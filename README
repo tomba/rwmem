@@ -1,0 +1,17 @@
+== rwmem - A small tool to read/write memory ==
+
+rwmem is a small tool to read and write arbitrary locations in memory. rwmem
+uses /dev/mem to access the memory. It supports accessing 8/16/32/64 bit memory
+locations, and bitfield operations.
+
+== Usage ==
+
+rwmem <mode> <regsize> <address>[:h[:l]] [value]
+
+mode            r/w/rw
+regsize         8/16/32/64
+address         memory address
+h               field's high bit number
+l               field's low bit number
+value           value to be written
+
