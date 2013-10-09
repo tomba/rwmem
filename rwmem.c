@@ -30,6 +30,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stdarg.h>
 
 enum opmode {
 	MODE_R,
@@ -49,6 +51,34 @@ struct field {
 	uint64_t mask;
 };
 
+__attribute__ ((noreturn))
+static void myerr(const char* format, ... )
+{
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fputs("\n", stderr);
+
+	exit(1);
+}
+
+__attribute__ ((noreturn))
+static void myerr2(const char* format, ... )
+{
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fprintf(stderr, ": %s\n", strerror(errno));
+
+	exit(1);
+}
+
 static uint64_t readmem(void *addr, int regsize)
 {
 	switch(regsize) {
@@ -61,8 +91,7 @@ static uint64_t readmem(void *addr, int regsize)
 	case 64:
 		return *((uint64_t *)addr);
 	default:
-		fprintf(stderr, "Illegal data regsize '%c'.\n", regsize);
-		exit(1);
+		myerr("Illegal data regsize '%c'", regsize);
 	}
 }
 
@@ -121,38 +150,65 @@ static void writememprint(const struct addr *addr, const struct field *field, ui
 __attribute__ ((noreturn))
 static void usage()
 {
-	fprintf(stderr, "usage: rwmem <mode> <regsize> <address>[:h[:l]] [value]\n"
-			"	mode		r/w/rw\n"
-			"	regsize		8/16/32/64\n"
-			"	address		memory address\n"
-			"	h		field's high bit number\n"
-			"	l		field's low bit number\n"
-			"	value		value to be written\n");
+	fprintf(stderr,
+"usage: rwmem [-s <size>] [-f file] [-w] <address>[:h[:l]] [value]\n"
+"	-s		size of the memory access: 8/16/32/64 (default: 32)\n"
+"	-f		file to open (default: /dev/mem)\n"
+"	-w		write only mode\n"
+"	<address>	address to access\n"
+"	h		bitfield's high bit number (inclusive, start from 0)\n"
+"	l		bitfield's low bit number (inclusive, start from 0)\n"
+"	<value>		value to be written\n");
+
 	exit(1);
 }
 
-static enum opmode parse_mode(const char *str)
+static uint64_t parse_address(char *astr, struct field *field, int regsize)
 {
-	if (strcmp(str, "r") == 0)
-		return MODE_R;
-	else if (strcmp(str, "w") == 0)
-		return MODE_W;
-	else if (strcmp(str, "rw") == 0)
-		return MODE_RW;
-	else
-		usage();
-}
+	char *s, *token, *endptr;
+	uint64_t paddr;
+	int fl, fh;
 
-static int parse_regsize(const char *str)
-{
-	int r;
+	s = astr;
 
-	r = strtoul(str, NULL, 10);
+	token = strsep(&s, ":");
+	paddr = strtoull(token, &endptr, 0);
+	if (*token == 0 || *endptr != 0)
+		myerr("Invalid address '%s'", token);
 
-	if (r != 8 && r != 16 && r != 32 && r != 64)
-		usage();
+	if (s) {
+		token = strsep(&s, ":");
+		fl = strtoull(token, &endptr, 0);
+		if (*token == 0 || *endptr != 0)
+			myerr("Invalid bit '%s'", token);
 
-	return r;
+		if (s) {
+			token = strsep(&s, ":");
+			fh = strtoull(token, &endptr, 0);
+			if (*token == 0 || *endptr != 0)
+				myerr("Invalid bit '%s'", token);
+		} else {
+			fh = fl;
+		}
+	} else {
+		fl = 0;
+		fh = regsize - 1;
+	}
+
+	if (fh >= regsize || fl >= regsize)
+		myerr("Field bits higher than size");
+
+	if (fh < fl) {
+		int tmp = fh;
+		fh = fl;
+		fl = tmp;
+	}
+
+	field->shift = fl;
+	field->width = fh - fl + 1;
+	field->mask = ((1ULL << field->width) - 1) << field->shift;
+
+	return paddr;
 }
 
 int main(int argc, char **argv)
@@ -165,78 +221,77 @@ int main(int argc, char **argv)
 	enum opmode mode;
 	int regsize;
 	uint64_t userval;
-	int fl, fh;
-	char *s, *token;
 	struct addr addr;
 	struct field field;
+	int opt;
+	const char *filename = "/dev/mem";
+	bool writeonly = false;
 
-	if(argc < 4 || argc > 5)
-		usage();
+	regsize = 32;
 
-	mode = parse_mode(argv[1]);
+	while ((opt = getopt(argc, argv, "s:f:w")) != -1) {
+		switch (opt) {
+		case 's':
+			regsize = atoi(optarg);
 
-	if ((mode == MODE_W || mode == MODE_RW) && argc == 4) {
-		fprintf(stderr, "No value given\n");
-		exit(1);
-	}
+			if (regsize != 8 && regsize != 16 && regsize != 32 && regsize != 64)
+				myerr("Invalid size '%s'", optarg);
 
-	regsize = parse_regsize(argv[2]);
-
-	s = argv[3];
-
-	token = strsep(&s, ":");
-	paddr = strtoull(token, NULL, 0);
-
-	if (s) {
-		token = strsep(&s, ":");
-		fl = strtoull(token, NULL, 0);
-
-		if (s) {
-			token = strsep(&s, ":");
-			fh = strtoull(token, NULL, 0);
-		} else {
-			fh = fl;
+			break;
+		case 'f':
+			filename = optarg;
+			break;
+		case 'w':
+			writeonly = true;
+			break;
+		default:
+			usage();
 		}
-	} else {
-		fl = 0;
-		fh = regsize - 1;
 	}
 
-	if (fh >= regsize || fl >= regsize) {
-		fprintf(stderr, "Field bits too high\n");
-		exit(1);
+	switch (argc - optind) {
+	case 1:
+		mode = MODE_R;
+		break;
+	case 2:
+		if (writeonly)
+			mode = MODE_W;
+		else
+			mode = MODE_RW;
+		break;
+	default:
+		usage();
 	}
 
-	if (fh < fl) {
-		int tmp = fh;
-		fh = fl;
-		fl = tmp;
-	}
+	/* Parse address */
 
-	field.shift = fl;
-	field.width = fh - fl + 1;
-	field.mask = ((1ULL << field.width) - 1) << field.shift;
+	paddr = parse_address(argv[optind], &field, regsize);
 
-	if (argc == 5) {
-		userval = strtoull(argv[4], 0, 0);
+	/* Parse value */
+
+	if (mode == MODE_W || mode == MODE_RW) {
+		const char *vstr = argv[optind + 1];
+		char *endptr;
+
+		userval = strtoull(vstr, &endptr, 0);
+		if (*vstr == 0 || *endptr != 0)
+			myerr("Invalid value '%s'", vstr);
+
 		userval &= field.mask >> field.shift;
 	} else {
 		userval = 0;
 	}
 
-	fd = open("/dev/mem", O_RDWR | O_SYNC);
+	fd = open(filename, (mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
 
-	if (fd == -1) {
-		perror("failed to open /dev/mem");
-		return 1;
-	}
+	if (fd == -1)
+		myerr2("Failed to open file '%s'", filename);
 
-	base = mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)paddr & ~pagemask);
+	base = mmap(0, pagesize, mode == MODE_R ? PROT_READ : PROT_WRITE,
+			MAP_SHARED, fd, (off_t)paddr & ~pagemask);
 
-	if (base == MAP_FAILED) {
-		perror("failed to mmap");
-		return 1;
-	}
+	if (base == MAP_FAILED)
+		myerr2("failed to mmap");
 
 	vaddr = (uint8_t* )base + (paddr & pagemask);
 
@@ -266,10 +321,8 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	if (munmap(base, pagesize) == -1) {
-		perror("failed to munmap");
-		return 1;
-	}
+	if (munmap(base, pagesize) == -1)
+		myerr2("failed to munmap");
 
 	close(fd);
 

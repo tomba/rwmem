@@ -1,17 +1,45 @@
 == rwmem - A small tool to read/write memory ==
 
-rwmem is a small tool to read and write arbitrary locations in memory. rwmem
-uses /dev/mem to access the memory. It supports accessing 8/16/32/64 bit memory
-locations, and bitfield operations.
+rwmem is a small tool to read and write arbitrary locations in a file.
+Normally, this file is /dev/mem, so the tool reads/writes memory, but the file
+can be anything.
+
+rwmem supports accessing 64 bit addresses, and accessing 8/16/32/64 bit memory
+locations.
+
+rwmem also supports bitfields, i.e. accessing only a subset of the memory
+location.
+
+When writing a value, by default rwmem will read the current value, and, if
+bitfield operation is used, modify the value. By specifying -w option, rwmem
+will not read the memory, only write to it.
 
 == Usage ==
 
-rwmem <mode> <regsize> <address>[:h[:l]] [value]
+usage: rwmem [-s <size>] [-f file] [-w] <address>[:h[:l]] [value]
+	-s		size of the memory access: 8/16/32/64 (default: 32)
+	-f		file to open (default: /dev/mem)
+	-w		write only mode
+	<address>	address to access
+	h		field's high bit number (inclusive, start from 0)
+	l		field's low bit number (inclusive, start from 0)
+	<value>		value to be written
 
-mode            r/w/rw
-regsize         8/16/32/64
-address         memory address
-h               field's high bit number
-l               field's low bit number
-value           value to be written
+== Examples ==
+
+Show what's in memory location 0x12345678
+
+	$ ./rwmem 0x12345678
+
+Show what's in memory location 0x12345678's bit 7 (i.e. 8th bit)
+
+	$ ./rwmem 0x12345678:7
+
+Write 0xbaadf00d to memory location 0x12345678
+
+	$ ./rwmem 0x12345678 0xbaadf00d
+
+Modify memory location 0x12345678's bits 4,5,6 and 7 to 0xf
+
+	$ ./rwmem 0x12345678 0xbaadf00d:7:4 0xf
 
