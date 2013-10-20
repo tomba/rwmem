@@ -18,14 +18,21 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-"usage: rwmem [-s <size>] [-f file] [-w] <address>[:h[:l]] [value]\n"
-"	-s		size of the memory access: 8/16/32/64 (default: 32)\n"
-"	-f		file to open (default: /dev/mem)\n"
-"	-w		write only mode\n"
+"usage: rwmem [options] <address>[:high[:low]] [value]\n"
+"\n"
 "	<address>	address to access\n"
-"	h		bitfield's high bit number (inclusive, start from 0)\n"
-"	l		bitfield's low bit number (inclusive, start from 0)\n"
-"	<value>		value to be written\n");
+"	[high]		bitfield's high bit number (inclusive, start from 0)\n"
+"	[low]		bitfield's low bit number (inclusive, start from 0)\n"
+"	[value]		value to be written\n"
+"\n"
+"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
+"	-f <file>	file to open (default: /dev/mem)\n"
+"	-w		write only mode\n"
+"	-b <address>	base address\n"
+"	-r <file>	register set file\n"
+"	-c		show comments\n"
+"	-d		show default value\n"
+);
 
 	exit(1);
 }
