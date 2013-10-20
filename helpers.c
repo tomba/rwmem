@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -68,3 +69,39 @@ void writemem(void *addr, int regsize, uint64_t value)
 	}
 }
 
+char *strip(char *str)
+{
+	while (isspace(*str))
+		str++;
+
+	int len = strlen(str);
+
+	while (isspace(*(str + len - 1)))
+		len--;
+
+	str[len] = 0;
+
+	return str;
+}
+
+int split_str(char *str, const char *delim, char **arr, int num)
+{
+	char *token;
+	int i;
+
+	str = strip(str);
+
+	for (i = 0; i < num; ++i) {
+		if (i == num - 1)
+			token = str;
+		else
+			token = strsep(&str, delim);
+
+		if (!token)
+			break;
+
+		arr[i] = token[0] ? token : NULL;
+	}
+
+	return i;
+}

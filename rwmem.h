@@ -43,6 +43,9 @@ void myerr2(const char* format, ... );
 uint64_t readmem(void *addr, int regsize);
 void writemem(void *addr, int regsize, uint64_t value);
 
+char *strip(char *str);
+int split_str(char *str, const char *delim, char **arr, int num);
+
 void parse_cmdline(int argc, char **argv);
 uint64_t parse_address(const char *astr);
 void parse_field(const char *fstr, struct field_desc *field, int regsize);
