@@ -42,7 +42,7 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 {
 	FILE *f;
 	char str[1024];
-	int regnamelen = strlen(regname);
+	size_t regnamelen = strlen(regname);
 	bool found = false;
 	int r;
 	struct reg_desc *reg;
@@ -92,11 +92,10 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 		myerr("Register not found");
 	}
 
-	int field_num = 0;
+	unsigned field_num = 0;
 
 	while (fgets(str, sizeof(str), f)) {
 		unsigned fh, fl;
-		unsigned len;
 
 		if (str[0] == 0 || isspace(str[0]))
 			break;
@@ -118,7 +117,7 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 		if (parts[5])
 			fd->comment = strdup(parts[5]);
 
-		len = strlen(fd->name);
+		size_t len = strlen(fd->name);
 		if (len > reg->max_field_name_len)
 			reg->max_field_name_len = len;
 
@@ -175,13 +174,13 @@ struct reg_desc *parse_address(const char *astr, const char *regfile)
 
 struct field_desc *parse_field(const char *fstr, struct reg_desc *reg)
 {
-	int fl, fh;
+	unsigned fl, fh;
 	char *endptr;
 
 	if (!fstr)
 		return NULL;
 
-	for (int i = 0; i < reg->num_fields; ++i) {
+	for (unsigned i = 0; i < reg->num_fields; ++i) {
 		struct field_desc *field = &reg->fields[i];
 
 		if (strcmp(fstr, field->name) == 0)
@@ -195,7 +194,7 @@ struct field_desc *parse_field(const char *fstr, struct reg_desc *reg)
 	}
 
 	if (fh < fl) {
-		int tmp = fh;
+		unsigned tmp = fh;
 		fh = fl;
 		fl = tmp;
 	}
@@ -228,7 +227,7 @@ void parse_base(const char *cfgfile, const char *bstr, uint64_t *base,
 	if (f == NULL)
 		myerr2("Failed to open '%s'", cfgfile);
 
-	int arglen = strlen(bstr);
+	size_t arglen = strlen(bstr);
 
 	while (fgets(str, sizeof(str), f)) {
 		if (str[0] == 0 || isspace(str[0]))

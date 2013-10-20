@@ -83,7 +83,7 @@ static uint64_t readmemprint(const struct addr *addr,
 	if (field) {
 		print_field(reg, field, v);
 	} else {
-		for (int i = 0; i < reg->num_fields; ++i) {
+		for (unsigned i = 0; i < reg->num_fields; ++i) {
 			const struct field_desc *fd = &reg->fields[i];
 
 			print_field(reg, fd, v);

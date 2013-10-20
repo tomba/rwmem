@@ -13,13 +13,13 @@ enum opmode {
 struct addr {
 	uint64_t paddr;
 	void *vaddr;
-	int regsize;
+	unsigned regsize;
 };
 
 struct field_desc {
 	const char *name;
-	int shift;
-	int width;
+	unsigned shift;
+	unsigned width;
 	uint64_t mask;
 	const char *comment;
 	uint64_t defval;
@@ -28,16 +28,16 @@ struct field_desc {
 struct reg_desc {
 	const char *name;
 	uint64_t address;
-	int width;
+	unsigned width;
 	const char *comment;
-	int num_fields;
+	unsigned num_fields;
 	struct field_desc fields[64];
 	unsigned max_field_name_len;
 };
 
 struct rwmem_opts {
 	const char *filename;
-	int regsize;
+	unsigned regsize;
 	enum opmode mode;
 
 	const char *address;

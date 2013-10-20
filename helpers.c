@@ -35,7 +35,7 @@ void myerr2(const char* format, ... )
 	exit(1);
 }
 
-uint64_t readmem(void *addr, int regsize)
+uint64_t readmem(void *addr, unsigned regsize)
 {
 	switch(regsize) {
 	case 8:
@@ -51,7 +51,7 @@ uint64_t readmem(void *addr, int regsize)
 	}
 }
 
-void writemem(void *addr, int regsize, uint64_t value)
+void writemem(void *addr, unsigned regsize, uint64_t value)
 {
 	switch(regsize) {
 	case 8:
@@ -74,7 +74,7 @@ char *strip(char *str)
 	while (isspace(*str))
 		str++;
 
-	int len = strlen(str);
+	size_t len = strlen(str);
 
 	while (isspace(*(str + len - 1)))
 		len--;
@@ -84,10 +84,10 @@ char *strip(char *str)
 	return str;
 }
 
-int split_str(char *str, const char *delim, char **arr, int num)
+unsigned split_str(char *str, const char *delim, char **arr, unsigned num)
 {
 	char *token;
-	int i;
+	unsigned i;
 
 	str = strip(str);
 
