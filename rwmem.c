@@ -17,66 +17,19 @@
  * MA  02110-1301, USA.
  */
 
-#include <unistd.h>
+#include <ctype.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <termios.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <inttypes.h>
-#include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <termios.h>
+#include <unistd.h>
 
-enum opmode {
-	MODE_R,
-	MODE_W,
-	MODE_RW,
-};
-
-struct addr {
-	uint64_t paddr;
-	void *vaddr;
-	int regsize;
-};
-
-struct field_desc {
-	int shift;
-	int width;
-	uint64_t mask;
-};
-
-__attribute__ ((noreturn))
-static void myerr(const char* format, ... )
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	fputs("\n", stderr);
-
-	exit(1);
-}
-
-__attribute__ ((noreturn))
-static void myerr2(const char* format, ... )
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	fprintf(stderr, ": %s\n", strerror(errno));
-
-	exit(1);
-}
+#include "rwmem.h"
 
 static uint64_t readmem(void *addr, int regsize)
 {
