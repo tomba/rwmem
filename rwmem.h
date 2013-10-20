@@ -17,9 +17,22 @@ struct addr {
 };
 
 struct field_desc {
+	const char *name;
 	int shift;
 	int width;
 	uint64_t mask;
+	const char *comment;
+	uint64_t defval;
+};
+
+struct reg_desc {
+	const char *name;
+	uint64_t address;
+	int width;
+	const char *comment;
+	int num_fields;
+	struct field_desc fields[64];
+	unsigned max_field_name_len;
 };
 
 struct rwmem_opts {
@@ -28,8 +41,13 @@ struct rwmem_opts {
 	enum opmode mode;
 
 	const char *address;
+	const char *base;
 	const char *field;
 	const char *value;
+	const char *regfile;
+
+	bool show_comments;
+	bool show_defval;
 };
 
 extern struct rwmem_opts rwmem_opts;
@@ -47,8 +65,11 @@ char *strip(char *str);
 int split_str(char *str, const char *delim, char **arr, int num);
 
 void parse_cmdline(int argc, char **argv);
-uint64_t parse_address(const char *astr);
-void parse_field(const char *fstr, struct field_desc *field, int regsize);
+
+void parse_base(const char *file, const char *arg, uint64_t *base,
+		const char **regfile);
+struct reg_desc *parse_address(const char *astr, const char *regfile);
+struct field_desc *parse_field(const char *fstr, struct reg_desc *reg);
 uint64_t parse_value(const char *vstr, const struct field_desc *field);
 
 #endif /* __RWMEM_H__ */

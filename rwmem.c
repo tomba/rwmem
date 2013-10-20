@@ -20,6 +20,8 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -61,6 +63,62 @@ static uint64_t readmemprint(const struct addr *addr,
 	return v;
 }
 
+static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
+		uint64_t value)
+{
+	uint64_t fv = (value & fd->mask) >> fd->shift;
+
+	printf("\t%-*s ", reg->max_field_name_len, fd->name);
+
+	if (fd->width == 1)
+		printf("   %-2d = ", fd->shift);
+	else
+		printf("%2d:%-2d = ",
+				fd->shift + fd->width - 1, fd->shift);
+
+	printf("%-#*" PRIx64, reg->width / 4 + 2, fv);
+
+	if (rwmem_opts.show_defval)
+		printf(" (%0#" PRIx64 ")", fd->defval);
+
+	if (rwmem_opts.show_comments && fd->comment)
+		printf(" # %s", fd->comment);
+
+	puts("");
+}
+
+static uint64_t readmemprint2(const struct addr *addr,
+		const struct reg_desc *reg,
+		const struct field_desc *field)
+{
+	uint64_t v, fv;
+
+	v = readmem(addr->vaddr, addr->regsize);
+	if (field) {
+		fv = (v & field->mask) >> field->shift;
+		print_reg('R', addr, field, v, fv);
+		return v;
+	}
+
+	fv = v;
+
+	printf("%s (%#" PRIx64 ") = %0#*" PRIx64,
+			reg->name, addr->paddr, addr->regsize / 4 + 2, v);
+
+	if (rwmem_opts.show_comments && reg->comment)
+		printf(" # %s", reg->comment);
+
+	puts("");
+
+	for (int i = 0; i < reg->num_fields; ++i) {
+		const struct field_desc *fd = &reg->fields[i];
+
+		print_field(reg, fd, v);
+	}
+
+	return v;
+}
+
 static void writememprint(const struct addr *addr,
 		const struct field_desc *field,
 		uint64_t oldvalue, uint64_t value)
@@ -84,21 +142,35 @@ int main(int argc, char **argv)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
-	uint64_t paddr;
-	struct field_desc field;
+	uint64_t base;
+	enum opmode mode;
 
 	parse_cmdline(argc, argv);
 
-	enum opmode mode = rwmem_opts.mode;
+	mode = rwmem_opts.mode;
+
+	/* Parse base */
+
+	parse_base("rwmem.cfg", rwmem_opts.base, &base, &rwmem_opts.regfile);
 
 	/* Parse address */
 
-	paddr = parse_address(rwmem_opts.address);
-	parse_field(rwmem_opts.field, &field, rwmem_opts.regsize);
+	struct reg_desc *reg = parse_address(rwmem_opts.address,
+			rwmem_opts.regfile);
+
+	/* Parse field */
+
+	struct field_desc *field = parse_field(rwmem_opts.field, reg);
+
+	if (field) {
+		if (field->shift >= rwmem_opts.regsize ||
+			(field->width + field->shift) > rwmem_opts.regsize)
+		myerr("Field bits higher than size");
+	}
 
 	/* Parse value */
 
-	uint64_t userval = parse_value(rwmem_opts.value, &field);
+	uint64_t userval = parse_value(rwmem_opts.value, field);
 
 
 	int fd = open(rwmem_opts.filename,
@@ -106,6 +178,8 @@ int main(int argc, char **argv)
 
 	if (fd == -1)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);
+
+	uint64_t paddr = base + reg->address;
 
 	void *mmap_base = mmap(0, pagesize,
 			mode == MODE_R ? PROT_READ : PROT_WRITE,
@@ -123,22 +197,22 @@ int main(int argc, char **argv)
 
 	switch (mode) {
 	case MODE_R:
-		readmemprint(&addr, &field);
+		readmemprint2(&addr, reg, field);
 		break;
 
 	case MODE_W:
-		writememprint(&addr, &field, 0, userval);
+		writememprint(&addr, field, 0, userval);
 		break;
 
 	case MODE_RW:
 		{
 			uint64_t v;
 
-			v = readmemprint(&addr, &field);
+			v = readmemprint(&addr, field);
 
-			writememprint(&addr, &field, v, userval);
+			writememprint(&addr, field, v, userval);
 
-			readmemprint(&addr, &field);
+			readmemprint(&addr, field);
 		}
 		break;
 	}
