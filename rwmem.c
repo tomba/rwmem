@@ -163,6 +163,8 @@ static uint64_t parse_address(char *astr, struct field_desc *field, int regsize)
 	return paddr;
 }
 
+struct rwmem_opts rwmem_opts;
+
 int main(int argc, char **argv)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
@@ -171,30 +173,31 @@ int main(int argc, char **argv)
 	void *mmap_base, *vaddr;
 	uint64_t paddr;
 	enum opmode mode;
-	int regsize;
 	uint64_t userval;
 	struct addr addr;
 	struct field_desc field;
 	int opt;
-	const char *filename = "/dev/mem";
-	bool writeonly = false;
 
-	regsize = 32;
+	rwmem_opts.filename = "/dev/mem";
+	rwmem_opts.regsize = 32;
+	rwmem_opts.writeonly = false;
 
 	while ((opt = getopt(argc, argv, "s:f:w")) != -1) {
 		switch (opt) {
-		case 's':
-			regsize = atoi(optarg);
+		case 's': {
+			int rs = atoi(optarg);
 
-			if (regsize != 8 && regsize != 16 && regsize != 32 && regsize != 64)
+			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
 				myerr("Invalid size '%s'", optarg);
 
+			rwmem_opts.regsize = rs;
 			break;
+		}
 		case 'f':
-			filename = optarg;
+			rwmem_opts.filename = optarg;
 			break;
 		case 'w':
-			writeonly = true;
+			rwmem_opts.writeonly = true;
 			break;
 		default:
 			usage();
@@ -206,7 +209,7 @@ int main(int argc, char **argv)
 		mode = MODE_R;
 		break;
 	case 2:
-		if (writeonly)
+		if (rwmem_opts.writeonly)
 			mode = MODE_W;
 		else
 			mode = MODE_RW;
@@ -217,7 +220,7 @@ int main(int argc, char **argv)
 
 	/* Parse address */
 
-	paddr = parse_address(argv[optind], &field, regsize);
+	paddr = parse_address(argv[optind], &field, rwmem_opts.regsize);
 
 	/* Parse value */
 
@@ -234,10 +237,11 @@ int main(int argc, char **argv)
 		userval = 0;
 	}
 
-	fd = open(filename, (mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
+	fd = open(rwmem_opts.filename,
+			(mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	if (fd == -1)
-		myerr2("Failed to open file '%s'", filename);
+		myerr2("Failed to open file '%s'", rwmem_opts.filename);
 
 	mmap_base = mmap(0, pagesize, mode == MODE_R ? PROT_READ : PROT_WRITE,
 			MAP_SHARED, fd, (off_t)paddr & ~pagemask);
@@ -249,7 +253,7 @@ int main(int argc, char **argv)
 
 	addr.paddr = paddr;
 	addr.vaddr = vaddr;
-	addr.regsize = regsize;
+	addr.regsize = rwmem_opts.regsize;
 
 	switch (mode) {
 	case MODE_R:

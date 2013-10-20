@@ -22,6 +22,14 @@ struct field_desc {
 	uint64_t mask;
 };
 
+struct rwmem_opts {
+	const char *filename;
+	int regsize;
+	bool writeonly;
+};
+
+extern struct rwmem_opts rwmem_opts;
+
 __attribute__ ((noreturn))
 void myerr(const char* format, ... );
 
