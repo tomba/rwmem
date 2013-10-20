@@ -65,34 +65,49 @@ static void writemem(void *addr, int regsize, uint64_t value)
 	}
 }
 
-static void print_reg(char m, const struct addr *addr, const struct field_desc *field, uint64_t v, uint64_t fv)
+static void print_reg(char m, const struct addr *addr,
+		const struct field_desc *field, uint64_t v, uint64_t fv)
 {
 	printf("%c %#" PRIx64 " = %0#*" PRIx64, m, addr->paddr, addr->regsize / 4 + 2, v);
-	if (field->width != addr->regsize)
-		printf(" [%d:%d] = %#" PRIx64, field->shift + field->width - 1, field->shift, fv);
+	if (field && field->width != addr->regsize) {
+		int fh = field->shift + field->width - 1;
+		int fl = field->shift;
+		printf(" [%d:%d] = %#" PRIx64, fh, fl, fv);
+	}
+
 	printf("\n");
 	fflush(stdout);
 }
 
-static uint64_t readmemprint(const struct addr *addr, const struct field_desc *field)
+static uint64_t readmemprint(const struct addr *addr,
+		const struct field_desc *field)
 {
 	uint64_t v, fv;
 
 	v = readmem(addr->vaddr, addr->regsize);
-	fv = (v & field->mask) >> field->shift;
+	if (field && field->width != addr->regsize)
+		fv = (v & field->mask) >> field->shift;
+	else
+		fv = v;
 
 	print_reg('R', addr, field, v, fv);
 
 	return v;
 }
 
-static void writememprint(const struct addr *addr, const struct field_desc *field, uint64_t oldvalue, uint64_t value)
+static void writememprint(const struct addr *addr,
+		const struct field_desc *field,
+		uint64_t oldvalue, uint64_t value)
 {
 	uint64_t v;
 
-	v = oldvalue;
-	v &= ~field->mask;
-	v |= value << field->shift;
+	if (field) {
+		v = oldvalue;
+		v &= ~field->mask;
+		v |= value << field->shift;
+	} else {
+		v = value;
+	}
 
 	print_reg('W', addr, field, v, value);
 
