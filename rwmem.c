@@ -33,42 +33,15 @@
 
 #include "rwmem.h"
 
-static void print_reg(char m, const struct addr *addr,
-		const struct field_desc *field, uint64_t v, uint64_t fv)
-{
-	printf("%c %#" PRIx64 " = %0#*" PRIx64, m, addr->paddr, addr->regsize / 4 + 2, v);
-	if (field && field->width != addr->regsize) {
-		int fh = field->shift + field->width - 1;
-		int fl = field->shift;
-		printf(" [%d:%d] = %#" PRIx64, fh, fl, fv);
-	}
-
-	printf("\n");
-	fflush(stdout);
-}
-
-static uint64_t readmemprint(const struct addr *addr,
-		const struct field_desc *field)
-{
-	uint64_t v, fv;
-
-	v = readmem(addr->vaddr, addr->regsize);
-	if (field && field->width != addr->regsize)
-		fv = (v & field->mask) >> field->shift;
-	else
-		fv = v;
-
-	print_reg('R', addr, field, v, fv);
-
-	return v;
-}
-
 static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 		uint64_t value)
 {
 	uint64_t fv = (value & fd->mask) >> fd->shift;
 
-	printf("\t%-*s ", reg->max_field_name_len, fd->name);
+	if (fd->name)
+		printf("\t%-*s ", reg->max_field_name_len, fd->name);
+	else
+		printf("\t");
 
 	if (fd->width == 1)
 		printf("   %-2d = ", fd->shift);
@@ -87,39 +60,41 @@ static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 	puts("");
 }
 
-static uint64_t readmemprint2(const struct addr *addr,
+static uint64_t readmemprint(const struct addr *addr,
 		const struct reg_desc *reg,
 		const struct field_desc *field)
 {
-	uint64_t v, fv;
+	uint64_t v;
 
 	v = readmem(addr->vaddr, addr->regsize);
-	if (field) {
-		fv = (v & field->mask) >> field->shift;
-		print_reg('R', addr, field, v, fv);
-		return v;
-	}
 
-	fv = v;
+	if (reg->name)
+		printf("%s (%#" PRIx64 ") = ", reg->name, addr->paddr);
+	else
+		printf("%#" PRIx64 " = ", addr->paddr);
 
-	printf("%s (%#" PRIx64 ") = %0#*" PRIx64,
-			reg->name, addr->paddr, addr->regsize / 4 + 2, v);
+	printf("%0#*" PRIx64, addr->regsize / 4 + 2, v);
 
 	if (rwmem_opts.show_comments && reg->comment)
 		printf(" # %s", reg->comment);
 
 	puts("");
 
-	for (int i = 0; i < reg->num_fields; ++i) {
-		const struct field_desc *fd = &reg->fields[i];
+	if (field) {
+		print_field(reg, field, v);
+	} else {
+		for (int i = 0; i < reg->num_fields; ++i) {
+			const struct field_desc *fd = &reg->fields[i];
 
-		print_field(reg, fd, v);
+			print_field(reg, fd, v);
+		}
 	}
 
 	return v;
 }
 
 static void writememprint(const struct addr *addr,
+		const struct reg_desc *reg,
 		const struct field_desc *field,
 		uint64_t oldvalue, uint64_t value)
 {
@@ -133,7 +108,14 @@ static void writememprint(const struct addr *addr,
 		v = value;
 	}
 
-	print_reg('W', addr, field, v, value);
+	if (reg->name)
+		printf("%s (%#" PRIx64 ") := ", reg->name, addr->paddr);
+	else
+		printf("%#" PRIx64 " := ", addr->paddr);
+
+	printf("%0#*" PRIx64, addr->regsize / 4 + 2, v);
+
+	puts("");
 
 	writemem(addr->vaddr, addr->regsize, v);
 }
@@ -204,22 +186,22 @@ int main(int argc, char **argv)
 
 	switch (mode) {
 	case MODE_R:
-		readmemprint2(&addr, reg, field);
+		readmemprint(&addr, reg, field);
 		break;
 
 	case MODE_W:
-		writememprint(&addr, field, 0, userval);
+		writememprint(&addr, reg, field, 0, userval);
 		break;
 
 	case MODE_RW:
 		{
 			uint64_t v;
 
-			v = readmemprint(&addr, field);
+			v = readmemprint(&addr, reg, field);
 
-			writememprint(&addr, field, v, userval);
+			writememprint(&addr, reg, field, v, userval);
 
-			readmemprint(&addr, field);
+			readmemprint(&addr, reg, field);
 		}
 		break;
 	}
