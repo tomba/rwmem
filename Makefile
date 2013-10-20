@@ -4,7 +4,7 @@ endif
 
 CFLAGS=-O2 -std=c99 -Wall -Wextra -D_XOPEN_SOURCE -D_BSD_SOURCE
 
-rwmem: rwmem.c helpers.c rwmem.h
+rwmem: rwmem.c helpers.c cmdline.c rwmem.h
 
 clean:
 	rm -f rwmem

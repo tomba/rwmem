@@ -80,131 +80,28 @@ static void writememprint(const struct addr *addr,
 	writemem(addr->vaddr, addr->regsize, v);
 }
 
-__attribute__ ((noreturn))
-static void usage()
-{
-	fprintf(stderr,
-"usage: rwmem [-s <size>] [-f file] [-w] <address>[:h[:l]] [value]\n"
-"	-s		size of the memory access: 8/16/32/64 (default: 32)\n"
-"	-f		file to open (default: /dev/mem)\n"
-"	-w		write only mode\n"
-"	<address>	address to access\n"
-"	h		bitfield's high bit number (inclusive, start from 0)\n"
-"	l		bitfield's low bit number (inclusive, start from 0)\n"
-"	<value>		value to be written\n");
-
-	exit(1);
-}
-
-static uint64_t parse_address(char *astr, struct field_desc *field, int regsize)
-{
-	char *s, *token, *endptr;
-	uint64_t paddr;
-	int fl, fh;
-
-	s = astr;
-
-	token = strsep(&s, ":");
-	paddr = strtoull(token, &endptr, 0);
-	if (*token == 0 || *endptr != 0)
-		myerr("Invalid address '%s'", token);
-
-	if (s) {
-		token = strsep(&s, ":");
-		fl = strtoull(token, &endptr, 0);
-		if (*token == 0 || *endptr != 0)
-			myerr("Invalid bit '%s'", token);
-
-		if (s) {
-			token = strsep(&s, ":");
-			fh = strtoull(token, &endptr, 0);
-			if (*token == 0 || *endptr != 0)
-				myerr("Invalid bit '%s'", token);
-		} else {
-			fh = fl;
-		}
-	} else {
-		fl = 0;
-		fh = regsize - 1;
-	}
-
-	if (fh >= regsize || fl >= regsize)
-		myerr("Field bits higher than size");
-
-	if (fh < fl) {
-		int tmp = fh;
-		fh = fl;
-		fl = tmp;
-	}
-
-	field->shift = fl;
-	field->width = fh - fl + 1;
-	field->mask = ((1ULL << field->width) - 1) << field->shift;
-
-	return paddr;
-}
-
-struct rwmem_opts rwmem_opts;
-
 int main(int argc, char **argv)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 	uint64_t paddr;
-	enum opmode mode;
 	struct field_desc field;
-	int opt;
 
-	rwmem_opts.filename = "/dev/mem";
-	rwmem_opts.regsize = 32;
-	rwmem_opts.writeonly = false;
+	parse_cmdline(argc, argv);
 
-	while ((opt = getopt(argc, argv, "s:f:w")) != -1) {
-		switch (opt) {
-		case 's': {
-			int rs = atoi(optarg);
-
-			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-				myerr("Invalid size '%s'", optarg);
-
-			rwmem_opts.regsize = rs;
-			break;
-		}
-		case 'f':
-			rwmem_opts.filename = optarg;
-			break;
-		case 'w':
-			rwmem_opts.writeonly = true;
-			break;
-		default:
-			usage();
-		}
-	}
-
-	switch (argc - optind) {
-	case 1:
-		mode = MODE_R;
-		break;
-	case 2:
-		if (rwmem_opts.writeonly)
-			mode = MODE_W;
-		else
-			mode = MODE_RW;
-		break;
-	default:
-		usage();
-	}
+	enum opmode mode = rwmem_opts.mode;
 
 	/* Parse address */
 
-	paddr = parse_address(argv[optind], &field, rwmem_opts.regsize);
+	paddr = parse_address(rwmem_opts.address_str);
+	parse_field(rwmem_opts.field_str, &field, rwmem_opts.regsize);
 
 	/* Parse value */
 
 	uint64_t userval = 0;
 
 	if (mode == MODE_W || mode == MODE_RW) {
-		const char *vstr = argv[optind + 1];
+		const char *vstr = rwmem_opts.value_str;
 		char *endptr;
 
 		userval = strtoull(vstr, &endptr, 0);
@@ -213,6 +110,7 @@ int main(int argc, char **argv)
 
 		userval &= field.mask >> field.shift;
 	}
+
 
 	int fd = open(rwmem_opts.filename,
 			(mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
