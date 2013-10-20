@@ -93,12 +93,12 @@ int main(int argc, char **argv)
 
 	/* Parse address */
 
-	paddr = parse_address(rwmem_opts.address_str);
-	parse_field(rwmem_opts.field_str, &field, rwmem_opts.regsize);
+	paddr = parse_address(rwmem_opts.address);
+	parse_field(rwmem_opts.field, &field, rwmem_opts.regsize);
 
 	/* Parse value */
 
-	uint64_t userval = parse_value(rwmem_opts.value_str, &field);
+	uint64_t userval = parse_value(rwmem_opts.value, &field);
 
 
 	int fd = open(rwmem_opts.filename,

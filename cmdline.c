@@ -149,17 +149,17 @@ void parse_cmdline(int argc, char **argv)
 
 	char *str = argv[optind];
 
-	rwmem_opts.address_str = strsep(&str, ":");
-	rwmem_opts.field_str = str;
+	rwmem_opts.address = strsep(&str, ":");
+	rwmem_opts.field = str;
 
-	if (strlen(rwmem_opts.address_str) == 0)
+	if (strlen(rwmem_opts.address) == 0)
 		usage();
 
-	if (rwmem_opts.field_str && strlen(rwmem_opts.field_str) == 0)
+	if (rwmem_opts.field && strlen(rwmem_opts.field) == 0)
 		usage();
 
 	if (rwmem_opts.mode != MODE_R)
-		rwmem_opts.value_str = argv[optind + 1];
+		rwmem_opts.value = argv[optind + 1];
 }
 
 

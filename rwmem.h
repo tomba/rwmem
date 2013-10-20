@@ -27,9 +27,9 @@ struct rwmem_opts {
 	int regsize;
 	enum opmode mode;
 
-	const char *address_str;
-	const char *field_str;
-	const char *value_str;
+	const char *address;
+	const char *field;
+	const char *value;
 };
 
 extern struct rwmem_opts rwmem_opts;
