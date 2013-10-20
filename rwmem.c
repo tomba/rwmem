@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 	int fd;
-	void *base, *vaddr;
+	void *mmap_base, *vaddr;
 	uint64_t paddr;
 	enum opmode mode;
 	int regsize;
@@ -285,13 +285,13 @@ int main(int argc, char **argv)
 	if (fd == -1)
 		myerr2("Failed to open file '%s'", filename);
 
-	base = mmap(0, pagesize, mode == MODE_R ? PROT_READ : PROT_WRITE,
+	mmap_base = mmap(0, pagesize, mode == MODE_R ? PROT_READ : PROT_WRITE,
 			MAP_SHARED, fd, (off_t)paddr & ~pagemask);
 
-	if (base == MAP_FAILED)
+	if (mmap_base == MAP_FAILED)
 		myerr2("failed to mmap");
 
-	vaddr = (uint8_t* )base + (paddr & pagemask);
+	vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
 	addr.paddr = paddr;
 	addr.vaddr = vaddr;
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	if (munmap(base, pagesize) == -1)
+	if (munmap(mmap_base, pagesize) == -1)
 		myerr2("failed to munmap");
 
 	close(fd);
