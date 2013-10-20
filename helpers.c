@@ -34,3 +34,37 @@ void myerr2(const char* format, ... )
 	exit(1);
 }
 
+uint64_t readmem(void *addr, int regsize)
+{
+	switch(regsize) {
+	case 8:
+		return *((uint8_t *)addr);
+	case 16:
+		return *((uint16_t *)addr);
+	case 32:
+		return *((uint32_t *)addr);
+	case 64:
+		return *((uint64_t *)addr);
+	default:
+		myerr("Illegal data regsize '%c'", regsize);
+	}
+}
+
+void writemem(void *addr, int regsize, uint64_t value)
+{
+	switch(regsize) {
+	case 8:
+		*((uint8_t *)addr) = value;
+		break;
+	case 16:
+		*((uint16_t *)addr) = value;
+		break;
+	case 32:
+		*((uint32_t *)addr) = value;
+		break;
+	case 64:
+		*((uint64_t *)addr) = value;
+		break;
+	}
+}
+

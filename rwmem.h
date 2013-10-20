@@ -36,5 +36,7 @@ void myerr(const char* format, ... );
 __attribute__ ((noreturn))
 void myerr2(const char* format, ... );
 
+uint64_t readmem(void *addr, int regsize);
+void writemem(void *addr, int regsize, uint64_t value);
 
 #endif /* __RWMEM_H__ */
