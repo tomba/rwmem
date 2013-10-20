@@ -150,12 +150,8 @@ int main(int argc, char **argv)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
-	int fd;
-	void *mmap_base, *vaddr;
 	uint64_t paddr;
 	enum opmode mode;
-	uint64_t userval;
-	struct addr addr;
 	struct field_desc field;
 	int opt;
 
@@ -205,6 +201,8 @@ int main(int argc, char **argv)
 
 	/* Parse value */
 
+	uint64_t userval = 0;
+
 	if (mode == MODE_W || mode == MODE_RW) {
 		const char *vstr = argv[optind + 1];
 		char *endptr;
@@ -214,24 +212,24 @@ int main(int argc, char **argv)
 			myerr("Invalid value '%s'", vstr);
 
 		userval &= field.mask >> field.shift;
-	} else {
-		userval = 0;
 	}
 
-	fd = open(rwmem_opts.filename,
+	int fd = open(rwmem_opts.filename,
 			(mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	if (fd == -1)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);
 
-	mmap_base = mmap(0, pagesize, mode == MODE_R ? PROT_READ : PROT_WRITE,
+	void *mmap_base = mmap(0, pagesize,
+			mode == MODE_R ? PROT_READ : PROT_WRITE,
 			MAP_SHARED, fd, (off_t)paddr & ~pagemask);
 
 	if (mmap_base == MAP_FAILED)
 		myerr2("failed to mmap");
 
-	vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
+	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
+	struct addr addr = { 0 };
 	addr.paddr = paddr;
 	addr.vaddr = vaddr;
 	addr.regsize = rwmem_opts.regsize;
