@@ -1,45 +1,113 @@
 == rwmem - A small tool to read/write memory ==
 
+Copyright (C) 2013 Tomi Valkeinen
+
+== Intro ==
+
 rwmem is a small tool to read and write arbitrary locations in a file.
 Normally, this file is /dev/mem, so the tool reads/writes memory, but the file
-can be anything.
+can be any file that can be memory mapped.
 
-rwmem supports accessing 64 bit addresses, and accessing 8/16/32/64 bit memory
-locations.
+rwmem supports accessing 32/64 bit addresses, and accessing 8/16/32/64 bit
+memory locations.
 
 rwmem also supports bitfields, i.e. accessing only a subset of the memory
 location.
 
-When writing a value, by default rwmem will read the current value, and, if
-bitfield operation is used, modify the value. By specifying -w option, rwmem
-will not read the memory, only write to it.
-
 == Usage ==
 
-usage: rwmem [-s <size>] [-f file] [-w] <address>[:h[:l]] [value]
-	-s		size of the memory access: 8/16/32/64 (default: 32)
-	-f		file to open (default: /dev/mem)
-	-w		write only mode
-	<address>	address to access
-	h		field's high bit number (inclusive, start from 0)
-	l		field's low bit number (inclusive, start from 0)
-	<value>		value to be written
+usage: rwmem [options] <address>[:high[:low]] [value]
+
+ <address>      address to access
+ [high]         bitfield's high bit number (inclusive, start from 0)
+ [low]          bitfield's low bit number (inclusive, start from 0)
+ [value]        value to be written
+
+ -s <size>      size of the memory access: 8/16/32/64 (default: 32)
+ -f <file>      file to open (default: /dev/mem)
+ -w             write only mode
+ -b <address>   base address
+ -r <file>      register set file
+ -c             show comments
+ -d             show default value
 
 == Examples ==
 
 Show what's in memory location 0x12345678
 
-	$ ./rwmem 0x12345678
+	$ rwmem 0x12345678
 
 Show what's in memory location 0x12345678's bit 7 (i.e. 8th bit)
 
-	$ ./rwmem 0x12345678:7
+	$ rwmem 0x12345678:7
+
+Show what's in memory location 0x12345678's bits 7-4 (i.e. bits 4, 5, 6, 7)
+
+	$ rwmem 0x12345678:7:4
 
 Write 0xbaadf00d to memory location 0x12345678
 
-	$ ./rwmem 0x12345678 0xbaadf00d
+	$ rwmem 0x12345678 0xbaadf00d
 
-Modify memory location 0x12345678's bits 4,5,6 and 7 to 0xf
+Modify memory location 0x12345678's bits 7-4 to 0xf
 
-	$ ./rwmem 0x12345678 0xbaadf00d:7:4 0xf
+	$ rwmem 0x12345678 0xbaadf00d:7:4 0xf
+
+Show the byte at location 0x10 in file edid.raw
+
+	$ rwmem -f edid.bin -s 8 0x10
+
+Show SYSCONFIG register in DISPC
+
+	$ rwmem -b DISPC SYSCONFIG
+
+Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
+
+	$ rwmem -b DISPC SYSCONFIG:MIDLEMODE 0x1
+
+Show SYSCONFIG register, as defined in DISPC.txt, in file dispc.bin
+
+	$ rwmem -f dispc.bin -r DISPC.txt SYSCONFIG
+
+== Register set files ==
+
+Register set files are used to define symbolic addresses and fields, so that
+you can use register and names instead of numerical addresses or bit numbers.
+
+As an example, the following entry in a register file:
+
+TIMING_H1,0x64,32
+HBP,31,20
+HFP,19,8
+HSW,7,0
+
+defines a 32bit register TIMING_H1, which is found at offset 0x64. It contains
+three fields, HBP, HFP and HSW, and their bit locations.
+
+Thus, instead of using address '0x64:19:8' you can use 'TIMING_H1:HFP'.
+
+You can specify the register set file to use with -r option. You would normally
+combine that with option -b to specify the base address of the IP block. For
+example:
+
+$ rwmem -r DISPC.txt -b 0x58001000 TIMING_H1:HFP
+
+However, to simplify things, you can define symbolic base addresses in rwmem.cfg file. Adding the following line to rwmem.cfg:
+
+DISPC  0x58001000       DISPC.txt
+
+means that base 'DISPC' means base address of 0x58001000 and register set file DISPC.txt. Thus, you can write the previous example as:
+
+$ rwmem -b DISPC TIMING_H1:HFP
+
+== Register set file format ==
+
+<regname>,<offset>,<size>[,comment]
+<fieldname>,<high>,<low>[,<default-value>[,<comment>]]
+... more fields ...
+empty line
+
+== rwmem.cfg file format ==
+
+<base-name>	<address>	<regfile>
 
