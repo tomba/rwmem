@@ -43,7 +43,7 @@ struct addr {
 	int regsize;
 };
 
-struct field {
+struct field_desc {
 	int shift;
 	int width;
 	uint64_t mask;
@@ -111,7 +111,7 @@ static void writemem(void *addr, int regsize, uint64_t value)
 	}
 }
 
-static void print_reg(char m, const struct addr *addr, const struct field *field, uint64_t v, uint64_t fv)
+static void print_reg(char m, const struct addr *addr, const struct field_desc *field, uint64_t v, uint64_t fv)
 {
 	printf("%c %#" PRIx64 " = %0#*" PRIx64, m, addr->paddr, addr->regsize / 4 + 2, v);
 	if (field->width != addr->regsize)
@@ -120,7 +120,7 @@ static void print_reg(char m, const struct addr *addr, const struct field *field
 	fflush(stdout);
 }
 
-static uint64_t readmemprint(const struct addr *addr, const struct field *field)
+static uint64_t readmemprint(const struct addr *addr, const struct field_desc *field)
 {
 	uint64_t v, fv;
 
@@ -132,7 +132,7 @@ static uint64_t readmemprint(const struct addr *addr, const struct field *field)
 	return v;
 }
 
-static void writememprint(const struct addr *addr, const struct field *field, uint64_t oldvalue, uint64_t value)
+static void writememprint(const struct addr *addr, const struct field_desc *field, uint64_t oldvalue, uint64_t value)
 {
 	uint64_t v;
 
@@ -161,7 +161,7 @@ static void usage()
 	exit(1);
 }
 
-static uint64_t parse_address(char *astr, struct field *field, int regsize)
+static uint64_t parse_address(char *astr, struct field_desc *field, int regsize)
 {
 	char *s, *token, *endptr;
 	uint64_t paddr;
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 	int regsize;
 	uint64_t userval;
 	struct addr addr;
-	struct field field;
+	struct field_desc field;
 	int opt;
 	const char *filename = "/dev/mem";
 	bool writeonly = false;
