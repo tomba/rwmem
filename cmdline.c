@@ -164,9 +164,11 @@ struct reg_desc *parse_address(const char *astr, const char *regfile)
 	if (reg)
 		return reg;
 
-	reg = parse_symbolic_address(astr, regfile);
-	if (reg)
-		return reg;
+	if (regfile) {
+		reg = parse_symbolic_address(astr, regfile);
+		if (reg)
+			return reg;
+	}
 
 	myerr("Invalid address '%s'", astr);
 }
