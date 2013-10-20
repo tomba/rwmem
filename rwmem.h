@@ -46,5 +46,6 @@ void writemem(void *addr, int regsize, uint64_t value);
 void parse_cmdline(int argc, char **argv);
 uint64_t parse_address(const char *astr);
 void parse_field(const char *fstr, struct field_desc *field, int regsize);
+uint64_t parse_value(const char *vstr, const struct field_desc *field);
 
 #endif /* __RWMEM_H__ */

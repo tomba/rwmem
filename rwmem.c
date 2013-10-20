@@ -98,18 +98,7 @@ int main(int argc, char **argv)
 
 	/* Parse value */
 
-	uint64_t userval = 0;
-
-	if (mode == MODE_W || mode == MODE_RW) {
-		const char *vstr = rwmem_opts.value_str;
-		char *endptr;
-
-		userval = strtoull(vstr, &endptr, 0);
-		if (*vstr == 0 || *endptr != 0)
-			myerr("Invalid value '%s'", vstr);
-
-		userval &= field.mask >> field.shift;
-	}
+	uint64_t userval = parse_value(rwmem_opts.value_str, &field);
 
 
 	int fd = open(rwmem_opts.filename,

@@ -85,6 +85,22 @@ void parse_field(const char *fstr, struct field_desc *field, int regsize)
 	field->mask = ((1ULL << field->width) - 1) << field->shift;
 }
 
+uint64_t parse_value(const char *vstr, const struct field_desc *field)
+{
+	if (!vstr)
+		return 0;
+
+	char *endptr;
+
+	uint64_t val = strtoull(vstr, &endptr, 0);
+	if (*endptr != 0)
+		myerr("Invalid value '%s'", vstr);
+
+	val &= field->mask >> field->shift;
+
+	return val;
+}
+
 void parse_cmdline(int argc, char **argv)
 {
 	int opt;
