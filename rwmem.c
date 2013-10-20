@@ -144,6 +144,7 @@ int main(int argc, char **argv)
 	const unsigned pagemask = pagesize - 1;
 	uint64_t base;
 	enum opmode mode;
+	const char *regfile;
 
 	parse_cmdline(argc, argv);
 
@@ -151,12 +152,18 @@ int main(int argc, char **argv)
 
 	/* Parse base */
 
-	parse_base("rwmem.cfg", rwmem_opts.base, &base, &rwmem_opts.regfile);
+	base = 0;
+	regfile = NULL;
+
+	if (rwmem_opts.base)
+		parse_base("rwmem.cfg", rwmem_opts.base, &base, &regfile);
+
+	if (rwmem_opts.regfile)
+		regfile = rwmem_opts.regfile;
 
 	/* Parse address */
 
-	struct reg_desc *reg = parse_address(rwmem_opts.address,
-			rwmem_opts.regfile);
+	struct reg_desc *reg = parse_address(rwmem_opts.address, regfile);
 
 	/* Parse field */
 
