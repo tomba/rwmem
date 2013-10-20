@@ -249,7 +249,7 @@ void parse_base(const char *cfgfile, const char *bstr, uint64_t *base,
 	myerr("Failed to find offset");
 }
 
-uint64_t parse_value(const char *vstr, const struct field_desc *field)
+uint64_t parse_value(const char *vstr)
 {
 	if (!vstr)
 		return 0;
@@ -259,9 +259,6 @@ uint64_t parse_value(const char *vstr, const struct field_desc *field)
 	uint64_t val = strtoull(vstr, &endptr, 0);
 	if (*endptr != 0)
 		myerr("Invalid value '%s'", vstr);
-
-	if (field)
-		val &= field->mask >> field->shift;
 
 	return val;
 }

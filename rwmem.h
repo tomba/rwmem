@@ -70,6 +70,6 @@ void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);
 struct reg_desc *parse_address(const char *astr, const char *regfile);
 struct field_desc *parse_field(const char *fstr, struct reg_desc *reg);
-uint64_t parse_value(const char *vstr, const struct field_desc *field);
+uint64_t parse_value(const char *vstr);
 
 #endif /* __RWMEM_H__ */

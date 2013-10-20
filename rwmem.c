@@ -154,13 +154,18 @@ int main(int argc, char **argv)
 	if (field) {
 		if (field->shift >= rwmem_opts.regsize ||
 			(field->width + field->shift) > rwmem_opts.regsize)
-		myerr("Field bits higher than size");
+		myerr("Field bits higher than register size");
 	}
 
 	/* Parse value */
 
-	uint64_t userval = parse_value(rwmem_opts.value, field);
+	uint64_t userval = parse_value(rwmem_opts.value);
 
+	if (userval >= (1ULL << rwmem_opts.regsize))
+		myerr("Value does not fit into the register size");
+
+	if (field && (userval & (~field->mask >> field->shift)))
+		myerr("Value does not fit into the field");
 
 	int fd = open(rwmem_opts.filename,
 			(mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
