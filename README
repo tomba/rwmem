@@ -103,7 +103,7 @@ $ rwmem -b DISPC TIMING_H1:HFP
 == Register set file format ==
 
 <regname>,<offset>,<size>[,comment]
-<fieldname>,<high>,<low>[,<default-value>[,<comment>]]
+<fieldname>,<high>,<low>[,<rw/ro/wo>[,<default-value>[,<comment>]]]
 ... more fields ...
 empty line
 
