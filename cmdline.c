@@ -50,7 +50,14 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 	reg = malloc(sizeof(struct reg_desc));
 	memset(reg, 0, sizeof(*reg));
 
-	f = fopen(regfile, "r");
+	const char *home = getenv("HOME");
+
+	if (home)
+		sprintf(str, "%s/.rwmem/%s", home, regfile);
+	else
+		strcpy(str, regfile);
+
+	f = fopen(str, "r");
 
 	if (f == NULL)
 		myerr2("Failed to open regfile %s", regfile);
@@ -223,7 +230,14 @@ void parse_base(const char *cfgfile, const char *bstr, uint64_t *base,
 		return;
 	}
 
-	f = fopen(cfgfile, "r");
+	const char *home = getenv("HOME");
+
+	if (home)
+		sprintf(str, "%s/.rwmem/%s", home, cfgfile);
+	else
+		strcpy(str, cfgfile);
+
+	f = fopen(str, "r");
 	if (f == NULL)
 		myerr2("Failed to open '%s'", cfgfile);
 
