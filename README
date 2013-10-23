@@ -59,15 +59,15 @@ Show the byte at location 0x10 in file edid.raw
 
 Show SYSCONFIG register in DISPC
 
-	$ rwmem -b DISPC SYSCONFIG
+	$ rwmem -b dispc SYSCONFIG
 
 Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
 
-	$ rwmem -b DISPC SYSCONFIG:MIDLEMODE 0x1
+	$ rwmem -b dispc SYSCONFIG:MIDLEMODE 0x1
 
-Show SYSCONFIG register, as defined in DISPC.txt, in file dispc.bin
+Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
-	$ rwmem -f dispc.bin -r DISPC.txt SYSCONFIG
+	$ rwmem -f dispc.bin -r dispc.regs SYSCONFIG
 
 == Register set files ==
 
@@ -90,15 +90,17 @@ You can specify the register set file to use with -r option. You would normally
 combine that with option -b to specify the base address of the IP block. For
 example:
 
-$ rwmem -r DISPC.txt -b 0x58001000 TIMING_H1:HFP
+$ rwmem -r dispc.regs -b 0x58001000 TIMING_H1:HFP
 
-However, to simplify things, you can define symbolic base addresses in rwmem.cfg file. Adding the following line to rwmem.cfg:
+However, to simplify things, you can define symbolic base addresses in
+rwmem.cfg file. Adding the following line to rwmem.cfg:
 
-DISPC  0x58001000       DISPC.txt
+dispc  0x58001000       dispc.regs
 
-means that base 'DISPC' means base address of 0x58001000 and register set file DISPC.txt. Thus, you can write the previous example as:
+means that base 'dispc' means base address of 0x58001000 and register set file
+dispc.regs. Thus, you can write the previous example as:
 
-$ rwmem -b DISPC TIMING_H1:HFP
+$ rwmem -b dispc TIMING_H1:HFP
 
 == Register set file format ==
 
