@@ -29,6 +29,7 @@ static void usage()
 "	-f <file>	file to open (default: /dev/mem)\n"
 "	-w		write only mode\n"
 "	-b <address>	base address\n"
+"	-a <file>	aliases file\n"
 "	-r <file>	register set file\n"
 "	-c		show comments\n"
 "	-d		show default value\n"
@@ -40,7 +41,6 @@ static void usage()
 static struct reg_desc *parse_symbolic_address(const char *regname,
 		const char *regfile)
 {
-	FILE *f;
 	char str[1024];
 	size_t regnamelen = strlen(regname);
 	bool found = false;
@@ -50,14 +50,7 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 	reg = malloc(sizeof(struct reg_desc));
 	memset(reg, 0, sizeof(*reg));
 
-	const char *home = getenv("HOME");
-
-	if (home)
-		sprintf(str, "%s/.rwmem/%s", home, regfile);
-	else
-		strcpy(str, regfile);
-
-	f = fopen(str, "r");
+	FILE *f = fopen(regfile, "r");
 
 	if (f == NULL)
 		myerr2("Failed to open regfile %s", regfile);
@@ -216,26 +209,35 @@ struct field_desc *parse_field(const char *fstr, struct reg_desc *reg)
 	return field;
 }
 
-void parse_base(const char *cfgfile, const char *bstr, uint64_t *base,
+void parse_base(const char *cfgfile, const char *basestr, uint64_t *base,
 		const char **regfile)
 {
-	char str[256];
 	char *endptr;
 
-	*base = strtoull(bstr, &endptr, 0);
+	*base = strtoull(basestr, &endptr, 0);
 	if (*endptr == 0) {
 		regfile = NULL;
 		return;
 	}
 
-	const char *home = getenv("HOME");
+	char path[256];
 
-	if (home)
-		sprintf(str, "%s/.rwmem/%s", home, cfgfile);
-	else
-		strcpy(str, cfgfile);
+	if (!cfgfile) {
+		const char *home = getenv("HOME");
+		if (!home)
+			myerr("No $HOME");
 
-	find_base_address(str, bstr, base, regfile);
+		sprintf(path, "%s/.rwmem/%s", home, "rwmemrc");
+	} else {
+		strcpy(path, cfgfile);
+	}
+
+	find_base_address(path, basestr, base, regfile);
+
+	/* regfile is relative to the cfgfile, so fix the path */
+	strcpy(rindex(path, '/') + 1, *regfile);
+
+	*regfile = strdup(path);
 }
 
 uint64_t parse_value(const char *vstr)
@@ -262,7 +264,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 
-	while ((opt = getopt(argc, argv, "s:f:wb:r:cd")) != -1) {
+	while ((opt = getopt(argc, argv, "s:f:wb:a:r:cd")) != -1) {
 		switch (opt) {
 		case 's': {
 			int rs = atoi(optarg);
@@ -281,6 +283,9 @@ void parse_cmdline(int argc, char **argv)
 			break;
 		case 'b':
 			rwmem_opts.base = optarg;
+			break;
+		case 'a':
+			rwmem_opts.aliasfile = optarg;
 			break;
 		case 'r':
 			rwmem_opts.regfile = optarg;
@@ -324,5 +329,3 @@ void parse_cmdline(int argc, char **argv)
 	if (rwmem_opts.mode != MODE_R)
 		rwmem_opts.value = argv[optind + 1];
 }
-
-

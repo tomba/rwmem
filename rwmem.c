@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 	regfile = NULL;
 
 	if (rwmem_opts.base)
-		parse_base("rwmemrc", rwmem_opts.base, &base, &regfile);
+		parse_base(rwmem_opts.aliasfile, rwmem_opts.base, &base, &regfile);
 
 	if (rwmem_opts.regfile)
 		regfile = rwmem_opts.regfile;

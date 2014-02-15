@@ -44,6 +44,7 @@ struct rwmem_opts {
 	const char *base;
 	const char *field;
 	const char *value;
+	const char *aliasfile;
 	const char *regfile;
 
 	bool show_comments;
