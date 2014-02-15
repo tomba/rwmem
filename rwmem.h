@@ -67,13 +67,11 @@ int split_str(char *str, const char *delim, char **arr, int num);
 
 void parse_cmdline(int argc, char **argv);
 
+/* parser */
 void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);
 struct reg_desc *parse_address(const char *astr, const char *regfile);
 struct field_desc *parse_field(const char *fstr, struct reg_desc *reg);
 uint64_t parse_value(const char *vstr);
-
-/* parser */
-void find_base_address(const char *path, const char *basestr, uint64_t *base, const char **regfile);
 
 #endif /* __RWMEM_H__ */
