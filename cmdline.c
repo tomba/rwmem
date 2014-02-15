@@ -219,10 +219,8 @@ struct field_desc *parse_field(const char *fstr, struct reg_desc *reg)
 void parse_base(const char *cfgfile, const char *bstr, uint64_t *base,
 		const char **regfile)
 {
-	FILE *f;
 	char str[256];
 	char *endptr;
-	int r;
 
 	*base = strtoull(bstr, &endptr, 0);
 	if (*endptr == 0) {
@@ -237,30 +235,7 @@ void parse_base(const char *cfgfile, const char *bstr, uint64_t *base,
 	else
 		strcpy(str, cfgfile);
 
-	f = fopen(str, "r");
-	if (f == NULL)
-		myerr2("Failed to open '%s'", cfgfile);
-
-	size_t arglen = strlen(bstr);
-
-	while (fgets(str, sizeof(str), f)) {
-		if (str[0] == 0 || isspace(str[0]))
-			continue;
-
-		if (strncmp(bstr, str, arglen) == 0) {
-			if (isblank(str[arglen]) == 0)
-				continue;
-
-			r = sscanf(str, "%*s %" SCNx64 " %ms",
-					base, regfile);
-			if (r != 2)
-				myerr("Failed to parse offset");
-
-			return;
-		}
-	}
-
-	myerr("Failed to find offset");
+	find_base_address(str, bstr, base, regfile);
 }
 
 uint64_t parse_value(const char *vstr)
