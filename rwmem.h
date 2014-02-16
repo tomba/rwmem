@@ -41,12 +41,14 @@ struct rwmem_opts {
 	enum opmode mode;
 
 	const char *address;
+	const char *range;
 	const char *base;
 	const char *field;
 	const char *value;
 	const char *aliasfile;
 	const char *regfile;
 
+	bool range_is_offset;
 	bool show_comments;
 	bool show_defval;
 };

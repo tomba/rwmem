@@ -33,6 +33,31 @@ static void usage()
 	exit(1);
 }
 
+static void split_addr_str(char *str)
+{
+	char *addr;
+
+	rwmem_opts.address = str;
+
+	addr = strsep(&str, ":");
+	rwmem_opts.field = str;
+
+	str = addr;
+	addr = strsep(&str, "+");
+	if (str) {
+		rwmem_opts.range = str;
+		rwmem_opts.range_is_offset = true;
+		return;
+	}
+
+	str = strstr(addr, "..");
+	if (str) {
+		*str = 0;
+		rwmem_opts.range = str + 2;
+		rwmem_opts.range_is_offset = false;
+	}
+}
+
 void parse_cmdline(int argc, char **argv)
 {
 	int opt;
@@ -94,12 +119,12 @@ void parse_cmdline(int argc, char **argv)
 		usage();
 	}
 
-	char *str = argv[optind];
-
-	rwmem_opts.address = strsep(&str, ":");
-	rwmem_opts.field = str;
+	split_addr_str(argv[optind]);
 
 	if (strlen(rwmem_opts.address) == 0)
+		usage();
+
+	if (rwmem_opts.range && strlen(rwmem_opts.range) == 0)
 		usage();
 
 	if (rwmem_opts.field && strlen(rwmem_opts.field) == 0)
