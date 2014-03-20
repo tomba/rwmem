@@ -124,6 +124,7 @@ static struct reg_desc *parse_numeric_address(const char *astr)
 	memset(reg, 0, sizeof(*reg));
 	reg->name = NULL;
 	reg->address = paddr;
+	reg->width = rwmem_opts.regsize;
 	reg->num_fields = 0;
 
 	return reg;
