@@ -13,11 +13,17 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-"usage: rwmem [options] <address>[:high[:low]] [value]\n"
+"usage: rwmem [options] <address>[:field] [value]\n"
 "\n"
-"	<address>	address to access\n"
-"	[high]		bitfield's high bit number (inclusive, start from 0)\n"
-"	[low]		bitfield's low bit number (inclusive, start from 0)\n"
+"	address		address to access:\n"
+"			<address>	single address\n"
+"			<start..end>	range with end address\n"
+"			<start+len>	range with length\n"
+"\n"
+"	field		bitfield (inclusive, start from 0):\n"
+"			<bit>		single bit\n"
+"			<high>:<low>	bitfield from high to low\n"
+"\n"
 "	[value]		value to be written\n"
 "\n"
 "	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
@@ -28,6 +34,7 @@ static void usage()
 "	-r <file>	register set file\n"
 "	-c		show comments\n"
 "	-d		show default value\n"
+"	-h		show this help\n"
 );
 
 	exit(1);
@@ -68,7 +75,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 
-	while ((opt = getopt(argc, argv, "s:f:wb:a:r:cd")) != -1) {
+	while ((opt = getopt(argc, argv, "s:f:wb:a:r:cdh")) != -1) {
 		switch (opt) {
 		case 's': {
 			int rs = atoi(optarg);
@@ -100,6 +107,7 @@ void parse_cmdline(int argc, char **argv)
 		case 'd':
 			rwmem_opts.show_defval = true;
 			break;
+		case 'h':
 		default:
 			usage();
 		}
