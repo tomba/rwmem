@@ -12,6 +12,49 @@
 
 #include "rwmem.h"
 
+static void parse_reg_fields(FILE *f, struct reg_desc *reg)
+{
+	char str[1024];
+	unsigned field_num = 0;
+	int r;
+
+	while (fgets(str, sizeof(str), f)) {
+		unsigned fh, fl;
+
+		if (str[0] == 0 || isspace(str[0]))
+			break;
+
+		char *parts[6] = { 0 };
+
+		r = split_str(str, ",", parts, 6);
+		if (r < 3)
+			myerr("Failed to parse field description: '%s'", str);
+
+		struct field_desc *fd = &reg->fields[field_num];
+
+		fd->name = strdup(parts[0]);
+		fh = strtoul(parts[1], NULL, 0);
+		fl = strtoul(parts[2], NULL, 0);
+		// parts[3] is mode
+		if (parts[4])
+			fd->defval = strtoull(parts[4], NULL, 0);
+		if (parts[5])
+			fd->comment = strdup(parts[5]);
+
+		size_t len = strlen(fd->name);
+		if (len > reg->max_field_name_len)
+			reg->max_field_name_len = len;
+
+		fd->shift = fl;
+		fd->width = fh - fl + 1;
+		fd->mask = ((1ULL << fd->width) - 1) << fd->shift;
+
+		field_num++;
+	}
+
+	reg->num_fields = field_num;
+}
+
 static struct reg_desc *parse_symbolic_address(const char *regname,
 		const char *regfile)
 {
@@ -66,43 +109,7 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 		myerr("Register not found");
 	}
 
-	unsigned field_num = 0;
-
-	while (fgets(str, sizeof(str), f)) {
-		unsigned fh, fl;
-
-		if (str[0] == 0 || isspace(str[0]))
-			break;
-
-		char *parts[6] = { 0 };
-
-		r = split_str(str, ",", parts, 6);
-		if (r < 3)
-			myerr("Failed to parse field description: '%s'", str);
-
-		struct field_desc *fd = &reg->fields[field_num];
-
-		fd->name = strdup(parts[0]);
-		fh = strtoul(parts[1], NULL, 0);
-		fl = strtoul(parts[2], NULL, 0);
-		// parts[3] is mode
-		if (parts[4])
-			fd->defval = strtoull(parts[4], NULL, 0);
-		if (parts[5])
-			fd->comment = strdup(parts[5]);
-
-		size_t len = strlen(fd->name);
-		if (len > reg->max_field_name_len)
-			reg->max_field_name_len = len;
-
-		fd->shift = fl;
-		fd->width = fh - fl + 1;
-		fd->mask = ((1ULL << fd->width) - 1) << fd->shift;
-
-		field_num++;
-	}
-
-	reg->num_fields = field_num;
+	parse_reg_fields(f, reg);
 
 	fclose(f);
 
