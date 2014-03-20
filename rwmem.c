@@ -193,10 +193,12 @@ int main(int argc, char **argv)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);
 
 	uint64_t paddr = base + reg->address;
+	off_t pa_offset = paddr & ~pagemask;
+	size_t len = range + paddr - pa_offset;
 
-	void *mmap_base = mmap(0, pagesize,
+	void *mmap_base = mmap(0, len,
 			mode == MODE_R ? PROT_READ : PROT_WRITE,
-			MAP_SHARED, fd, (off_t)paddr & ~pagemask);
+			MAP_SHARED, fd, pa_offset);
 
 	if (mmap_base == MAP_FAILED)
 		myerr2("failed to mmap");
