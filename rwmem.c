@@ -208,10 +208,11 @@ int main(int argc, char **argv)
 
 	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
-	struct addr addr = { 0 };
-	addr.paddr = paddr;
-	addr.vaddr = vaddr;
-	addr.regsize = rwmem_opts.regsize;
+	const struct addr addr = {
+		.paddr = paddr,
+		.vaddr = vaddr,
+		.regsize = rwmem_opts.regsize,
+	};
 
 	switch (mode) {
 	case MODE_R:
