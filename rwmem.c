@@ -167,6 +167,8 @@ int main(int argc, char **argv)
 	if (field && (userval & (~field->mask >> field->shift)))
 		myerr("Value does not fit into the field");
 
+	/* Open the file and mmap */
+
 	int fd = open(rwmem_opts.filename,
 			(mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
 
