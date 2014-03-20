@@ -17,18 +17,20 @@ struct addr {
 };
 
 struct field_desc {
-	const char *name;
 	unsigned shift;
 	unsigned width;
 	uint64_t mask;
+
+	const char *name;
 	const char *comment;
 	uint64_t defval;
 };
 
 struct reg_desc {
-	const char *name;
 	uint64_t address;
 	unsigned width;
+
+	const char *name;
 	const char *comment;
 	unsigned num_fields;
 	struct field_desc fields[64];
