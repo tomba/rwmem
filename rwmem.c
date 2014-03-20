@@ -69,9 +69,11 @@ static uint64_t readmemprint(const struct addr *addr,
 	v = readmem(addr->vaddr, reg->width);
 
 	if (reg->name)
-		printf("%s (%#" PRIx64 ") = ", reg->name, addr->paddr);
+		printf("%s (%#" PRIx64 " (+%#" PRIx64 ")) = ",
+			reg->name, addr->paddr, reg->address);
 	else
-		printf("%#" PRIx64 " = ", addr->paddr);
+		printf("%#" PRIx64 " (+%#" PRIx64 ") = ",
+			addr->paddr, reg->address);
 
 	printf("%0#*" PRIx64, reg->width / 4 + 2, v);
 
