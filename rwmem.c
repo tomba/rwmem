@@ -66,14 +66,14 @@ static uint64_t readmemprint(const struct addr *addr,
 {
 	uint64_t v;
 
-	v = readmem(addr->vaddr, addr->regsize);
+	v = readmem(addr->vaddr, reg->width);
 
 	if (reg->name)
 		printf("%s (%#" PRIx64 ") = ", reg->name, addr->paddr);
 	else
 		printf("%#" PRIx64 " = ", addr->paddr);
 
-	printf("%0#*" PRIx64, addr->regsize / 4 + 2, v);
+	printf("%0#*" PRIx64, reg->width / 4 + 2, v);
 
 	if (rwmem_opts.show_comments && reg->comment)
 		printf(" # %s", reg->comment);
@@ -113,11 +113,11 @@ static void writememprint(const struct addr *addr,
 	else
 		printf("%#" PRIx64 " := ", addr->paddr);
 
-	printf("%0#*" PRIx64, addr->regsize / 4 + 2, v);
+	printf("%0#*" PRIx64, reg->width / 4 + 2, v);
 
 	puts("");
 
-	writemem(addr->vaddr, addr->regsize, v);
+	writemem(addr->vaddr, reg->width, v);
 }
 
 int main(int argc, char **argv)
@@ -211,7 +211,6 @@ int main(int argc, char **argv)
 	const struct addr addr = {
 		.paddr = paddr,
 		.vaddr = vaddr,
-		.regsize = rwmem_opts.regsize,
 	};
 
 	switch (mode) {

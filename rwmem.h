@@ -13,7 +13,6 @@ enum opmode {
 struct addr {
 	uint64_t paddr;
 	void *vaddr;
-	unsigned regsize;
 };
 
 struct field_desc {
