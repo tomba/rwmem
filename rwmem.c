@@ -210,31 +210,47 @@ int main(int argc, char **argv)
 
 	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
-	const struct addr addr = {
-		.paddr = paddr,
-		.vaddr = vaddr,
-	};
+	uint64_t end_paddr = paddr + range;
 
-	switch (mode) {
-	case MODE_R:
-		readmemprint(&addr, reg, field);
-		break;
+	while (paddr < end_paddr) {
 
-	case MODE_W:
-		writememprint(&addr, reg, field, 0, userval);
-		break;
+		const struct addr addr = {
+			.paddr = paddr,
+			.vaddr = vaddr,
+		};
 
-	case MODE_RW:
-		{
-			uint64_t v;
-
-			v = readmemprint(&addr, reg, field);
-
-			writememprint(&addr, reg, field, v, userval);
-
+		switch (mode) {
+		case MODE_R:
 			readmemprint(&addr, reg, field);
+			break;
+
+		case MODE_W:
+			writememprint(&addr, reg, field, 0, userval);
+			break;
+
+		case MODE_RW:
+			{
+				uint64_t v;
+
+				v = readmemprint(&addr, reg, field);
+
+				writememprint(&addr, reg, field, v, userval);
+
+				readmemprint(&addr, reg, field);
+			}
+			break;
 		}
-		break;
+
+		paddr += reg->width / 8;
+		vaddr += reg->width / 8;
+
+		/* HACK */
+		struct reg_desc new_reg = {
+			.address = reg->address + reg->width / 8,
+			.width = reg->width
+		};
+
+		*reg = new_reg;
 	}
 
 	if (munmap(mmap_base, pagesize) == -1)
