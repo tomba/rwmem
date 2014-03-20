@@ -196,6 +196,9 @@ int main(int argc, char **argv)
 	off_t pa_offset = paddr & ~pagemask;
 	size_t len = range + paddr - pa_offset;
 
+	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx\n",
+		range, paddr, pa_offset, len);
+
 	void *mmap_base = mmap(0, len,
 			mode == MODE_R ? PROT_READ : PROT_WRITE,
 			MAP_SHARED, fd, pa_offset);
