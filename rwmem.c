@@ -147,6 +147,23 @@ int main(int argc, char **argv)
 
 	struct reg_desc *reg = parse_address(rwmem_opts.address, regfile);
 
+	/* Parse range */
+
+	uint64_t range;
+
+	if (rwmem_opts.range) {
+		char *endptr;
+
+		range = strtoull(rwmem_opts.range, &endptr, 0);
+		if (*endptr != 0)
+			myerr("Invalid range '%s'", rwmem_opts.range);
+
+		if (!rwmem_opts.range_is_offset)
+			range = range - reg->address;
+	} else {
+		range = reg->width / 8;
+	}
+
 	/* Parse field */
 
 	struct field_desc *field = parse_field(rwmem_opts.field, reg);
