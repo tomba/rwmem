@@ -95,6 +95,8 @@ static void readwriteprint(const struct addr *addr,
 
 		printf(":= %0#*" PRIx64 " ", reg->width / 4 + 2, v);
 
+		fflush(stdout);
+
 		writemem(addr->vaddr, reg->width, v);
 
 		newval = v;
