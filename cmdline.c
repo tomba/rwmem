@@ -13,7 +13,7 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-"usage: rwmem [options] <address>[:field] [value]\n"
+"usage: rwmem [options] <address>[:field][=value]\n"
 "\n"
 "	address		address to access:\n"
 "			<address>	single address\n"
@@ -45,6 +45,10 @@ static void split_addr_str(char *str)
 	char *addr;
 
 	rwmem_opts.address = str;
+
+	addr = strsep(&str, "=");
+	rwmem_opts.value = str;
+	str = addr;
 
 	addr = strsep(&str, ":");
 	rwmem_opts.field = str;
@@ -113,19 +117,11 @@ void parse_cmdline(int argc, char **argv)
 		}
 	}
 
-	switch (argc - optind) {
-	case 1:
-		rwmem_opts.mode = MODE_R;
-		break;
-	case 2:
-		if (writeonly)
-			rwmem_opts.mode = MODE_W;
-		else
-			rwmem_opts.mode = MODE_RW;
-		break;
-	default:
+	if (argc - optind == 0)
 		usage();
-	}
+
+	if (argc - optind > 1)
+		usage(); // XXX for now
 
 	split_addr_str(argv[optind]);
 
@@ -138,6 +134,15 @@ void parse_cmdline(int argc, char **argv)
 	if (rwmem_opts.field && strlen(rwmem_opts.field) == 0)
 		usage();
 
-	if (rwmem_opts.mode != MODE_R)
-		rwmem_opts.value = argv[optind + 1];
+	if (rwmem_opts.value && strlen(rwmem_opts.value) == 0)
+		usage();
+
+	if (rwmem_opts.value) {
+		if (writeonly)
+			rwmem_opts.mode = MODE_W;
+		else
+			rwmem_opts.mode = MODE_RW;
+	} else {
+		rwmem_opts.mode = MODE_R;
+	}
 }
