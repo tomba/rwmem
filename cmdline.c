@@ -24,7 +24,7 @@ static void usage()
 "			<bit>		single bit\n"
 "			<high>:<low>	bitfield from high to low\n"
 "\n"
-"	[value]		value to be written\n"
+"	value		value to be written\n"
 "\n"
 "	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
 "	-f <file>	file to open (default: /dev/mem)\n"
