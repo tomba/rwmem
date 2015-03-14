@@ -60,66 +60,66 @@ static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 	puts("");
 }
 
-static uint64_t readmemprint(const struct addr *addr,
+static void readwriteprint(const struct addr *addr,
 		const struct reg_desc *reg,
-		const struct field_desc *field)
+		const struct field_desc *field,
+		enum opmode mode,
+		uint64_t userval)
 {
-	uint64_t v;
-
-	v = readmem(addr->vaddr, reg->width);
-
 	if (reg->name)
-		printf("%s (%#" PRIx64 " (+%#" PRIx64 ")) = ",
-			reg->name, addr->paddr, reg->address);
-	else
-		printf("%#" PRIx64 " (+%#" PRIx64 ") = ",
-			addr->paddr, reg->address);
+		printf("%s ", reg->name);
 
-	printf("%0#*" PRIx64, reg->width / 4 + 2, v);
+	printf("%#" PRIx64 " ", addr->paddr);
+	printf("(+%#" PRIx64 ") ", reg->address);
+
+	uint64_t oldval = 0, newval = 0;
+
+	if (mode != MODE_W) {
+		oldval = readmem(addr->vaddr, reg->width);
+
+		printf("= %0#*" PRIx64 " ", reg->width / 4 + 2, oldval);
+
+		newval = oldval;
+	}
+
+	if (mode != MODE_R) {
+		uint64_t v;
+
+		if (field) {
+			v = oldval;
+			v &= ~field->mask;
+			v |= userval << field->shift;
+		} else {
+			v = userval;
+		}
+
+		printf(":= %0#*" PRIx64 " ", reg->width / 4 + 2, v);
+
+		writemem(addr->vaddr, reg->width, v);
+
+		newval = v;
+	}
+
+	if (mode == MODE_RW) {
+		newval = readmem(addr->vaddr, reg->width);
+
+		printf("-> %0#*" PRIx64 " ", reg->width / 4 + 2, newval);
+	}
 
 	if (rwmem_opts.show_comments && reg->comment)
 		printf(" # %s", reg->comment);
 
-	puts("");
+	printf("\n");
 
 	if (field) {
-		print_field(reg, field, v);
+		print_field(reg, field, newval);
 	} else {
 		for (unsigned i = 0; i < reg->num_fields; ++i) {
 			const struct field_desc *fd = &reg->fields[i];
 
-			print_field(reg, fd, v);
+			print_field(reg, fd, newval);
 		}
 	}
-
-	return v;
-}
-
-static void writememprint(const struct addr *addr,
-		const struct reg_desc *reg,
-		const struct field_desc *field,
-		uint64_t oldvalue, uint64_t value)
-{
-	uint64_t v;
-
-	if (field) {
-		v = oldvalue;
-		v &= ~field->mask;
-		v |= value << field->shift;
-	} else {
-		v = value;
-	}
-
-	if (reg->name)
-		printf("%s (%#" PRIx64 ") := ", reg->name, addr->paddr);
-	else
-		printf("%#" PRIx64 " := ", addr->paddr);
-
-	printf("%0#*" PRIx64, reg->width / 4 + 2, v);
-
-	puts("");
-
-	writemem(addr->vaddr, reg->width, v);
 }
 
 int main(int argc, char **argv)
@@ -219,27 +219,7 @@ int main(int argc, char **argv)
 			.vaddr = vaddr,
 		};
 
-		switch (mode) {
-		case MODE_R:
-			readmemprint(&addr, reg, field);
-			break;
-
-		case MODE_W:
-			writememprint(&addr, reg, field, 0, userval);
-			break;
-
-		case MODE_RW:
-			{
-				uint64_t v;
-
-				v = readmemprint(&addr, reg, field);
-
-				writememprint(&addr, reg, field, v, userval);
-
-				readmemprint(&addr, reg, field);
-			}
-			break;
-		}
+		readwriteprint(&addr, reg, field, mode, userval);
 
 		paddr += reg->width / 8;
 		vaddr += reg->width / 8;
