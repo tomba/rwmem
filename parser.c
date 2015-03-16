@@ -137,7 +137,7 @@ static struct reg_desc *parse_numeric_address(const char *astr)
 	return reg;
 }
 
-struct reg_desc *parse_address(const char *astr, const char *regfile)
+const struct reg_desc *parse_address(const char *astr, const char *regfile)
 {
 	struct reg_desc *reg;
 
@@ -154,7 +154,7 @@ struct reg_desc *parse_address(const char *astr, const char *regfile)
 	myerr("Invalid address '%s'", astr);
 }
 
-struct field_desc *parse_field(const char *fstr, struct reg_desc *reg)
+const struct field_desc *parse_field(const char *fstr, const struct reg_desc *reg)
 {
 	unsigned fl, fh;
 	char *endptr;
@@ -163,7 +163,7 @@ struct field_desc *parse_field(const char *fstr, struct reg_desc *reg)
 		return NULL;
 
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
-		struct field_desc *field = &reg->fields[i];
+		const struct field_desc *field = &reg->fields[i];
 
 		if (strcmp(fstr, field->name) == 0)
 			return field;

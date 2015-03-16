@@ -130,24 +130,19 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 {
 	/* Parse address */
 
-	struct reg_desc *reg = parse_address(arg->address, regfile);
-	op->reg = reg;
+	op->reg = parse_address(arg->address, regfile);
 
 	/* Parse range */
 
-	uint64_t range;
-
 	if (arg->range)
-		range = parse_range(reg, arg->range, arg->range_is_offset);
+		op->range = parse_range(op->reg, arg->range, arg->range_is_offset);
 	else
-		range = reg->width / 8;
-
-	op->range = range;
+		op->range = op->reg->width / 8;
 
 	/* Parse field */
 
 	if (arg->field) {
-		struct field_desc *field = parse_field(arg->field, reg);
+		const struct field_desc *field = parse_field(arg->field, op->reg);
 
 		if (field) {
 			if (field->shift >= rwmem_opts.regsize ||
@@ -161,15 +156,15 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 	/* Parse value */
 
 	if (arg->value) {
-		uint64_t userval = parse_value(arg->value);
+		uint64_t value = parse_value(arg->value);
 
-		if (userval >= (1ULL << rwmem_opts.regsize))
+		if (value >= (1ULL << rwmem_opts.regsize))
 			myerr("Value does not fit into the register size");
 
-		if (op->field && (userval & (~op->field->mask >> op->field->shift)))
+		if (op->field && (value & (~op->field->mask >> op->field->shift)))
 			myerr("Value does not fit into the field");
 
-		op->value = userval;
+		op->value = value;
 		op->write = true;
 	}
 }

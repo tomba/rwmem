@@ -85,8 +85,8 @@ void parse_cmdline(int argc, char **argv);
 /* parser */
 void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);
-struct reg_desc *parse_address(const char *astr, const char *regfile);
-struct field_desc *parse_field(const char *fstr, struct reg_desc *reg);
+const struct reg_desc *parse_address(const char *astr, const char *regfile);
+const struct field_desc *parse_field(const char *fstr, const struct reg_desc *reg);
 uint64_t parse_value(const char *vstr);
 uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
 	bool range_is_offset);
