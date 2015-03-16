@@ -4,12 +4,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-enum opmode {
-	MODE_R,
-	MODE_W,
-	MODE_RW,
-};
-
 struct addr {
 	uint64_t paddr;
 	void *vaddr;
@@ -36,22 +30,40 @@ struct reg_desc {
 	unsigned max_field_name_len;
 };
 
+struct rwmem_op {
+	uint64_t address;
+	uint64_t range;
+	uint64_t value;
+
+	bool write;
+
+	const struct reg_desc *reg;
+	const struct field_desc *field;
+};
+
+struct rwmem_opts_arg {
+	const char *address;
+	const char *range;
+	const char *field;
+	const char *value;
+
+	bool range_is_offset;
+};
+
 struct rwmem_opts {
 	const char *filename;
 	unsigned regsize;
-	enum opmode mode;
+	bool write_only;
 
-	const char *address;
-	const char *range;
 	const char *base;
-	const char *field;
-	const char *value;
 	const char *aliasfile;
 	const char *regfile;
 
-	bool range_is_offset;
 	bool show_comments;
 	bool show_defval;
+
+	int num_args;
+	struct rwmem_opts_arg *args;
 };
 
 extern struct rwmem_opts rwmem_opts;

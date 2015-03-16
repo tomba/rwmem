@@ -63,8 +63,8 @@ static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 static void readwriteprint(const struct addr *addr,
 		const struct reg_desc *reg,
 		const struct field_desc *field,
-		enum opmode mode,
-		uint64_t userval)
+		uint64_t userval,
+		bool write, bool write_only)
 {
 	if (reg->name)
 		printf("%s ", reg->name);
@@ -74,7 +74,7 @@ static void readwriteprint(const struct addr *addr,
 
 	uint64_t oldval = 0, newval = 0;
 
-	if (mode != MODE_W) {
+	if (!write_only) {
 		oldval = readmem(addr->vaddr, reg->width);
 
 		printf("= %0#*" PRIx64 " ", reg->width / 4 + 2, oldval);
@@ -82,7 +82,7 @@ static void readwriteprint(const struct addr *addr,
 		newval = oldval;
 	}
 
-	if (mode != MODE_R) {
+	if (write) {
 		uint64_t v;
 
 		if (field) {
@@ -102,7 +102,7 @@ static void readwriteprint(const struct addr *addr,
 		newval = v;
 	}
 
-	if (mode == MODE_RW) {
+	if (write && !write_only) {
 		newval = readmem(addr->vaddr, reg->width);
 
 		printf("-> %0#*" PRIx64 " ", reg->width / 4 + 2, newval);
@@ -124,17 +124,121 @@ static void readwriteprint(const struct addr *addr,
 	}
 }
 
-int main(int argc, char **argv)
+static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
+	const char *regfile)
+{
+	/* Parse address */
+
+	struct reg_desc *reg = parse_address(arg->address, regfile);
+	op->reg = reg;
+
+	/* Parse range */
+
+	uint64_t range;
+
+	if (arg->range) {
+		char *endptr;
+
+		range = strtoull(arg->range, &endptr, 0);
+		if (*endptr != 0)
+			myerr("Invalid range '%s'", arg->range);
+
+		if (!arg->range_is_offset)
+			range = range - reg->address;
+	} else {
+		range = reg->width / 8;
+	}
+
+	op->range = range;
+
+	/* Parse field */
+
+	if (arg->field) {
+		struct field_desc *field = parse_field(arg->field, reg);
+
+		if (field) {
+			if (field->shift >= rwmem_opts.regsize ||
+				(field->width + field->shift) > rwmem_opts.regsize)
+			myerr("Field bits higher than register size");
+		}
+
+		op->field = field;
+	}
+
+	/* Parse value */
+
+	if (arg->value) {
+		uint64_t userval = parse_value(arg->value);
+
+		if (userval >= (1ULL << rwmem_opts.regsize))
+			myerr("Value does not fit into the register size");
+
+		if (op->field && (userval & (~op->field->mask >> op->field->shift)))
+			myerr("Value does not fit into the field");
+
+		op->value = userval;
+		op->write = true;
+	}
+}
+
+static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
+
+	uint64_t paddr = base + op->reg->address;
+	off_t pa_offset = paddr & ~pagemask;
+	size_t len = op->range + paddr - pa_offset;
+
+	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx\n",
+		op->range, paddr, pa_offset, len);
+
+	void *mmap_base = mmap(0, len,
+			op->write ? PROT_WRITE : PROT_READ,
+			MAP_SHARED, fd, pa_offset);
+
+	if (mmap_base == MAP_FAILED)
+		myerr2("failed to mmap");
+
+	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
+
+	uint64_t end_paddr = paddr + op->range;
+
+	/* HACK */
+	struct reg_desc reg = *op->reg;
+
+	while (paddr < end_paddr) {
+
+		const struct addr addr = {
+			.paddr = paddr,
+			.vaddr = vaddr,
+		};
+
+		readwriteprint(&addr, &reg, op->field, op->value,
+			op->write, rwmem_opts.write_only);
+
+		paddr += reg.width / 8;
+		vaddr += reg.width / 8;
+
+		/* HACK */
+		struct reg_desc new_reg = {
+			.address = reg.address + reg.width / 8,
+			.width = reg.width
+		};
+
+		reg = new_reg;
+	}
+
+	if (munmap(mmap_base, pagesize) == -1)
+		myerr2("failed to munmap");
+}
+
+int main(int argc, char **argv)
+{
 	uint64_t base;
-	enum opmode mode;
 	const char *regfile;
 
 	parse_cmdline(argc, argv);
-
-	mode = rwmem_opts.mode;
 
 	/* Parse base */
 
@@ -147,99 +251,37 @@ int main(int argc, char **argv)
 	if (rwmem_opts.regfile)
 		regfile = rwmem_opts.regfile;
 
-	/* Parse address */
+	int num_ops = rwmem_opts.num_args;
 
-	struct reg_desc *reg = parse_address(rwmem_opts.address, regfile);
+	bool read_only = true;
 
-	/* Parse range */
+	struct rwmem_op *ops = malloc(sizeof(struct rwmem_op) * num_ops);
+	memset(ops, 0, sizeof(struct rwmem_op) * num_ops);
+	for (int i = 0; i < num_ops; ++i) {
+		const struct rwmem_opts_arg *arg = &rwmem_opts.args[i];
+		struct rwmem_op *op = &ops[i];
 
-	uint64_t range;
+		parse_op(arg, op, regfile);
 
-	if (rwmem_opts.range) {
-		char *endptr;
-
-		range = strtoull(rwmem_opts.range, &endptr, 0);
-		if (*endptr != 0)
-			myerr("Invalid range '%s'", rwmem_opts.range);
-
-		if (!rwmem_opts.range_is_offset)
-			range = range - reg->address;
-	} else {
-		range = reg->width / 8;
+		if (op->write)
+			read_only = false;
 	}
-
-	/* Parse field */
-
-	struct field_desc *field = parse_field(rwmem_opts.field, reg);
-
-	if (field) {
-		if (field->shift >= rwmem_opts.regsize ||
-			(field->width + field->shift) > rwmem_opts.regsize)
-		myerr("Field bits higher than register size");
-	}
-
-	/* Parse value */
-
-	uint64_t userval = parse_value(rwmem_opts.value);
-
-	if (userval >= (1ULL << rwmem_opts.regsize))
-		myerr("Value does not fit into the register size");
-
-	if (field && (userval & (~field->mask >> field->shift)))
-		myerr("Value does not fit into the field");
 
 	/* Open the file and mmap */
 
 	int fd = open(rwmem_opts.filename,
-			(mode == MODE_R ? O_RDONLY : O_RDWR) | O_SYNC);
+			(read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	if (fd == -1)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);
 
-	uint64_t paddr = base + reg->address;
-	off_t pa_offset = paddr & ~pagemask;
-	size_t len = range + paddr - pa_offset;
+	for (int i = 0; i < num_ops; ++i) {
+		struct rwmem_op *op = &ops[i];
 
-	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx\n",
-		range, paddr, pa_offset, len);
-
-	void *mmap_base = mmap(0, len,
-			mode == MODE_R ? PROT_READ : PROT_WRITE,
-			MAP_SHARED, fd, pa_offset);
-
-	if (mmap_base == MAP_FAILED)
-		myerr2("failed to mmap");
-
-	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
-
-	uint64_t end_paddr = paddr + range;
-
-	while (paddr < end_paddr) {
-
-		const struct addr addr = {
-			.paddr = paddr,
-			.vaddr = vaddr,
-		};
-
-		readwriteprint(&addr, reg, field, mode, userval);
-
-		paddr += reg->width / 8;
-		vaddr += reg->width / 8;
-
-		/* HACK */
-		struct reg_desc new_reg = {
-			.address = reg->address + reg->width / 8,
-			.width = reg->width
-		};
-
-		*reg = new_reg;
+		do_op(fd, base, op);
 	}
-
-	if (munmap(mmap_base, pagesize) == -1)
-		myerr2("failed to munmap");
 
 	close(fd);
 
 	return 0;
 }
-

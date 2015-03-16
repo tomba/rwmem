@@ -40,39 +40,49 @@ static void usage()
 	exit(1);
 }
 
-static void split_addr_str(char *str)
+static void parse_arg(char *str, struct rwmem_opts_arg *arg)
 {
 	char *addr;
 
-	rwmem_opts.address = str;
+	arg->address = str;
 
 	addr = strsep(&str, "=");
-	rwmem_opts.value = str;
+	arg->value = str;
 	str = addr;
 
 	addr = strsep(&str, ":");
-	rwmem_opts.field = str;
+	arg->field = str;
 
 	str = addr;
 	addr = strsep(&str, "+");
 	if (str) {
-		rwmem_opts.range = str;
-		rwmem_opts.range_is_offset = true;
-		return;
+		arg->range = str;
+		arg->range_is_offset = true;
+	} else {
+		str = strstr(addr, "..");
+		if (str) {
+			*str = 0;
+			arg->range = str + 2;
+			arg->range_is_offset = false;
+		}
 	}
 
-	str = strstr(addr, "..");
-	if (str) {
-		*str = 0;
-		rwmem_opts.range = str + 2;
-		rwmem_opts.range_is_offset = false;
-	}
+	if (strlen(arg->address) == 0)
+		usage();
+
+	if (arg->range && strlen(arg->range) == 0)
+		usage();
+
+	if (arg->field && strlen(arg->field) == 0)
+		usage();
+
+	if (arg->value && strlen(arg->value) == 0)
+		usage();
 }
 
 void parse_cmdline(int argc, char **argv)
 {
 	int opt;
-	bool writeonly = false;
 
 	memset(&rwmem_opts, 0, sizeof(rwmem_opts));
 
@@ -94,7 +104,7 @@ void parse_cmdline(int argc, char **argv)
 			rwmem_opts.filename = optarg;
 			break;
 		case 'w':
-			writeonly = true;
+			rwmem_opts.write_only = true;
 			break;
 		case 'b':
 			rwmem_opts.base = optarg;
@@ -120,29 +130,9 @@ void parse_cmdline(int argc, char **argv)
 	if (argc - optind == 0)
 		usage();
 
-	if (argc - optind > 1)
-		usage(); // XXX for now
+	rwmem_opts.num_args = argc - optind;
+	rwmem_opts.args = malloc(sizeof(struct rwmem_opts_arg) * rwmem_opts.num_args);
 
-	split_addr_str(argv[optind]);
-
-	if (strlen(rwmem_opts.address) == 0)
-		usage();
-
-	if (rwmem_opts.range && strlen(rwmem_opts.range) == 0)
-		usage();
-
-	if (rwmem_opts.field && strlen(rwmem_opts.field) == 0)
-		usage();
-
-	if (rwmem_opts.value && strlen(rwmem_opts.value) == 0)
-		usage();
-
-	if (rwmem_opts.value) {
-		if (writeonly)
-			rwmem_opts.mode = MODE_W;
-		else
-			rwmem_opts.mode = MODE_RW;
-	} else {
-		rwmem_opts.mode = MODE_R;
-	}
+	for (int i = 0; i < rwmem_opts.num_args; ++i)
+		parse_arg(argv[optind + i], &rwmem_opts.args[i]);
 }
