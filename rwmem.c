@@ -70,7 +70,8 @@ static void readwriteprint(const struct addr *addr,
 		printf("%s ", reg->name);
 
 	printf("%#" PRIx64 " ", addr->paddr);
-	printf("(+%#" PRIx64 ") ", reg->address);
+	if (reg->address != addr->paddr)
+		printf("(+%#" PRIx64 ") ", reg->address);
 
 	uint64_t oldval = 0, newval = 0;
 
