@@ -74,11 +74,11 @@ void myerr(const char* format, ... );
 __attribute__ ((noreturn))
 void myerr2(const char* format, ... );
 
-uint64_t readmem(void *addr, int regsize);
-void writemem(void *addr, int regsize, uint64_t value);
+uint64_t readmem(void *addr, unsigned regsize);
+void writemem(void *addr, unsigned regsize, uint64_t value);
 
 char *strip(char *str);
-int split_str(char *str, const char *delim, char **arr, int num);
+unsigned split_str(char *str, const char *delim, char **arr, unsigned num);
 
 void parse_cmdline(int argc, char **argv);
 
