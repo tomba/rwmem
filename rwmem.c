@@ -191,8 +191,10 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 	off_t pa_offset = paddr & ~pagemask;
 	size_t len = op->range + paddr - pa_offset;
 
+	/*
 	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx\n",
 		op->range, paddr, pa_offset, len);
+	*/
 
 	void *mmap_base = mmap(0, len,
 			op->write ? PROT_WRITE : PROT_READ,
