@@ -281,3 +281,25 @@ uint64_t parse_value(const char *vstr)
 
 	return val;
 }
+
+uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
+	bool range_is_offset)
+{
+	if (!rangestr)
+		return 0;
+
+	uint64_t range;
+	char *endptr;
+
+	range = strtoull(rangestr, &endptr, 0);
+	if (*endptr != 0)
+		myerr("Invalid range '%s'", rangestr);
+
+	if (!range_is_offset) {
+		if (range <= reg->address)
+			myerr("range '%s' is <= 0", rangestr);
+		range = range - reg->address;
+	}
+
+	return range;
+}

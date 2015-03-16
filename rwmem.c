@@ -137,18 +137,10 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 
 	uint64_t range;
 
-	if (arg->range) {
-		char *endptr;
-
-		range = strtoull(arg->range, &endptr, 0);
-		if (*endptr != 0)
-			myerr("Invalid range '%s'", arg->range);
-
-		if (!arg->range_is_offset)
-			range = range - reg->address;
-	} else {
+	if (arg->range)
+		range = parse_range(reg, arg->range, arg->range_is_offset);
+	else
 		range = reg->width / 8;
-	}
 
 	op->range = range;
 
