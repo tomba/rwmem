@@ -55,59 +55,84 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 	reg->num_fields = field_num;
 }
 
-static struct reg_desc *parse_symbolic_address(const char *regname,
-		const char *regfile)
+static bool seek_to_next_reg(FILE *f)
 {
 	char str[1024];
-	size_t regnamelen = strlen(regname);
-	bool found = false;
-	int r;
-	struct reg_desc *reg;
-
-	reg = malloc(sizeof(struct reg_desc));
-	memset(reg, 0, sizeof(*reg));
-
-	FILE *f = fopen(regfile, "r");
-
-	if (f == NULL)
-		myerr2("Failed to open regfile %s", regfile);
-
-	bool next_is_reg = true;
 
 	while (fgets(str, sizeof(str), f)) {
-		if (str[0] == 0 || isspace(str[0])) {
-			next_is_reg = true;
-			continue;
-		}
+		if (str[0] == 0 || isspace(str[0]))
+			return true;
+	}
 
-		if (next_is_reg == false)
-			continue;
+	return false;
+}
 
-		if (strncmp(regname, str, regnamelen) != 0 ||
-				str[regnamelen] != ',') {
-			next_is_reg = false;
-			continue;
-		}
+static bool seek_to_regname(FILE *f, const char *regname)
+{
+	char str[1024];
+
+	while (true) {
+		fpos_t pos;
+		int r;
+
+		r = fgetpos(f, &pos);
+		if (r)
+			myerr2("fgetpos failed");
+
+		if (!fgets(str, sizeof(str), f))
+			return false;
 
 		char *parts[4] = { 0 };
 
 		r = split_str(str, ",", parts, 4);
 		if (r < 3)
 			myerr("Failed to parse register description: '%s'", str);
-		reg->name = strdup(parts[0]);
-		reg->address = strtoull(parts[1], NULL, 0);
-		reg->width = strtoul(parts[2], NULL, 0);
-		if (parts[3])
-			reg->comment = strdup(parts[3]);
 
-		found = true;
-		break;
+		if (strcmp(regname, parts[0]) == 0) {
+			r = fsetpos(f, &pos);
+			if (r)
+				myerr2("fsetpos failed");
+
+			return true;
+		}
+
+		if (!seek_to_next_reg(f))
+			return false;
 	}
 
-	if (!found) {
-		fclose(f);
+	return false;
+}
+
+static struct reg_desc *parse_symbolic_address(const char *regname,
+		const char *regfile)
+{
+	char str[1024];
+
+	FILE *f = fopen(regfile, "r");
+
+	if (f == NULL)
+		myerr2("Failed to open regfile %s", regfile);
+
+	if (!seek_to_regname(f, regname))
 		myerr("Register not found");
-	}
+
+	if (!fgets(str, sizeof(str), f))
+		myerr("Register not found");
+
+	char *parts[4] = { 0 };
+
+	int r = split_str(str, ",", parts, 4);
+	if (r < 3)
+		myerr("Failed to parse register description: '%s'", str);
+
+	struct reg_desc *reg;
+	reg = malloc(sizeof(struct reg_desc));
+	memset(reg, 0, sizeof(*reg));
+	reg->name = strdup(parts[0]);
+	reg->address = strtoull(parts[1], NULL, 0);
+	reg->width = strtoul(parts[2], NULL, 0);
+	if (parts[3])
+		reg->comment = strdup(parts[3]);
 
 	parse_reg_fields(f, reg);
 
