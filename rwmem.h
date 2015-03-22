@@ -91,4 +91,18 @@ uint64_t parse_value(const char *vstr);
 uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
 	bool range_is_offset);
 
+#define ERR(format...) myerr(format)
+
+#define ERR_ON(condition, format...) do {	\
+	if (condition)				\
+		ERR(format);			\
+} while (0)
+
+#define ERR_ERRNO(format...) myerr2(format)
+
+#define ERR_ON_ERRNO(condition, format...) do {	\
+	if (condition)				\
+		ERR_ERRNO(format);		\
+} while (0)
+
 #endif /* __RWMEM_H__ */

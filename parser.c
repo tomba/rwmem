@@ -110,20 +110,19 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 
 	FILE *f = fopen(regfile, "r");
 
-	if (f == NULL)
-		myerr2("Failed to open regfile %s", regfile);
+	ERR_ON_ERRNO(f == NULL , "Failed to open regfile %s", regfile);
 
 	if (!seek_to_regname(f, regname))
-		myerr("Register not found");
+		ERR("Register not found");
 
 	if (!fgets(str, sizeof(str), f))
-		myerr("Register not found");
+		ERR("Register not found");
 
 	char *parts[4] = { 0 };
 
 	int r = split_str(str, ",", parts, 4);
-	if (r < 3)
-		myerr("Failed to parse register description: '%s'", str);
+
+	ERR_ON(r < 3, "Failed to parse register description: '%s'", str);
 
 	struct reg_desc *reg;
 	reg = malloc(sizeof(struct reg_desc));
