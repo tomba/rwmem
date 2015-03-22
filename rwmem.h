@@ -20,7 +20,7 @@ struct field_desc {
 };
 
 struct reg_desc {
-	uint64_t address;
+	uint64_t offset;
 	unsigned width;
 
 	const char *name;

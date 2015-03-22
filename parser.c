@@ -128,7 +128,7 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 	reg = malloc(sizeof(struct reg_desc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = strdup(parts[0]);
-	reg->address = strtoull(parts[1], NULL, 0);
+	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
 	if (parts[3])
 		reg->comment = strdup(parts[3]);
@@ -154,7 +154,7 @@ static struct reg_desc *parse_numeric_address(const char *astr)
 	reg = malloc(sizeof(struct reg_desc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = NULL;
-	reg->address = paddr;
+	reg->offset = paddr;
 	reg->width = rwmem_opts.regsize;
 	reg->num_fields = 0;
 
@@ -320,9 +320,9 @@ uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
 		myerr("Invalid range '%s'", rangestr);
 
 	if (!range_is_offset) {
-		if (range <= reg->address)
+		if (range <= reg->offset)
 			myerr("range '%s' is <= 0", rangestr);
-		range = range - reg->address;
+		range = range - reg->offset;
 	}
 
 	return range;

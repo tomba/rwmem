@@ -70,8 +70,8 @@ static void readwriteprint(const struct addr *addr,
 		printf("%s ", reg->name);
 
 	printf("%#" PRIx64 " ", addr->paddr);
-	if (reg->address != addr->paddr)
-		printf("(+%#" PRIx64 ") ", reg->address);
+	if (reg->offset != addr->paddr)
+		printf("(+%#" PRIx64 ") ", reg->offset);
 
 	uint64_t oldval = 0, newval = 0;
 
@@ -174,7 +174,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 
-	uint64_t paddr = base + op->reg->address;
+	uint64_t paddr = base + op->reg->offset;
 	off_t pa_offset = paddr & ~pagemask;
 	size_t len = op->range + paddr - pa_offset;
 
@@ -212,7 +212,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 
 		/* HACK */
 		struct reg_desc new_reg = {
-			.address = reg.address + reg.width / 8,
+			.offset = reg.offset + reg.width / 8,
 			.width = reg.width
 		};
 
