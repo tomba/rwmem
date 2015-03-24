@@ -158,7 +158,9 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 	if (arg->value) {
 		uint64_t value = parse_value(arg->value);
 
-		if (value >= (1ULL << rwmem_opts.regsize))
+		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize);
+
+		if (value & ~regmask)
 			myerr("Value does not fit into the register size");
 
 		if (op->field && (value & (~op->field->mask >> op->field->shift)))
