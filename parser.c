@@ -47,7 +47,7 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 
 		fd->shift = fl;
 		fd->width = fh - fl + 1;
-		fd->mask = ((1ULL << fd->width) - 1) << fd->shift;
+		fd->mask = GENMASK(fh, fl);
 
 		field_num++;
 	}
@@ -210,7 +210,7 @@ const struct field_desc *parse_field(const char *fstr, const struct reg_desc *re
 	field->name = NULL;
 	field->shift = fl;
 	field->width = fh - fl + 1;
-	field->mask = ((1ULL << field->width) - 1) << field->shift;
+	field->mask = GENMASK(fh, fl);
 
 	return field;
 }

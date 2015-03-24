@@ -105,4 +105,6 @@ uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
 		ERR_ERRNO(format);		\
 } while (0)
 
+#define GENMASK(h, l) (((~0ULL) << (l)) & (~0ULL >> (64 - 1 - (h))))
+
 #endif /* __RWMEM_H__ */
