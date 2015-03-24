@@ -10,7 +10,8 @@ struct addr {
 };
 
 struct field_desc {
-	unsigned shift;
+	unsigned low;
+	unsigned high;
 	unsigned width;
 	uint64_t mask;
 

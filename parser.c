@@ -45,7 +45,8 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 		if (len > reg->max_field_name_len)
 			reg->max_field_name_len = len;
 
-		fd->shift = fl;
+		fd->low = fl;
+		fd->high = fh;
 		fd->width = fh - fl + 1;
 		fd->mask = GENMASK(fh, fl);
 
@@ -208,7 +209,8 @@ const struct field_desc *parse_field(const char *fstr, const struct reg_desc *re
 	struct field_desc *field = malloc(sizeof(struct field_desc));
 	memset(field, 0, sizeof(*field));
 	field->name = NULL;
-	field->shift = fl;
+	field->low = fl;
+	field->high = fh;
 	field->width = fh - fl + 1;
 	field->mask = GENMASK(fh, fl);
 

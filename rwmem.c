@@ -36,7 +36,7 @@
 static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 		uint64_t value)
 {
-	uint64_t fv = (value & fd->mask) >> fd->shift;
+	uint64_t fv = (value & fd->mask) >> fd->low;
 
 	if (fd->name)
 		printf("\t%-*s ", reg->max_field_name_len, fd->name);
@@ -44,10 +44,9 @@ static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 		printf("\t");
 
 	if (fd->width == 1)
-		printf("   %-2d = ", fd->shift);
+		printf("   %-2d = ", fd->low);
 	else
-		printf("%2d:%-2d = ",
-				fd->shift + fd->width - 1, fd->shift);
+		printf("%2d:%-2d = ", fd->high, fd->low);
 
 	printf("%-#*" PRIx64, reg->width / 4 + 2, fv);
 
@@ -89,7 +88,7 @@ static void readwriteprint(const struct addr *addr,
 		if (field) {
 			v = oldval;
 			v &= ~field->mask;
-			v |= userval << field->shift;
+			v |= userval << field->low;
 		} else {
 			v = userval;
 		}
@@ -145,8 +144,8 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 		const struct field_desc *field = parse_field(arg->field, op->reg);
 
 		if (field) {
-			if (field->shift >= rwmem_opts.regsize ||
-				(field->width + field->shift) > rwmem_opts.regsize)
+			if (field->low >= rwmem_opts.regsize ||
+				field->high >= rwmem_opts.regsize)
 			myerr("Field bits higher than register size");
 		}
 
@@ -163,7 +162,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 		if (value & ~regmask)
 			myerr("Value does not fit into the register size");
 
-		if (op->field && (value & (~op->field->mask >> op->field->shift)))
+		if (op->field && (value & (~op->field->mask >> op->field->low)))
 			myerr("Value does not fit into the field");
 
 		op->value = value;
