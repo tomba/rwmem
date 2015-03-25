@@ -104,8 +104,7 @@ static bool seek_to_regname(FILE *f, const char *regname)
 	return false;
 }
 
-static struct reg_desc *parse_symbolic_address(const char *regname,
-		const char *regfile)
+struct reg_desc *find_reg_by_name(const char *regname, const char *regfile)
 {
 	char str[1024];
 
@@ -114,10 +113,10 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 	ERR_ON_ERRNO(f == NULL , "Failed to open regfile %s", regfile);
 
 	if (!seek_to_regname(f, regname))
-		ERR("Register not found");
+		return NULL;
 
 	if (!fgets(str, sizeof(str), f))
-		ERR("Register not found");
+		ERR("Failed to parse register");
 
 	char *parts[4] = { 0 };
 
@@ -245,7 +244,7 @@ const struct reg_desc *parse_address(const char *astr, const char *regfile)
 		return reg;
 
 	if (regfile) {
-		reg = parse_symbolic_address(astr, regfile);
+		reg = find_reg_by_name(astr, regfile);
 		if (reg)
 			return reg;
 	}
