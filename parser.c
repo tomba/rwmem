@@ -141,6 +141,80 @@ static struct reg_desc *parse_symbolic_address(const char *regname,
 	return reg;
 }
 
+static bool seek_to_regaddr(FILE *f, uint64_t addr)
+{
+	char str[1024];
+
+	while (true) {
+		fpos_t pos;
+		int r;
+
+		r = fgetpos(f, &pos);
+		if (r)
+			myerr2("fgetpos failed");
+
+		if (!fgets(str, sizeof(str), f))
+			return false;
+
+		char *parts[4] = { 0 };
+
+		r = split_str(str, ",", parts, 4);
+		if (r < 3)
+			myerr("Failed to parse register description: '%s'", str);
+
+		uint64_t a = strtoull(parts[1], NULL, 0);
+
+		if (addr == a) {
+			r = fsetpos(f, &pos);
+			if (r)
+				myerr2("fsetpos failed");
+
+			return true;
+		}
+
+		if (!seek_to_next_reg(f))
+			return false;
+	}
+
+	return false;
+}
+
+struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
+{
+	char str[1024];
+
+	FILE *f = fopen(regfile, "r");
+
+	ERR_ON_ERRNO(f == NULL , "Failed to open regfile %s", regfile);
+
+	if (!seek_to_regaddr(f, addr))
+		return NULL;
+
+	if (!fgets(str, sizeof(str), f))
+		ERR("Failed to parse register");
+
+	char *parts[4] = { 0 };
+
+	int r = split_str(str, ",", parts, 4);
+
+	ERR_ON(r < 3, "Failed to parse register description: '%s'", str);
+
+	struct reg_desc *reg;
+	reg = malloc(sizeof(struct reg_desc));
+	memset(reg, 0, sizeof(*reg));
+	reg->name = strdup(parts[0]);
+	reg->offset = strtoull(parts[1], NULL, 0);
+	reg->width = strtoul(parts[2], NULL, 0);
+	if (parts[3])
+		reg->comment = strdup(parts[3]);
+
+	parse_reg_fields(f, reg);
+
+	fclose(f);
+
+	return reg;
+}
+
 static struct reg_desc *parse_numeric_address(const char *astr)
 {
 	char *endptr;
