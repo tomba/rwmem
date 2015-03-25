@@ -79,7 +79,7 @@ unsigned split_str(char *str, const char *delim, char **arr, unsigned num);
 void parse_cmdline(int argc, char **argv);
 
 /* parser */
-struct reg_desc *find_reg_by_name(const char *regname, const char *regfile);
+struct reg_desc *find_reg_by_name(const char *regfile, const char *regname);
 struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr);
 void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);

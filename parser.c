@@ -104,7 +104,7 @@ static bool seek_to_regname(FILE *f, const char *regname)
 	return false;
 }
 
-struct reg_desc *find_reg_by_name(const char *regname, const char *regfile)
+struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
 {
 	char str[1024];
 
@@ -244,7 +244,7 @@ const struct reg_desc *parse_address(const char *astr, const char *regfile)
 		return reg;
 
 	if (regfile) {
-		reg = find_reg_by_name(astr, regfile);
+		reg = find_reg_by_name(regfile, astr);
 		if (reg)
 			return reg;
 	}
