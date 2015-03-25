@@ -59,7 +59,7 @@ static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 	puts("");
 }
 
-static void readwriteprint(const struct addr *addr,
+static void readwriteprint(uint64_t paddr, void *vaddr,
 		const struct reg_desc *reg,
 		const struct field_desc *field,
 		uint64_t userval,
@@ -68,14 +68,14 @@ static void readwriteprint(const struct addr *addr,
 	if (reg->name)
 		printf("%s ", reg->name);
 
-	printf("%#" PRIx64 " ", addr->paddr);
-	if (reg->offset != addr->paddr)
+	printf("%#" PRIx64 " ", paddr);
+	if (reg->offset != paddr)
 		printf("(+%#" PRIx64 ") ", reg->offset);
 
 	uint64_t oldval = 0, newval = 0;
 
 	if (!write_only) {
-		oldval = readmem(addr->vaddr, reg->width);
+		oldval = readmem(vaddr, reg->width);
 
 		printf("= %0#*" PRIx64 " ", reg->width / 4 + 2, oldval);
 
@@ -97,13 +97,13 @@ static void readwriteprint(const struct addr *addr,
 
 		fflush(stdout);
 
-		writemem(addr->vaddr, reg->width, v);
+		writemem(vaddr, reg->width, v);
 
 		newval = v;
 	}
 
 	if (write && !write_only) {
-		newval = readmem(addr->vaddr, reg->width);
+		newval = readmem(vaddr, reg->width);
 
 		printf("-> %0#*" PRIx64 " ", reg->width / 4 + 2, newval);
 	}
@@ -200,12 +200,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 
 	while (paddr < end_paddr) {
 
-		const struct addr addr = {
-			.paddr = paddr,
-			.vaddr = vaddr,
-		};
-
-		readwriteprint(&addr, &reg, op->field, op->value,
+		readwriteprint(paddr, vaddr, &reg, op->field, op->value,
 			op->write, rwmem_opts.write_only);
 
 		paddr += reg.width / 8;

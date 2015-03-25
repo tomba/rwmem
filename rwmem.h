@@ -4,11 +4,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-struct addr {
-	uint64_t paddr;
-	void *vaddr;
-};
-
 struct field_desc {
 	unsigned low;
 	unsigned high;
