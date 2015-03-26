@@ -33,27 +33,32 @@
 
 #include "rwmem.h"
 
-static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
-		uint64_t value)
+static void print_field(unsigned high, unsigned low,
+	const struct reg_desc *reg, const struct field_desc *fd,
+	uint64_t value)
 {
-	uint64_t fv = (value & fd->mask) >> fd->low;
+	uint64_t mask = GENMASK(high, low);
 
-	if (fd->name)
+	uint64_t fv = (value & mask) >> low;
+
+	if (fd)
 		printf("\t%-*s ", reg->max_field_name_len, fd->name);
 	else
 		printf("\t");
 
-	if (fd->width == 1)
-		printf("   %-2d = ", fd->low);
+	if (high == low)
+		printf("   %-2d = ", low);
 	else
-		printf("%2d:%-2d = ", fd->high, fd->low);
+		printf("%2d:%-2d = ", high, low);
 
-	printf("%-#*" PRIx64, reg->width / 4 + 2, fv);
+	unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
-	if (rwmem_opts.show_defval)
+	printf("%-#*" PRIx64, access_width / 4 + 2, fv);
+
+	if (rwmem_opts.show_defval && fd)
 		printf(" (%0#" PRIx64 ")", fd->defval);
 
-	if (rwmem_opts.show_comments && fd->comment)
+	if (rwmem_opts.show_comments && fd && fd->comment)
 		printf(" # %s", fd->comment);
 
 	puts("");
@@ -140,29 +145,20 @@ static void readwriteprint(const struct rwmem_op *op,
 
 	printf("\n");
 
-	if (reg && !op->field_valid) {
-		for (unsigned i = 0; i < reg->num_fields; ++i) {
-			const struct field_desc *fd = &reg->fields[i];
-			print_field(reg, fd, newval);
+	if (!op->field_valid) {
+		if (reg) {
+			for (unsigned i = 0; i < reg->num_fields; ++i) {
+				const struct field_desc *fd = &reg->fields[i];
+				print_field(fd->high, fd->low, reg, fd, newval);
+			}
 		}
 	} else {
-		const struct field_desc *fd;
+		const struct field_desc *fd = NULL;
 
-		fd = find_field_by_pos(reg, op->high, op->low);
+		if (reg)
+			fd = find_field_by_pos(reg, op->high, op->low);
 
-		if (!fd) {
-			struct field_desc *field = malloc(sizeof(struct field_desc));
-			memset(field, 0, sizeof(*field));
-			field->name = NULL;
-			field->low = op->low;
-			field->high = op->high;
-			field->width = field->high - field->low + 1;
-			field->mask = GENMASK(field->high, field->low);
-
-			fd = field;
-		}
-
-		print_field(reg, fd, newval);
+		print_field(op->high, op->low, reg, fd, newval);
 	}
 }
 
@@ -295,9 +291,10 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 	uint64_t end_offset = offset + op->range;
 
 	while (offset < end_offset) {
-		struct reg_desc *reg;
+		struct reg_desc *reg = NULL;
 
-		reg = find_reg_by_address(regfile, offset);
+		if (regfile)
+			reg = find_reg_by_address(regfile, offset);
 
 		unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
