@@ -125,12 +125,12 @@ static void readwriteprint(const struct rwmem_op *op,
 		writemem(vaddr, width, v);
 
 		newval = v;
-	}
 
-	if (op->value_valid && !rwmem_opts.write_only) {
-		newval = readmem(vaddr, width);
+		if (!rwmem_opts.write_only) {
+			newval = readmem(vaddr, width);
 
-		printf("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
+			printf("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
+		}
 	}
 
 	printf("\n");
