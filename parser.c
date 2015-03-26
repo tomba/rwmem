@@ -37,10 +37,8 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 		fh = strtoul(parts[1], NULL, 0);
 		fl = strtoul(parts[2], NULL, 0);
 		// parts[3] is mode
-		if (parts[4])
-			fd->defval = strtoull(parts[4], NULL, 0);
-		if (parts[5])
-			fd->comment = strdup(parts[5]);
+		// parts[4] is defval (deprecated)
+		// parts[5] is comment (deprecated)
 
 		size_t len = strlen(fd->name);
 		if (len > reg->max_field_name_len)
@@ -131,8 +129,7 @@ struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
-	if (parts[3])
-		reg->comment = strdup(parts[3]);
+	// parts[3] is comment (deprecated)
 
 	parse_reg_fields(f, reg);
 
@@ -205,8 +202,7 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
-	if (parts[3])
-		reg->comment = strdup(parts[3]);
+	// parts[3] is comment (deprecated)
 
 	parse_reg_fields(f, reg);
 

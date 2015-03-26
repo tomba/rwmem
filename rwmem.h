@@ -11,8 +11,6 @@ struct field_desc {
 	uint64_t mask;
 
 	const char *name;
-	const char *comment;
-	uint64_t defval;
 };
 
 struct reg_desc {
@@ -20,7 +18,6 @@ struct reg_desc {
 	unsigned width;
 
 	const char *name;
-	const char *comment;
 	unsigned num_fields;
 	struct field_desc fields[64];
 	unsigned max_field_name_len;
@@ -56,9 +53,6 @@ struct rwmem_opts {
 	const char *base;
 	const char *aliasfile;
 	const char *regfile;
-
-	bool show_comments;
-	bool show_defval;
 
 	int num_args;
 	struct rwmem_opts_arg *args;

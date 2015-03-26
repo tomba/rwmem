@@ -32,8 +32,6 @@ static void usage()
 "	-b <address>	base address\n"
 "	-a <file>	aliases file\n"
 "	-r <file>	register set file\n"
-"	-c		show comments\n"
-"	-d		show default value\n"
 "	-h		show this help\n"
 );
 
@@ -89,7 +87,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 
-	while ((opt = getopt(argc, argv, "s:f:wb:a:r:cdh")) != -1) {
+	while ((opt = getopt(argc, argv, "s:f:wb:a:r:h")) != -1) {
 		switch (opt) {
 		case 's': {
 			int rs = atoi(optarg);
@@ -114,12 +112,6 @@ void parse_cmdline(int argc, char **argv)
 			break;
 		case 'r':
 			rwmem_opts.regfile = optarg;
-			break;
-		case 'c':
-			rwmem_opts.show_comments = true;
-			break;
-		case 'd':
-			rwmem_opts.show_defval = true;
 			break;
 		case 'h':
 		default:

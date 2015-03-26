@@ -55,12 +55,6 @@ static void print_field(unsigned high, unsigned low,
 
 	printf("%-#*" PRIx64, access_width / 4 + 2, fv);
 
-	if (rwmem_opts.show_defval && fd)
-		printf(" (%0#" PRIx64 ")", fd->defval);
-
-	if (rwmem_opts.show_comments && fd && fd->comment)
-		printf(" # %s", fd->comment);
-
 	puts("");
 }
 
@@ -139,9 +133,6 @@ static void readwriteprint(const struct rwmem_op *op,
 
 		printf("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
 	}
-
-	if (rwmem_opts.show_comments && reg && reg->comment)
-		printf(" # %s", reg->comment);
 
 	printf("\n");
 
