@@ -59,123 +59,221 @@ static void print_field(const struct reg_desc *reg, const struct field_desc *fd,
 	puts("");
 }
 
-static void readwriteprint(uint64_t paddr, void *vaddr,
-		const struct reg_desc *reg,
-		const struct field_desc *field,
-		uint64_t userval,
-		bool write, bool write_only)
+static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
+	unsigned high, unsigned low)
 {
-	if (reg->name)
+	for (unsigned i = 0; i < reg->num_fields; ++i) {
+		const struct field_desc *field = &reg->fields[i];
+
+		if (low == field->low && high == field->high)
+			return field;
+	}
+
+	return NULL;
+}
+
+static const struct field_desc *find_field_by_name(const struct reg_desc *reg,
+	const char *name)
+{
+	for (unsigned i = 0; i < reg->num_fields; ++i) {
+		const struct field_desc *field = &reg->fields[i];
+
+		if (strcmp(name, field->name) == 0)
+			return field;
+	}
+
+	return NULL;
+}
+
+static void readwriteprint(const struct rwmem_op *op,
+	uint64_t paddr, void *vaddr,
+	uint64_t offset,
+	unsigned width,
+		const struct reg_desc *reg,
+		bool write_only)
+{
+	if (reg)
 		printf("%s ", reg->name);
 
 	printf("%#" PRIx64 " ", paddr);
-	if (reg->offset != paddr)
-		printf("(+%#" PRIx64 ") ", reg->offset);
+	if (offset != paddr)
+		printf("(+%#" PRIx64 ") ", offset);
 
 	uint64_t oldval = 0, newval = 0;
 
 	if (!write_only) {
-		oldval = readmem(vaddr, reg->width);
+		oldval = readmem(vaddr, width);
 
-		printf("= %0#*" PRIx64 " ", reg->width / 4 + 2, oldval);
+		printf("= %0#*" PRIx64 " ", width / 4 + 2, oldval);
 
 		newval = oldval;
 	}
 
-	if (write) {
+	if (op->value_valid) {
 		uint64_t v;
 
-		if (field) {
+		if (op->field_valid) {
 			v = oldval;
-			v &= ~field->mask;
-			v |= userval << field->low;
+			v &= ~GENMASK(op->high, op->low);
+			v |= op->value << op->low;
 		} else {
-			v = userval;
+			v = op->value;
 		}
 
-		printf(":= %0#*" PRIx64 " ", reg->width / 4 + 2, v);
+		printf(":= %0#*" PRIx64 " ", width / 4 + 2, v);
 
 		fflush(stdout);
 
-		writemem(vaddr, reg->width, v);
+		writemem(vaddr, width, v);
 
 		newval = v;
 	}
 
-	if (write && !write_only) {
-		newval = readmem(vaddr, reg->width);
+	if (op->value_valid && !write_only) {
+		newval = readmem(vaddr, width);
 
-		printf("-> %0#*" PRIx64 " ", reg->width / 4 + 2, newval);
+		printf("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
 	}
 
-	if (rwmem_opts.show_comments && reg->comment)
+	if (rwmem_opts.show_comments && reg && reg->comment)
 		printf(" # %s", reg->comment);
 
 	printf("\n");
 
-	if (field) {
-		print_field(reg, field, newval);
-	} else {
+	if (reg && !op->field_valid) {
 		for (unsigned i = 0; i < reg->num_fields; ++i) {
 			const struct field_desc *fd = &reg->fields[i];
-
 			print_field(reg, fd, newval);
 		}
+	} else {
+		const struct field_desc *fd;
+
+		fd = find_field_by_pos(reg, op->high, op->low);
+
+		if (!fd) {
+			struct field_desc *field = malloc(sizeof(struct field_desc));
+			memset(field, 0, sizeof(*field));
+			field->name = NULL;
+			field->low = op->low;
+			field->high = op->high;
+			field->width = field->high - field->low + 1;
+			field->mask = GENMASK(field->high, field->low);
+
+			fd = field;
+		}
+
+		print_field(reg, fd, newval);
 	}
 }
 
 static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 	const char *regfile)
 {
+	struct reg_desc *reg = NULL;
+
 	/* Parse address */
 
-	op->reg = parse_address(arg->address, regfile);
+	{
+		char *endptr;
+		op->address = strtoull(arg->address, &endptr, 0);
+		if (*endptr != 0) {
+			if (!regfile)
+				myerr("Invalid address '%s'", arg->address);
+
+			reg = find_reg_by_name(regfile, arg->address);
+			op->address = reg->offset;
+		}
+	}
 
 	/* Parse range */
 
-	if (arg->range)
-		op->range = parse_range(op->reg, arg->range, arg->range_is_offset);
-	else
-		op->range = op->reg->width / 8;
+	if (arg->range) {
+		int r = parse_u64(arg->range, &op->range);
+		ERR_ON(r, "Invalid range '%s'", arg->range);
+
+		if (!arg->range_is_offset) {
+			if (op->range <= op->address)
+				myerr("range '%s' is <= 0", arg->range);
+			op->range = op->range - op->address;
+		}
+
+		op->range_valid = true;
+	} else {
+		if (reg)
+			op->range = reg->width / 8;
+		else
+			op->range = rwmem_opts.regsize / 8;
+	}
 
 	/* Parse field */
 
 	if (arg->field) {
-		const struct field_desc *field = parse_field(arg->field, op->reg);
+		unsigned fl, fh;
+		char *endptr;
 
-		if (field) {
-			if (field->low >= rwmem_opts.regsize ||
-				field->high >= rwmem_opts.regsize)
-			myerr("Field bits higher than register size");
+		bool ok = false;
+
+		if (sscanf(arg->field, "%i:%i", &fh, &fl) == 2)
+			ok = true;
+
+		if (!ok) {
+			fl = fh = strtoull(arg->field, &endptr, 0);
+			if (*endptr == 0)
+				ok = true;
 		}
 
-		op->field = field;
+		if (!ok) {
+			const struct field_desc *field;
+
+			field = find_field_by_name(reg, arg->field);
+
+			if (field) {
+				fl = field->low;
+				fh = field->high;
+				ok = true;
+			}
+		}
+
+		if (!ok)
+			myerr("Field not found '%s'", arg->field);
+
+		if (fl >= rwmem_opts.regsize ||
+				fh >= rwmem_opts.regsize)
+			myerr("Field bits higher than register size");
+
+		op->low = fl;
+		op->high = fh;
+		op->field_valid = true;
 	}
 
 	/* Parse value */
 
 	if (arg->value) {
-		uint64_t value = parse_value(arg->value);
+		uint64_t value;
+		int r = parse_u64(arg->value, &value);
+		ERR_ON(r, "Invalid value '%s'", arg->value);
 
 		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize);
 
 		if (value & ~regmask)
 			myerr("Value does not fit into the register size");
 
-		if (op->field && (value & (~op->field->mask >> op->field->low)))
+		if (op->field_valid &&
+				(value & GENMASK(op->high - op->low, 0)))
 			myerr("Value does not fit into the field");
 
 		op->value = value;
-		op->write = true;
+		op->value_valid = true;
 	}
 }
 
-static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
+static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
+	const char *regfile)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 
-	uint64_t paddr = base + op->reg->offset;
+	uint64_t paddr = base + op->address;
 	off_t pa_offset = paddr & ~pagemask;
 	size_t len = op->range + paddr - pa_offset;
 
@@ -185,7 +283,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 	*/
 
 	void *mmap_base = mmap(0, len,
-			op->write ? PROT_WRITE : PROT_READ,
+			op->value_valid ? PROT_WRITE : PROT_READ,
 			MAP_SHARED, fd, pa_offset);
 
 	if (mmap_base == MAP_FAILED)
@@ -193,26 +291,21 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op)
 
 	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
-	uint64_t end_paddr = paddr + op->range;
+	uint64_t offset = op->address;
+	uint64_t end_offset = offset + op->range;
 
-	/* HACK */
-	struct reg_desc reg = *op->reg;
+	while (offset < end_offset) {
+		struct reg_desc *reg;
 
-	while (paddr < end_paddr) {
+		reg = find_reg_by_address(regfile, offset);
 
-		readwriteprint(paddr, vaddr, &reg, op->field, op->value,
-			op->write, rwmem_opts.write_only);
+		unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
-		paddr += reg.width / 8;
-		vaddr += reg.width / 8;
+		readwriteprint(op, paddr, vaddr, offset, access_width,
+			reg,
+			rwmem_opts.write_only);
 
-		/* HACK */
-		struct reg_desc new_reg = {
-			.offset = reg.offset + reg.width / 8,
-			.width = reg.width
-		};
-
-		reg = new_reg;
+		offset += access_width / 8;
 	}
 
 	if (munmap(mmap_base, pagesize) == -1)
@@ -249,7 +342,7 @@ int main(int argc, char **argv)
 
 		parse_op(arg, op, regfile);
 
-		if (op->write)
+		if (op->value_valid)
 			read_only = false;
 	}
 
@@ -264,7 +357,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < num_ops; ++i) {
 		struct rwmem_op *op = &ops[i];
 
-		do_op(fd, base, op);
+		do_op(fd, base, op, regfile);
 	}
 
 	close(fd);

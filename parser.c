@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -214,82 +215,6 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
 	return reg;
 }
 
-static struct reg_desc *parse_numeric_address(const char *astr)
-{
-	char *endptr;
-	uint64_t paddr;
-	struct reg_desc *reg;
-
-	paddr = strtoull(astr, &endptr, 0);
-
-	if (*endptr != 0)
-		return NULL;
-
-	reg = malloc(sizeof(struct reg_desc));
-	memset(reg, 0, sizeof(*reg));
-	reg->name = NULL;
-	reg->offset = paddr;
-	reg->width = rwmem_opts.regsize;
-	reg->num_fields = 0;
-
-	return reg;
-}
-
-const struct reg_desc *parse_address(const char *astr, const char *regfile)
-{
-	struct reg_desc *reg;
-
-	reg = parse_numeric_address(astr);
-	if (reg)
-		return reg;
-
-	if (regfile) {
-		reg = find_reg_by_name(regfile, astr);
-		if (reg)
-			return reg;
-	}
-
-	myerr("Invalid address '%s'", astr);
-}
-
-const struct field_desc *parse_field(const char *fstr, const struct reg_desc *reg)
-{
-	unsigned fl, fh;
-	char *endptr;
-
-	if (!fstr)
-		return NULL;
-
-	for (unsigned i = 0; i < reg->num_fields; ++i) {
-		const struct field_desc *field = &reg->fields[i];
-
-		if (strcmp(fstr, field->name) == 0)
-			return field;
-	}
-
-	if (sscanf(fstr, "%i:%i", &fh, &fl) != 2) {
-		fl = fh = strtoull(fstr, &endptr, 0);
-		if (*endptr != 0)
-			myerr("Invalid field '%s'", fstr);
-	}
-
-	if (fh < fl) {
-		unsigned tmp = fh;
-		fh = fl;
-		fl = tmp;
-	}
-
-	struct field_desc *field = malloc(sizeof(struct field_desc));
-	memset(field, 0, sizeof(*field));
-	field->name = NULL;
-	field->low = fl;
-	field->high = fh;
-	field->width = fh - fl + 1;
-	field->mask = GENMASK(fh, fl);
-
-	return field;
-}
-
 /*
  * Find 'basestr' from the given file.
  * Return found base address and (optional) register file name
@@ -367,38 +292,15 @@ void parse_base(const char *cfgfile, const char *basestr, uint64_t *base,
 	*regfile = strdup(path);
 }
 
-uint64_t parse_value(const char *vstr)
+int parse_u64(const char *str, uint64_t *value)
 {
-	if (!vstr)
-		return 0;
-
+	uint64_t v;
 	char *endptr;
 
-	uint64_t val = strtoull(vstr, &endptr, 0);
+	v = strtoull(str, &endptr, 0);
 	if (*endptr != 0)
-		myerr("Invalid value '%s'", vstr);
+		return -EINVAL;
 
-	return val;
-}
-
-uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
-	bool range_is_offset)
-{
-	if (!rangestr)
-		return 0;
-
-	uint64_t range;
-	char *endptr;
-
-	range = strtoull(rangestr, &endptr, 0);
-	if (*endptr != 0)
-		myerr("Invalid range '%s'", rangestr);
-
-	if (!range_is_offset) {
-		if (range <= reg->offset)
-			myerr("range '%s' is <= 0", rangestr);
-		range = range - reg->offset;
-	}
-
-	return range;
+	*value = v;
+	return 0;
 }

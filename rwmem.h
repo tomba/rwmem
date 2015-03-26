@@ -28,13 +28,15 @@ struct reg_desc {
 
 struct rwmem_op {
 	uint64_t address;
+
+	bool range_valid;
 	uint64_t range;
+
+	bool field_valid;
+	unsigned low, high;
+
+	bool value_valid;
 	uint64_t value;
-
-	bool write;
-
-	const struct reg_desc *reg;
-	const struct field_desc *field;
 };
 
 struct rwmem_opts_arg {
@@ -83,11 +85,7 @@ struct reg_desc *find_reg_by_name(const char *regfile, const char *regname);
 struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr);
 void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);
-const struct reg_desc *parse_address(const char *astr, const char *regfile);
-const struct field_desc *parse_field(const char *fstr, const struct reg_desc *reg);
-uint64_t parse_value(const char *vstr);
-uint64_t parse_range(const struct reg_desc *reg, const char *rangestr,
-	bool range_is_offset);
+int parse_u64(const char *str, uint64_t *value);
 
 #define ERR(format...) myerr(format)
 
