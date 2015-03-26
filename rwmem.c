@@ -246,7 +246,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 			myerr("Value does not fit into the register size");
 
 		if (op->field_valid &&
-				(value & GENMASK(op->high - op->low, 0)))
+				(value & ~GENMASK(op->high - op->low, 0)))
 			myerr("Value does not fit into the field");
 
 		op->value = value;
