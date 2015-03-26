@@ -35,11 +35,14 @@
 
 static void print_field(unsigned high, unsigned low,
 	const struct reg_desc *reg, const struct field_desc *fd,
-	uint64_t value)
+	uint64_t newval, uint64_t oldval,
+	const struct rwmem_op *op)
 {
 	uint64_t mask = GENMASK(high, low);
 
-	uint64_t fv = (value & mask) >> low;
+	newval = (newval & mask) >> low;
+	oldval = (oldval & mask) >> low;
+	uint64_t userval = op->value & (mask >> low);
 
 	if (fd)
 		printf("\t%-*s ", reg->max_field_name_len, fd->name);
@@ -53,7 +56,14 @@ static void print_field(unsigned high, unsigned low,
 
 	unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
-	printf("%-#*" PRIx64, access_width / 4 + 2, fv);
+	if (!rwmem_opts.write_only)
+		printf("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
+
+	if (op->value_valid) {
+		printf(":= %-#*" PRIx64 " ", access_width / 4 + 2, userval);
+		if (!rwmem_opts.write_only)
+			printf("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
+	}
 
 	puts("");
 }
@@ -139,7 +149,8 @@ static void readwriteprint(const struct rwmem_op *op,
 		if (reg) {
 			for (unsigned i = 0; i < reg->num_fields; ++i) {
 				const struct field_desc *fd = &reg->fields[i];
-				print_field(fd->high, fd->low, reg, fd, newval);
+				print_field(fd->high, fd->low, reg, fd,
+					newval, oldval, op);
 			}
 		}
 	} else {
@@ -148,7 +159,8 @@ static void readwriteprint(const struct rwmem_op *op,
 		if (reg)
 			fd = find_field_by_pos(reg, op->high, op->low);
 
-		print_field(op->high, op->low, reg, fd, newval);
+		print_field(op->high, op->low, reg, fd, newval, oldval,
+			op);
 	}
 }
 
