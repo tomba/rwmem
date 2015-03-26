@@ -88,8 +88,7 @@ static void readwriteprint(const struct rwmem_op *op,
 	uint64_t paddr, void *vaddr,
 	uint64_t offset,
 	unsigned width,
-		const struct reg_desc *reg,
-		bool write_only)
+		const struct reg_desc *reg)
 {
 	if (reg)
 		printf("%s ", reg->name);
@@ -100,7 +99,7 @@ static void readwriteprint(const struct rwmem_op *op,
 
 	uint64_t oldval = 0, newval = 0;
 
-	if (!write_only) {
+	if (!rwmem_opts.write_only) {
 		oldval = readmem(vaddr, width);
 
 		printf("= %0#*" PRIx64 " ", width / 4 + 2, oldval);
@@ -128,7 +127,7 @@ static void readwriteprint(const struct rwmem_op *op,
 		newval = v;
 	}
 
-	if (op->value_valid && !write_only) {
+	if (op->value_valid && !rwmem_opts.write_only) {
 		newval = readmem(vaddr, width);
 
 		printf("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
@@ -290,8 +289,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 		unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
 		readwriteprint(op, paddr, vaddr, offset, access_width,
-			reg,
-			rwmem_opts.write_only);
+			reg);
 
 		offset += access_width / 8;
 	}
