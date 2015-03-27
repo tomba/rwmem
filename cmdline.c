@@ -87,7 +87,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 
-	while ((opt = getopt(argc, argv, "s:f:wb:a:r:hR")) != -1) {
+	while ((opt = getopt(argc, argv, "s:f:wb:a:r:hRq")) != -1) {
 		switch (opt) {
 		case 's': {
 			int rs = atoi(optarg);
@@ -115,6 +115,9 @@ void parse_cmdline(int argc, char **argv)
 			break;
 		case 'R':
 			rwmem_opts.raw_output = true;
+			break;
+		case 'q':
+			rwmem_opts.quiet = true;
 			break;
 		case 'h':
 		default:

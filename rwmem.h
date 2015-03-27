@@ -50,6 +50,7 @@ struct rwmem_opts {
 	unsigned regsize;
 	bool write_only;
 	bool raw_output;
+	bool quiet;
 
 	const char *base;
 	const char *aliasfile;

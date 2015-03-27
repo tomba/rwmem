@@ -33,6 +33,8 @@
 
 #include "rwmem.h"
 
+#define printq(format...) do { if (!rwmem_opts.quiet) printf(format); } while(0)
+
 static void print_field(unsigned high, unsigned low,
 	const struct reg_desc *reg, const struct field_desc *fd,
 	uint64_t newval, uint64_t userval, uint64_t oldval,
@@ -45,24 +47,24 @@ static void print_field(unsigned high, unsigned low,
 	userval = (userval & mask) >> low;
 
 	if (fd)
-		printf("\t%-*s ", reg->max_field_name_len, fd->name);
+		printq("\t%-*s ", reg->max_field_name_len, fd->name);
 	else
-		printf("\t");
+		printq("\t");
 
 	if (high == low)
-		printf("   %-2d = ", low);
+		printq("   %-2d = ", low);
 	else
-		printf("%2d:%-2d = ", high, low);
+		printq("%2d:%-2d = ", high, low);
 
 	unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
 	if (!rwmem_opts.write_only)
-		printf("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
+		printq("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
 
 	if (op->value_valid) {
-		printf(":= %-#*" PRIx64 " ", access_width / 4 + 2, userval);
+		printq(":= %-#*" PRIx64 " ", access_width / 4 + 2, userval);
 		if (!rwmem_opts.write_only)
-			printf("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
+			printq("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
 	}
 
 	puts("");
@@ -101,11 +103,11 @@ static void readwriteprint(const struct rwmem_op *op,
 		const struct reg_desc *reg)
 {
 	if (reg)
-		printf("%s ", reg->name);
+		printq("%s ", reg->name);
 
-	printf("%#" PRIx64 " ", paddr);
+	printq("%#" PRIx64 " ", paddr);
 	if (offset != paddr)
-		printf("(+%#" PRIx64 ") ", offset);
+		printq("(+%#" PRIx64 ") ", offset);
 
 	uint64_t oldval, userval, newval;
 
@@ -114,7 +116,7 @@ static void readwriteprint(const struct rwmem_op *op,
 	if (!rwmem_opts.write_only) {
 		oldval = readmem(vaddr, width);
 
-		printf("= %0#*" PRIx64 " ", width / 4 + 2, oldval);
+		printq("= %0#*" PRIx64 " ", width / 4 + 2, oldval);
 
 		newval = oldval;
 	}
@@ -130,7 +132,7 @@ static void readwriteprint(const struct rwmem_op *op,
 			v = op->value;
 		}
 
-		printf(":= %0#*" PRIx64 " ", width / 4 + 2, v);
+		printq(":= %0#*" PRIx64 " ", width / 4 + 2, v);
 
 		fflush(stdout);
 
@@ -142,11 +144,11 @@ static void readwriteprint(const struct rwmem_op *op,
 		if (!rwmem_opts.write_only) {
 			newval = readmem(vaddr, width);
 
-			printf("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
+			printq("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
 		}
 	}
 
-	printf("\n");
+	printq("\n");
 
 	if (!op->field_valid) {
 		if (reg) {
