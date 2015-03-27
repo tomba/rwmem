@@ -285,41 +285,42 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 	const unsigned pagemask = pagesize - 1;
 
 	uint64_t paddr = base + op->address;
-	off_t pa_offset = paddr & ~pagemask;
-	size_t len = op->range + paddr - pa_offset;
+	off_t mmap_offset = paddr & ~pagemask;
+	size_t mmap_len = op->range + (paddr & pagemask);
 
 	/*
 	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx\n",
-		op->range, paddr, pa_offset, len);
+		op->range, paddr, mmap_offset, mmap_len);
 	*/
 
-	void *mmap_base = mmap(0, len,
+	void *mmap_base = mmap(0, mmap_len,
 			op->value_valid ? PROT_WRITE : PROT_READ,
-			MAP_SHARED, fd, pa_offset);
+			MAP_SHARED, fd, mmap_offset);
 
 	if (mmap_base == MAP_FAILED)
 		myerr2("failed to mmap");
 
 	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
-	uint64_t offset = op->address;
-	uint64_t end_offset = offset + op->range;
+	uint64_t reg_offset = op->address;
+	uint64_t end_reg_offset = reg_offset + op->range;
 
-	while (offset < end_offset) {
+	while (reg_offset < end_reg_offset) {
 		struct reg_desc *reg = NULL;
 
 		if (regfile)
-			reg = find_reg_by_address(regfile, offset);
+			reg = find_reg_by_address(regfile, reg_offset);
 
 		unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
 		if (rwmem_opts.raw_output)
-			readprint_raw(vaddr + offset, access_width);
+			readprint_raw(vaddr, access_width);
 		else
-			readwriteprint(op, paddr + offset, vaddr + offset,
-				offset, access_width, reg);
+			readwriteprint(op, paddr, vaddr, reg_offset, access_width, reg);
 
-		offset += access_width / 8;
+		paddr += access_width / 8;
+		vaddr += access_width / 8;
+		reg_offset += access_width / 8;
 	}
 
 	if (munmap(mmap_base, pagesize) == -1)
