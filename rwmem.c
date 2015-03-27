@@ -167,6 +167,15 @@ static void readwriteprint(const struct rwmem_op *op,
 	}
 }
 
+static void readprint_raw(void *vaddr, unsigned width)
+{
+	uint64_t v = readmem(vaddr, width);
+
+	width /= 8;
+
+	write(STDOUT_FILENO, &v, width);
+}
+
 static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 	const char *regfile)
 {
@@ -304,8 +313,11 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 
 		unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
-		readwriteprint(op, paddr, vaddr, offset, access_width,
-			reg);
+		if (rwmem_opts.raw_output)
+			readprint_raw(vaddr + offset, access_width);
+		else
+			readwriteprint(op, paddr + offset, vaddr + offset,
+				offset, access_width, reg);
 
 		offset += access_width / 8;
 	}
