@@ -35,14 +35,14 @@
 
 static void print_field(unsigned high, unsigned low,
 	const struct reg_desc *reg, const struct field_desc *fd,
-	uint64_t newval, uint64_t oldval,
+	uint64_t newval, uint64_t userval, uint64_t oldval,
 	const struct rwmem_op *op)
 {
 	uint64_t mask = GENMASK(high, low);
 
 	newval = (newval & mask) >> low;
 	oldval = (oldval & mask) >> low;
-	uint64_t userval = op->value & (mask >> low);
+	userval = (userval & mask) >> low;
 
 	if (fd)
 		printf("\t%-*s ", reg->max_field_name_len, fd->name);
@@ -107,7 +107,9 @@ static void readwriteprint(const struct rwmem_op *op,
 	if (offset != paddr)
 		printf("(+%#" PRIx64 ") ", offset);
 
-	uint64_t oldval = 0, newval = 0;
+	uint64_t oldval, userval, newval;
+
+	oldval = userval = newval = 0;
 
 	if (!rwmem_opts.write_only) {
 		oldval = readmem(vaddr, width);
@@ -135,6 +137,7 @@ static void readwriteprint(const struct rwmem_op *op,
 		writemem(vaddr, width, v);
 
 		newval = v;
+		userval = v;
 
 		if (!rwmem_opts.write_only) {
 			newval = readmem(vaddr, width);
@@ -150,7 +153,7 @@ static void readwriteprint(const struct rwmem_op *op,
 			for (unsigned i = 0; i < reg->num_fields; ++i) {
 				const struct field_desc *fd = &reg->fields[i];
 				print_field(fd->high, fd->low, reg, fd,
-					newval, oldval, op);
+					newval, userval, oldval, op);
 			}
 		}
 	} else {
@@ -159,7 +162,7 @@ static void readwriteprint(const struct rwmem_op *op,
 		if (reg)
 			fd = find_field_by_pos(reg, op->high, op->low);
 
-		print_field(op->high, op->low, reg, fd, newval, oldval,
+		print_field(op->high, op->low, reg, fd, newval, userval, oldval,
 			op);
 	}
 }
@@ -176,9 +179,10 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 		op->address = strtoull(arg->address, &endptr, 0);
 		if (*endptr != 0) {
 			if (!regfile)
-				myerr("Invalid address '%s'", arg->address);
+				ERR("Invalid address '%s'", arg->address);
 
 			reg = find_reg_by_name(regfile, arg->address);
+			ERR_ON(!reg, "Register not found '%s'", arg->address);
 			op->address = reg->offset;
 		}
 	}
