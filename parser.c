@@ -25,10 +25,10 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 		if (str[0] == 0 || isspace(str[0]))
 			break;
 
-		char *parts[6] = { 0 };
+		char *parts[3] = { 0 };
 
-		r = split_str(str, ",", parts, 6);
-		if (r < 3)
+		r = split_str(str, ",", parts, 3);
+		if (r != 3)
 			myerr("Failed to parse field description: '%s'", str);
 
 		struct field_desc *fd = &reg->fields[field_num];
@@ -36,9 +36,6 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 		fd->name = strdup(parts[0]);
 		fh = strtoul(parts[1], NULL, 0);
 		fl = strtoul(parts[2], NULL, 0);
-		// parts[3] is mode
-		// parts[4] is defval (deprecated)
-		// parts[5] is comment (deprecated)
 
 		size_t len = strlen(fd->name);
 		if (len > reg->max_field_name_len)
@@ -82,10 +79,10 @@ static bool seek_to_regname(FILE *f, const char *regname)
 		if (!fgets(str, sizeof(str), f))
 			return false;
 
-		char *parts[4] = { 0 };
+		char *parts[3] = { 0 };
 
-		r = split_str(str, ",", parts, 4);
-		if (r < 3)
+		r = split_str(str, ",", parts, 3);
+		if (r != 3)
 			myerr("Failed to parse register description: '%s'", str);
 
 		if (strcmp(regname, parts[0]) == 0) {
@@ -117,11 +114,11 @@ struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
 	if (!fgets(str, sizeof(str), f))
 		ERR("Failed to parse register");
 
-	char *parts[4] = { 0 };
+	char *parts[3] = { 0 };
 
-	int r = split_str(str, ",", parts, 4);
+	int r = split_str(str, ",", parts, 3);
 
-	ERR_ON(r < 3, "Failed to parse register description: '%s'", str);
+	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
 
 	struct reg_desc *reg;
 	reg = malloc(sizeof(struct reg_desc));
@@ -129,7 +126,6 @@ struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
-	// parts[3] is comment (deprecated)
 
 	parse_reg_fields(f, reg);
 
@@ -153,10 +149,10 @@ static bool seek_to_regaddr(FILE *f, uint64_t addr)
 		if (!fgets(str, sizeof(str), f))
 			return false;
 
-		char *parts[4] = { 0 };
+		char *parts[3] = { 0 };
 
-		r = split_str(str, ",", parts, 4);
-		if (r < 3)
+		r = split_str(str, ",", parts, 3);
+		if (r != 3)
 			myerr("Failed to parse register description: '%s'", str);
 
 		uint64_t a = strtoull(parts[1], NULL, 0);
@@ -190,11 +186,11 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
 	if (!fgets(str, sizeof(str), f))
 		ERR("Failed to parse register");
 
-	char *parts[4] = { 0 };
+	char *parts[3] = { 0 };
 
-	int r = split_str(str, ",", parts, 4);
+	int r = split_str(str, ",", parts, 3);
 
-	ERR_ON(r < 3, "Failed to parse register description: '%s'", str);
+	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
 
 	struct reg_desc *reg;
 	reg = malloc(sizeof(struct reg_desc));
@@ -202,7 +198,6 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
-	// parts[3] is comment (deprecated)
 
 	parse_reg_fields(f, reg);
 
