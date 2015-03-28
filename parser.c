@@ -211,7 +211,7 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
  * Return found base address and (optional) register file name
  */
 static void find_base_address(const char *path, const char *basestr,
-	uint64_t *base, const char **regfile)
+			      uint64_t *base, const char **regfile)
 {
 	char str[256];
 	int r;

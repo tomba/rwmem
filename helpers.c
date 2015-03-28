@@ -37,7 +37,7 @@ void myerr2(const char* format, ... )
 
 uint64_t readmem(void *addr, unsigned regsize)
 {
-	switch(regsize) {
+	switch (regsize) {
 	case 8:
 		return *((uint8_t *)addr);
 	case 16:
@@ -53,7 +53,7 @@ uint64_t readmem(void *addr, unsigned regsize)
 
 void writemem(void *addr, unsigned regsize, uint64_t value)
 {
-	switch(regsize) {
+	switch (regsize) {
 	case 8:
 		*((uint8_t *)addr) = value;
 		break;

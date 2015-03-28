@@ -36,9 +36,9 @@
 #define printq(format...) do { if (!rwmem_opts.quiet) printf(format); } while(0)
 
 static void print_field(unsigned high, unsigned low,
-	const struct reg_desc *reg, const struct field_desc *fd,
-	uint64_t newval, uint64_t userval, uint64_t oldval,
-	const struct rwmem_op *op)
+			const struct reg_desc *reg, const struct field_desc *fd,
+			uint64_t newval, uint64_t userval, uint64_t oldval,
+			const struct rwmem_op *op)
 {
 	uint64_t mask = GENMASK(high, low);
 
@@ -71,7 +71,7 @@ static void print_field(unsigned high, unsigned low,
 }
 
 static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
-	unsigned high, unsigned low)
+		unsigned high, unsigned low)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
 		const struct field_desc *field = &reg->fields[i];
@@ -84,7 +84,7 @@ static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
 }
 
 static const struct field_desc *find_field_by_name(const struct reg_desc *reg,
-	const char *name)
+		const char *name)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
 		const struct field_desc *field = &reg->fields[i];
@@ -97,10 +97,10 @@ static const struct field_desc *find_field_by_name(const struct reg_desc *reg,
 }
 
 static void readwriteprint(const struct rwmem_op *op,
-	uint64_t paddr, void *vaddr,
-	uint64_t offset,
-	unsigned width,
-		const struct reg_desc *reg)
+			   uint64_t paddr, void *vaddr,
+			   uint64_t offset,
+			   unsigned width,
+			   const struct reg_desc *reg)
 {
 	if (reg)
 		printq("%s ", reg->name);
@@ -155,7 +155,7 @@ static void readwriteprint(const struct rwmem_op *op,
 			for (unsigned i = 0; i < reg->num_fields; ++i) {
 				const struct field_desc *fd = &reg->fields[i];
 				print_field(fd->high, fd->low, reg, fd,
-					newval, userval, oldval, op);
+					    newval, userval, oldval, op);
 			}
 		}
 	} else {
@@ -165,7 +165,7 @@ static void readwriteprint(const struct rwmem_op *op,
 			fd = find_field_by_pos(reg, op->high, op->low);
 
 		print_field(op->high, op->low, reg, fd, newval, userval, oldval,
-			op);
+			    op);
 	}
 }
 
@@ -179,7 +179,7 @@ static void readprint_raw(void *vaddr, unsigned width)
 }
 
 static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
-	const char *regfile)
+		     const char *regfile)
 {
 	struct reg_desc *reg = NULL;
 
@@ -251,7 +251,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 			myerr("Field not found '%s'", arg->field);
 
 		if (fl >= rwmem_opts.regsize ||
-				fh >= rwmem_opts.regsize)
+		    fh >= rwmem_opts.regsize)
 			myerr("Field bits higher than register size");
 
 		op->low = fl;
@@ -272,7 +272,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 			myerr("Value does not fit into the register size");
 
 		if (op->field_valid &&
-				(value & ~GENMASK(op->high - op->low, 0)))
+		    (value & ~GENMASK(op->high - op->low, 0)))
 			myerr("Value does not fit into the field");
 
 		op->value = value;
@@ -281,7 +281,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 }
 
 static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
-	const char *regfile)
+		  const char *regfile)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
@@ -296,8 +296,8 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 	*/
 
 	void *mmap_base = mmap(0, mmap_len,
-			op->value_valid ? PROT_WRITE : PROT_READ,
-			MAP_SHARED, fd, mmap_offset);
+			       op->value_valid ? PROT_WRITE : PROT_READ,
+			       MAP_SHARED, fd, mmap_offset);
 
 	if (mmap_base == MAP_FAILED)
 		myerr2("failed to mmap");
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 	/* Open the file and mmap */
 
 	int fd = open(rwmem_opts.filename,
-			(read_only ? O_RDONLY : O_RDWR) | O_SYNC);
+		      (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	if (fd == -1)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);

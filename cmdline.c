@@ -13,27 +13,27 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-"usage: rwmem [options] <address>[:field][=value]\n"
-"\n"
-"	address		address to access:\n"
-"			<address>	single address\n"
-"			<start..end>	range with end address\n"
-"			<start+len>	range with length\n"
-"\n"
-"	field		bitfield (inclusive, start from 0):\n"
-"			<bit>		single bit\n"
-"			<high>:<low>	bitfield from high to low\n"
-"\n"
-"	value		value to be written\n"
-"\n"
-"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
-"	-f <file>	file to open (default: /dev/mem)\n"
-"	-w		write only mode\n"
-"	-b <address>	base address\n"
-"	-a <file>	aliases file\n"
-"	-r <file>	register set file\n"
-"	-h		show this help\n"
-);
+		"usage: rwmem [options] <address>[:field][=value]\n"
+		"\n"
+		"	address		address to access:\n"
+		"			<address>	single address\n"
+		"			<start..end>	range with end address\n"
+		"			<start+len>	range with length\n"
+		"\n"
+		"	field		bitfield (inclusive, start from 0):\n"
+		"			<bit>		single bit\n"
+		"			<high>:<low>	bitfield from high to low\n"
+		"\n"
+		"	value		value to be written\n"
+		"\n"
+		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
+		"	-f <file>	file to open (default: /dev/mem)\n"
+		"	-w		write only mode\n"
+		"	-b <address>	base address\n"
+		"	-a <file>	aliases file\n"
+		"	-r <file>	register set file\n"
+		"	-h		show this help\n"
+	       );
 
 	exit(1);
 }
