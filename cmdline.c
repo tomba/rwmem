@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include "rwmem.h"
 
@@ -26,13 +27,13 @@ static void usage()
 		"\n"
 		"	value		value to be written\n"
 		"\n"
+		"	-h		show this help\n"
 		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
-		"	-f <file>	file to open (default: /dev/mem)\n"
 		"	-w		write only mode\n"
 		"	-b <address>	base address\n"
-		"	-a <file>	aliases file\n"
-		"	-r <file>	register set file\n"
-		"	-h		show this help\n"
+		"	--file <file>	file to open (default: /dev/mem)\n"
+		"	--conf <file>	config file (default: ~/.rwmem/rwmemrc)\n"
+		"	--regs <file>	register set file\n"
 	       );
 
 	exit(1);
@@ -78,17 +79,51 @@ static void parse_arg(char *str, struct rwmem_opts_arg *arg)
 		usage();
 }
 
+static void parse_longopt(int idx)
+{
+	switch (idx) {
+	case 0:	/* file */
+		rwmem_opts.filename = optarg;
+		break;
+	case 1:	/* regs */
+		rwmem_opts.regfile = optarg;
+		break;
+	case 2:	/* conf */
+		rwmem_opts.aliasfile = optarg;
+		break;
+	default:
+		usage();
+	}
+}
+
 void parse_cmdline(int argc, char **argv)
 {
-	int opt;
-
 	memset(&rwmem_opts, 0, sizeof(rwmem_opts));
 
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 
-	while ((opt = getopt(argc, argv, "s:f:wb:a:r:hRq")) != -1) {
-		switch (opt) {
+	int c;
+
+	while (1) {
+		int option_index = 0;
+		static const struct option lopts[] = {
+			{"file", required_argument, 0, 0 },
+			{"regs", required_argument, 0, 0 },
+			{"conf", required_argument, 0, 0 },
+			{0, 0, 0, 0 }
+		};
+
+		c = getopt_long(argc, argv, "s:wb:hRq",
+				lopts, &option_index);
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 0:
+			parse_longopt(option_index);
+			break;
+
 		case 's': {
 			int rs = atoi(optarg);
 
@@ -98,20 +133,11 @@ void parse_cmdline(int argc, char **argv)
 			rwmem_opts.regsize = rs;
 			break;
 		}
-		case 'f':
-			rwmem_opts.filename = optarg;
-			break;
 		case 'w':
 			rwmem_opts.write_only = true;
 			break;
 		case 'b':
 			rwmem_opts.base = optarg;
-			break;
-		case 'a':
-			rwmem_opts.aliasfile = optarg;
-			break;
-		case 'r':
-			rwmem_opts.regfile = optarg;
 			break;
 		case 'R':
 			rwmem_opts.raw_output = true;
