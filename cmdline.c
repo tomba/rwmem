@@ -30,9 +30,9 @@ static void usage()
 		"	-h		show this help\n"
 		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
 		"	-w <mode>	write mode: w, rw or rwr (default)\n"
+		"	-p <mode>	print mode: q, r or rf (default)\n"
 		"	-b <address>	base address\n"
 		"	-R		raw output mode\n"
-		"	-q		quiet\n"
 		"	--file <file>	file to open (default: /dev/mem)\n"
 		"	--conf <file>	config file (default: ~/.rwmem/rwmemrc)\n"
 		"	--regs <file>	register set file\n"
@@ -105,6 +105,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 	rwmem_opts.write_mode = WRITE_MODE_RWR;
+	rwmem_opts.print_mode = PRINT_MODE_REG_FIELDS;
 
 	int c;
 
@@ -117,7 +118,7 @@ void parse_cmdline(int argc, char **argv)
 			{0, 0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "s:w:b:hRq",
+		c = getopt_long(argc, argv, "s:w:b:hRp:",
 				lopts, &option_index);
 		if (c == -1)
 			break;
@@ -152,8 +153,15 @@ void parse_cmdline(int argc, char **argv)
 		case 'R':
 			rwmem_opts.raw_output = true;
 			break;
-		case 'q':
-			rwmem_opts.quiet = true;
+		case 'p':
+			if (strcmp(optarg, "q") == 0)
+				rwmem_opts.print_mode = PRINT_MODE_QUIET;
+			else if (strcmp(optarg, "r") == 0)
+				rwmem_opts.print_mode = PRINT_MODE_REG;
+			else if (strcmp(optarg, "rf") == 0)
+				rwmem_opts.print_mode = PRINT_MODE_REG_FIELDS;
+			else
+				ERR("illegal print mode '%s'", optarg);
 			break;
 		case 'h':
 		default:

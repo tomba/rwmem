@@ -33,7 +33,11 @@
 
 #include "rwmem.h"
 
-#define printq(format...) do { if (!rwmem_opts.quiet) printf(format); } while(0)
+#define printq(format...) \
+	do { \
+		if (rwmem_opts.print_mode != PRINT_MODE_QUIET) \
+		printf(format); \
+	} while(0)
 
 static void print_field(unsigned high, unsigned low,
 			const struct reg_desc *reg, const struct field_desc *fd,
@@ -149,6 +153,9 @@ static void readwriteprint(const struct rwmem_op *op,
 	}
 
 	printq("\n");
+
+	if (rwmem_opts.print_mode != PRINT_MODE_REG_FIELDS)
+		return;
 
 	if (!op->field_valid) {
 		if (reg) {

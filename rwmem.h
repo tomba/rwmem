@@ -10,6 +10,12 @@ enum write_mode {
 	WRITE_MODE_RWR,
 };
 
+enum print_mode {
+	PRINT_MODE_QUIET,
+	PRINT_MODE_REG,
+	PRINT_MODE_REG_FIELDS,
+};
+
 struct field_desc {
 	unsigned low;
 	unsigned high;
@@ -55,8 +61,8 @@ struct rwmem_opts {
 	const char *filename;
 	unsigned regsize;
 	enum write_mode write_mode;
+	enum print_mode print_mode;
 	bool raw_output;
-	bool quiet;
 
 	const char *base;
 	const char *aliasfile;
