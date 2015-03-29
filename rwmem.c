@@ -58,12 +58,12 @@ static void print_field(unsigned high, unsigned low,
 
 	unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
 
-	if (!rwmem_opts.write_only)
+	if (rwmem_opts.write_mode != WRITE_MODE_W)
 		printq("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
 
 	if (op->value_valid) {
 		printq(":= %-#*" PRIx64 " ", access_width / 4 + 2, userval);
-		if (!rwmem_opts.write_only)
+		if (rwmem_opts.write_mode == WRITE_MODE_RWR)
 			printq("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
 	}
 
@@ -113,7 +113,7 @@ static void readwriteprint(const struct rwmem_op *op,
 
 	oldval = userval = newval = 0;
 
-	if (!rwmem_opts.write_only) {
+	if (rwmem_opts.write_mode != WRITE_MODE_W) {
 		oldval = readmem(vaddr, width);
 
 		printq("= %0#*" PRIx64 " ", width / 4 + 2, oldval);
@@ -141,7 +141,7 @@ static void readwriteprint(const struct rwmem_op *op,
 		newval = v;
 		userval = v;
 
-		if (!rwmem_opts.write_only) {
+		if (rwmem_opts.write_mode == WRITE_MODE_RWR) {
 			newval = readmem(vaddr, width);
 
 			printq("-> %0#*" PRIx64 " ", width / 4 + 2, newval);

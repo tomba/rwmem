@@ -29,7 +29,7 @@ static void usage()
 		"\n"
 		"	-h		show this help\n"
 		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
-		"	-w		write only mode\n"
+		"	-w <mode>	write mode: w, rw or rwr (default)\n"
 		"	-b <address>	base address\n"
 		"	-R		raw output mode\n"
 		"	-q		quiet\n"
@@ -104,6 +104,7 @@ void parse_cmdline(int argc, char **argv)
 
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
+	rwmem_opts.write_mode = WRITE_MODE_RWR;
 
 	int c;
 
@@ -116,7 +117,7 @@ void parse_cmdline(int argc, char **argv)
 			{0, 0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "s:wb:hRq",
+		c = getopt_long(argc, argv, "s:w:b:hRq",
 				lopts, &option_index);
 		if (c == -1)
 			break;
@@ -136,7 +137,14 @@ void parse_cmdline(int argc, char **argv)
 			break;
 		}
 		case 'w':
-			rwmem_opts.write_only = true;
+			if (strcmp(optarg, "w") == 0)
+				rwmem_opts.write_mode = WRITE_MODE_W;
+			else if (strcmp(optarg, "rw") == 0)
+				rwmem_opts.write_mode = WRITE_MODE_RW;
+			else if (strcmp(optarg, "rwr") == 0)
+				rwmem_opts.write_mode = WRITE_MODE_RWR;
+			else
+				ERR("illegal write mode '%s'", optarg);
 			break;
 		case 'b':
 			rwmem_opts.base = optarg;
