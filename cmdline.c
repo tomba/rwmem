@@ -31,6 +31,8 @@ static void usage()
 		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
 		"	-w		write only mode\n"
 		"	-b <address>	base address\n"
+		"	-R		raw output mode\n"
+		"	-q		quiet\n"
 		"	--file <file>	file to open (default: /dev/mem)\n"
 		"	--conf <file>	config file (default: ~/.rwmem/rwmemrc)\n"
 		"	--regs <file>	register set file\n"
