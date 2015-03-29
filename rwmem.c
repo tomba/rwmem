@@ -67,7 +67,7 @@ static void print_field(unsigned high, unsigned low,
 			printq("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
 	}
 
-	puts("");
+	printq("\n");
 }
 
 static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
