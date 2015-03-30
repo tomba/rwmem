@@ -14,7 +14,7 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-		"usage: rwmem [options] <address>[:field][=value]\n"
+		"usage: rwmem [options] <address>[:field][=value] [<address>[:field][=value]...]\n"
 		"\n"
 		"	address		address to access:\n"
 		"			<address>	single address\n"

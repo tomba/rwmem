@@ -6,17 +6,19 @@ Copyright (C) 2015 Tomi Valkeinen
 
 rwmem is a small tool to read and write arbitrary locations in a file.
 Normally, this file is /dev/mem, so the tool reads/writes memory, but the file
-can be any file that can be memory mapped.
+can be any file that can be memory mapped (e.g. a normal file, /dev/fb0, etc.).
 
 rwmem supports accessing 32/64 bit addresses, and accessing 8/16/32/64 bit
 memory locations.
 
-rwmem also supports bitfields, i.e. accessing only a subset of the memory
-location.
+rwmem also supports bitfields (i.e. accessing only a subset of the memory
+location), and operations on address ranges.
+
+rwmem has support for using symbolic names for addresses and bitfields.
 
 == Usage ==
 
-usage: rwmem [options] <address>[:field][=value]
+usage: rwmem [options] <address>[:field][=value] [<address>[:field][=value]...]
 
 	address		address to access:
 			<address>	single address
