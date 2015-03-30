@@ -1,6 +1,6 @@
 == rwmem - A small tool to read/write memory ==
 
-Copyright (C) 2013 Tomi Valkeinen
+Copyright (C) 2015 Tomi Valkeinen
 
 == Intro ==
 
@@ -16,20 +16,28 @@ location.
 
 == Usage ==
 
-usage: rwmem [options] <address>[:high[:low]] [value]
+usage: rwmem [options] <address>[:field][=value]
 
- <address>      address to access
- [high]         bitfield's high bit number (inclusive, start from 0)
- [low]          bitfield's low bit number (inclusive, start from 0)
- [value]        value to be written
+	address		address to access:
+			<address>	single address
+			<start..end>	range with end address
+			<start+len>	range with length
 
- -s <size>      size of the memory access: 8/16/32/64 (default: 32)
- -f <file>      file to open (default: /dev/mem)
- -w             write only mode
- -b <address>   base address
- -r <file>      register set file
- -c             show comments
- -d             show default value
+	field		bitfield (inclusive, start from 0):
+			<bit>		single bit
+			<high>:<low>	bitfield from high to low
+
+	value		value to be written
+
+	-h		show this help
+	-s <size>	size of the memory access: 8/16/32/64 (default: 32)
+	-w <mode>	write mode: w, rw or rwr (default)
+	-p <mode>	print mode: q, r or rf (default)
+	-b <address>	base address
+	-R		raw output mode
+	--file <file>	file to open (default: /dev/mem)
+	--conf <file>	config file (default: ~/.rwmem/rwmemrc)
+	--regs <file>	register set file
 
 == Examples ==
 
@@ -47,15 +55,15 @@ Show what's in memory location 0x12345678's bits 7-4 (i.e. bits 4, 5, 6, 7)
 
 Write 0xbaadf00d to memory location 0x12345678
 
-	$ rwmem 0x12345678 0xbaadf00d
+	$ rwmem 0x12345678=0xbaadf00d
 
 Modify memory location 0x12345678's bits 7-4 to 0xf
 
-	$ rwmem 0x12345678 0xbaadf00d:7:4 0xf
+	$ rwmem 0x12345678 0xbaadf00d:7:4=0xf
 
 Show the byte at location 0x10 in file edid.raw
 
-	$ rwmem -f edid.bin -s 8 0x10
+	$ rwmem --file edid.bin -s 8 0x10
 
 Show SYSCONFIG register in DISPC
 
@@ -63,11 +71,47 @@ Show SYSCONFIG register in DISPC
 
 Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
 
-	$ rwmem -b dispc SYSCONFIG:MIDLEMODE 0x1
+	$ rwmem -b dispc SYSCONFIG:MIDLEMODE=0x1
+
+Read binary dump of DISPC to dispc.bin file
+
+	$ rwmem -b dispc -R 0x0..0x1000 > dispc.bin
 
 Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
-	$ rwmem -f dispc.bin -r dispc.regs SYSCONFIG
+	$ rwmem --file dispc.bin --regs dispc.regs SYSCONFIG
+
+Set /dev/fb0 to red
+
+	$ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xffff00
+
+== Write mode ==
+
+The write mode parameter affects how rwmem handles writing.
+
+Write mode 'w' means write-only. In this mode rwmem never reads from the
+address. This means that if you modify only certain bits with the bitfield
+operator, the rest of the bits will be set to 0.
+
+Write mode 'rw' means read-write. In this mode rwmem reads from the address,
+modifies the value, and writes it back.
+
+Write mode 'rwr' means read-write-read. This is the same as 'rw' except rwmem
+reads from the address again after writing for the purpose of showing the new
+value. This is the default mode.
+
+== Print mode ==
+
+The print mode parameter affects what rwmem will output.
+
+'q'  - quiet
+'r'  - print only register value, not individual fields
+'rf' - print register and fields (when available).
+
+== Raw output mode ==
+
+In raw output mode rwmem will copy the values it reads to stdout without any
+formatting. This can be used to get binary dumps of memory areas.
 
 == Register set files ==
 
@@ -86,11 +130,11 @@ three fields, HBP, HFP and HSW, and their bit locations.
 
 Thus, instead of using address '0x64:19:8' you can use 'TIMING_H1:HFP'.
 
-You can specify the register set file to use with -r option. You would normally
+You can specify the register set file to use with --regs option. You would normally
 combine that with option -b to specify the base address of the IP block. For
 example:
 
-$ rwmem -r dispc.regs -b 0x58001000 TIMING_H1:HFP
+$ rwmem --regs dispc.regs -b 0x58001000 TIMING_H1:HFP
 
 However, to simplify things, you can define symbolic base addresses in
 rwmem.cfg file. Adding the following line to rwmem.cfg:
@@ -104,8 +148,8 @@ $ rwmem -b dispc TIMING_H1:HFP
 
 == Register set file format ==
 
-<regname>,<offset>,<size>[,comment]
-<fieldname>,<high>,<low>[,<rw/ro/wo>[,<default-value>[,<comment>]]]
+<regname>,<offset>,<size>
+<fieldname>,<high>,<low>
 ... more fields ...
 empty line
 
