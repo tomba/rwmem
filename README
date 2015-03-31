@@ -85,7 +85,7 @@ Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
 Set /dev/fb0 to red
 
-	$ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xffff00
+	$ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xff0000
 
 == Write mode ==
 
