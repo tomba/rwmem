@@ -176,13 +176,13 @@ static void readwriteprint(const struct rwmem_op *op,
 	}
 }
 
-static void readprint_raw(void *vaddr, unsigned width)
+static int readprint_raw(void *vaddr, unsigned width)
 {
 	uint64_t v = readmem(vaddr, width);
 
 	width /= 8;
 
-	write(STDOUT_FILENO, &v, width);
+	return write(STDOUT_FILENO, &v, width);
 }
 
 static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
