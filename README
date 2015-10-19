@@ -61,7 +61,7 @@ Write 0xbaadf00d to memory location 0x12345678
 
 Modify memory location 0x12345678's bits 7-4 to 0xf
 
-	$ rwmem 0x12345678 0xbaadf00d:7:4=0xf
+	$ rwmem 0x12345678:7:4=0xf
 
 Show the byte at location 0x10 in file edid.raw
 
