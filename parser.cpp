@@ -37,7 +37,7 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 		fh = strtoul(parts[1], NULL, 0);
 		fl = strtoul(parts[2], NULL, 0);
 
-		size_t len = strlen(fd->name);
+		size_t len = fd->name.length();
 		if (len > reg->max_field_name_len)
 			reg->max_field_name_len = len;
 

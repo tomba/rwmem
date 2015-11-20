@@ -33,6 +33,8 @@
 
 #include "rwmem.h"
 
+using namespace std;
+
 #define printq(format...) \
 	do { \
 		if (rwmem_opts.print_mode != PrintMode::Quiet) \
@@ -51,7 +53,7 @@ static void print_field(unsigned high, unsigned low,
 	userval = (userval & mask) >> low;
 
 	if (fd)
-		printq("\t%-*s ", reg->max_field_name_len, fd->name);
+		printq("\t%-*s ", reg->max_field_name_len, fd->name.c_str());
 	else
 		printq("\t");
 
@@ -88,12 +90,12 @@ static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
 }
 
 static const struct field_desc *find_field_by_name(const struct reg_desc *reg,
-		const char *name)
+		const string& name)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
 		const struct field_desc *field = &reg->fields[i];
 
-		if (strcmp(name, field->name) == 0)
+		if (name == field->name)
 			return field;
 	}
 
@@ -107,7 +109,7 @@ static void readwriteprint(const struct rwmem_op *op,
 			   const struct reg_desc *reg)
 {
 	if (reg)
-		printq("%s ", reg->name);
+		printq("%s ", reg->name.c_str());
 
 	printq("%#" PRIx64 " ", paddr);
 	if (offset != paddr)

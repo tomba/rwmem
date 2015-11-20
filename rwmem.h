@@ -1,6 +1,7 @@
 #ifndef __RWMEM_H__
 #define __RWMEM_H__
 
+#include <string>
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -22,14 +23,14 @@ struct field_desc {
 	unsigned width;
 	uint64_t mask;
 
-	const char *name;
+	std::string name;
 };
 
 struct reg_desc {
 	uint64_t offset;
 	unsigned width;
 
-	const char *name;
+	std::string name;
 	unsigned num_fields;
 	struct field_desc fields[64];
 	unsigned max_field_name_len;
