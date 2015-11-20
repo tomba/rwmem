@@ -85,7 +85,6 @@ uint64_t readmem(void *addr, unsigned regsize);
 void writemem(void *addr, unsigned regsize, uint64_t value);
 
 char *strip(char *str);
-unsigned split_str(char *str, const char *delim, char **arr, unsigned num);
 
 void parse_cmdline(int argc, char **argv);
 

@@ -90,28 +90,6 @@ char *strip(char *str)
 	return str;
 }
 
-unsigned split_str(char *str, const char *delim, char **arr, unsigned num)
-{
-	char *token;
-	unsigned i;
-
-	str = strip(str);
-
-	for (i = 0; i < num; ++i) {
-		if (i == num - 1)
-			token = str;
-		else
-			token = strsep(&str, delim);
-
-		if (!token)
-			break;
-
-		arr[i] = token[0] ? token : NULL;
-	}
-
-	return i;
-}
-
 void split(const string &s, char delim, vector<string> &elems)
 {
 	stringstream ss(s);

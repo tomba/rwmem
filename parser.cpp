@@ -1,3 +1,4 @@
+#include <string>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -18,7 +19,6 @@ using namespace std;
 static void parse_reg_fields(FILE *f, RegDesc *reg)
 {
 	char str[1024];
-	int r;
 
 	vector<FieldDesc> fields;
 
@@ -28,17 +28,15 @@ static void parse_reg_fields(FILE *f, RegDesc *reg)
 		if (str[0] == 0 || isspace(str[0]))
 			break;
 
-		char *parts[3] = { 0 };
-
-		r = split_str(str, ",", parts, 3);
-		if (r != 3)
+		vector<string> parts = split(str, ',');
+		if (parts.size() != 3)
 			myerr("Failed to parse field description: '%s'", str);
 
 		FieldDesc fd;
 
 		fd.name = parts[0];
-		fh = strtoul(parts[1], NULL, 0);
-		fl = strtoul(parts[2], NULL, 0);
+		fh = stoul(parts[1], 0, 0);
+		fl = stoul(parts[2], 0, 0);
 
 		size_t len = fd.name.length();
 		if (len > reg->max_field_name_len)
@@ -82,13 +80,11 @@ static bool seek_to_regname(FILE *f, const char *regname)
 		if (!fgets(str, sizeof(str), f))
 			return false;
 
-		char *parts[3] = { 0 };
-
-		r = split_str(str, ",", parts, 3);
-		if (r != 3)
+		vector<string> parts = split(str, ',');
+		if (parts.size() != 3)
 			myerr("Failed to parse register description: '%s'", str);
 
-		if (strcmp(regname, parts[0]) == 0) {
+		if (parts[0] == regname) {
 			r = fsetpos(f, &pos);
 			if (r)
 				myerr2("fsetpos failed");
@@ -117,18 +113,15 @@ RegDesc *find_reg_by_name(const char *regfile, const char *regname)
 	if (!fgets(str, sizeof(str), f))
 		ERR("Failed to parse register");
 
-	char *parts[3] = { 0 };
-
-	int r = split_str(str, ",", parts, 3);
-
-	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
+	vector<string> parts = split(str, ',');
+	ERR_ON(parts.size() != 3, "Failed to parse register description: '%s'", str);
 
 	RegDesc *reg;
 	reg = (RegDesc *)malloc(sizeof(RegDesc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = parts[0];
-	reg->offset = strtoull(parts[1], NULL, 0);
-	reg->width = strtoul(parts[2], NULL, 0);
+	reg->offset = stoul(parts[1], 0, 0);
+	reg->width = stoul(parts[2], 0, 0);
 
 	parse_reg_fields(f, reg);
 
@@ -152,13 +145,11 @@ static bool seek_to_regaddr(FILE *f, uint64_t addr)
 		if (!fgets(str, sizeof(str), f))
 			return false;
 
-		char *parts[3] = { 0 };
-
-		r = split_str(str, ",", parts, 3);
-		if (r != 3)
+		vector<string> parts = split(str, ',');
+		if (parts.size() != 3)
 			myerr("Failed to parse register description: '%s'", str);
 
-		uint64_t a = strtoull(parts[1], NULL, 0);
+		uint64_t a = stoul(parts[1], 0, 0);
 
 		if (addr == a) {
 			r = fsetpos(f, &pos);
@@ -189,18 +180,15 @@ RegDesc *find_reg_by_address(const char *regfile, uint64_t addr)
 	if (!fgets(str, sizeof(str), f))
 		ERR("Failed to parse register");
 
-	char *parts[3] = { 0 };
-
-	int r = split_str(str, ",", parts, 3);
-
-	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
+	vector<string> parts = split(str, ',');
+	ERR_ON(parts.size() != 3, "Failed to parse register description: '%s'", str);
 
 	RegDesc *reg;
 	reg = (RegDesc *)malloc(sizeof(RegDesc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = parts[0];
-	reg->offset = strtoull(parts[1], NULL, 0);
-	reg->width = strtoul(parts[2], NULL, 0);
+	reg->offset = stoul(parts[1], 0, 0);
+	reg->width = stoul(parts[2], 0, 0);
 
 	parse_reg_fields(f, reg);
 
