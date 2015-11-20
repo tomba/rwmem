@@ -4,10 +4,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-enum write_mode {
-	WRITE_MODE_W,
-	WRITE_MODE_RW,
-	WRITE_MODE_RWR,
+enum class WriteMode {
+	Write,
+	ReadWrite,
+	ReadWriteRead,
 };
 
 enum print_mode {
@@ -60,7 +60,7 @@ struct rwmem_opts_arg {
 struct rwmem_opts {
 	const char *filename;
 	unsigned regsize;
-	enum write_mode write_mode;
+	WriteMode write_mode;
 	enum print_mode print_mode;
 	bool raw_output;
 

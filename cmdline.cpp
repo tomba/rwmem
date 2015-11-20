@@ -104,7 +104,7 @@ void parse_cmdline(int argc, char **argv)
 
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
-	rwmem_opts.write_mode = WRITE_MODE_RWR;
+	rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 	rwmem_opts.print_mode = PRINT_MODE_REG_FIELDS;
 
 	int c;
@@ -139,11 +139,11 @@ void parse_cmdline(int argc, char **argv)
 		}
 		case 'w':
 			if (strcmp(optarg, "w") == 0)
-				rwmem_opts.write_mode = WRITE_MODE_W;
+				rwmem_opts.write_mode = WriteMode::Write;
 			else if (strcmp(optarg, "rw") == 0)
-				rwmem_opts.write_mode = WRITE_MODE_RW;
+				rwmem_opts.write_mode = WriteMode::ReadWrite;
 			else if (strcmp(optarg, "rwr") == 0)
-				rwmem_opts.write_mode = WRITE_MODE_RWR;
+				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
 				ERR("illegal write mode '%s'", optarg);
 			break;
