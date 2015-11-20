@@ -126,7 +126,7 @@ RegDesc *find_reg_by_name(const char *regfile, const char *regname)
 	RegDesc *reg;
 	reg = (RegDesc *)malloc(sizeof(RegDesc));
 	memset(reg, 0, sizeof(*reg));
-	reg->name = strdup(parts[0]);
+	reg->name = parts[0];
 	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
 
@@ -198,7 +198,7 @@ RegDesc *find_reg_by_address(const char *regfile, uint64_t addr)
 	RegDesc *reg;
 	reg = (RegDesc *)malloc(sizeof(RegDesc));
 	memset(reg, 0, sizeof(*reg));
-	reg->name = strdup(parts[0]);
+	reg->name = parts[0];
 	reg->offset = strtoull(parts[1], NULL, 0);
 	reg->width = strtoul(parts[2], NULL, 0);
 
