@@ -1,3 +1,7 @@
+#include <string>
+#include <sstream>
+#include <vector>
+
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -6,6 +10,8 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
+
+using namespace std;
 
 __attribute__ ((noreturn))
 void myerr(const char* format, ... )
@@ -104,4 +110,20 @@ unsigned split_str(char *str, const char *delim, char **arr, unsigned num)
 	}
 
 	return i;
+}
+
+void split(const string &s, char delim, vector<string> &elems)
+{
+	stringstream ss(s);
+	string item;
+
+	while (getline(ss, item, delim))
+		elems.push_back(item);
+}
+
+vector<string> split(const string &s, char delim)
+{
+	vector<string> elems;
+	split(s, delim, elems);
+	return elems;
 }
