@@ -328,7 +328,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 			readwriteprint(op, paddr, vaddr, reg_offset, access_width, reg);
 
 		paddr += access_width / 8;
-		vaddr += access_width / 8;
+		vaddr = (uint8_t*)vaddr + access_width / 8;
 		reg_offset += access_width / 8;
 	}
 
@@ -358,7 +358,7 @@ int main(int argc, char **argv)
 
 	bool read_only = true;
 
-	struct rwmem_op *ops = malloc(sizeof(struct rwmem_op) * num_ops);
+	struct rwmem_op *ops = (struct rwmem_op *)malloc(sizeof(struct rwmem_op) * num_ops);
 	memset(ops, 0, sizeof(struct rwmem_op) * num_ops);
 	for (int i = 0; i < num_ops; ++i) {
 		const struct rwmem_opts_arg *arg = &rwmem_opts.args[i];

@@ -121,7 +121,7 @@ struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
 	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
 
 	struct reg_desc *reg;
-	reg = malloc(sizeof(struct reg_desc));
+	reg = (struct reg_desc *)malloc(sizeof(struct reg_desc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
@@ -193,7 +193,7 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
 	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
 
 	struct reg_desc *reg;
-	reg = malloc(sizeof(struct reg_desc));
+	reg = (struct reg_desc *)malloc(sizeof(struct reg_desc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);

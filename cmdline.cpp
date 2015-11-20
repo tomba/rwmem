@@ -173,7 +173,7 @@ void parse_cmdline(int argc, char **argv)
 		usage();
 
 	rwmem_opts.num_args = argc - optind;
-	rwmem_opts.args = calloc(rwmem_opts.num_args, sizeof(struct rwmem_opts_arg));
+	rwmem_opts.args = (struct rwmem_opts_arg *)calloc(rwmem_opts.num_args, sizeof(struct rwmem_opts_arg));
 
 	for (int i = 0; i < rwmem_opts.num_args; ++i)
 		parse_arg(argv[optind + i], &rwmem_opts.args[i]);
