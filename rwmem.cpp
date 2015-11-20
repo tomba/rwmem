@@ -44,7 +44,7 @@ using namespace std;
 static void print_field(unsigned high, unsigned low,
 			const RegDesc *reg, const FieldDesc *fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
-			const struct rwmem_op *op)
+			const RwmemOp *op)
 {
 	uint64_t mask = GENMASK(high, low);
 
@@ -102,7 +102,7 @@ static const FieldDesc *find_field_by_name(const RegDesc *reg,
 	return NULL;
 }
 
-static void readwriteprint(const struct rwmem_op *op,
+static void readwriteprint(const RwmemOp *op,
 			   uint64_t paddr, void *vaddr,
 			   uint64_t offset,
 			   unsigned width,
@@ -187,7 +187,7 @@ static int readprint_raw(void *vaddr, unsigned width)
 	return write(STDOUT_FILENO, &v, width);
 }
 
-static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
+static void parse_op(const struct rwmem_opts_arg *arg, RwmemOp *op,
 		     const char *regfile)
 {
 	RegDesc *reg = NULL;
@@ -289,7 +289,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 	}
 }
 
-static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
+static void do_op(int fd, uint64_t base, const RwmemOp *op,
 		  const char *regfile)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
@@ -360,11 +360,11 @@ int main(int argc, char **argv)
 
 	bool read_only = true;
 
-	struct rwmem_op *ops = (struct rwmem_op *)malloc(sizeof(struct rwmem_op) * num_ops);
-	memset(ops, 0, sizeof(struct rwmem_op) * num_ops);
+	RwmemOp *ops = (RwmemOp *)malloc(sizeof(RwmemOp) * num_ops);
+	memset(ops, 0, sizeof(RwmemOp) * num_ops);
 	for (int i = 0; i < num_ops; ++i) {
 		const struct rwmem_opts_arg *arg = &rwmem_opts.args[i];
-		struct rwmem_op *op = &ops[i];
+		RwmemOp *op = &ops[i];
 
 		parse_op(arg, op, regfile);
 
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);
 
 	for (int i = 0; i < num_ops; ++i) {
-		struct rwmem_op *op = &ops[i];
+		RwmemOp *op = &ops[i];
 
 		do_op(fd, base, op, regfile);
 	}

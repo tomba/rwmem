@@ -36,7 +36,7 @@ struct RegDesc {
 	unsigned max_field_name_len;
 };
 
-struct rwmem_op {
+struct RwmemOp {
 	uint64_t address;
 
 	bool range_valid;
