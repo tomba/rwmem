@@ -42,7 +42,7 @@ using namespace std;
 	} while(0)
 
 static void print_field(unsigned high, unsigned low,
-			const struct reg_desc *reg, const FieldDesc *fd,
+			const RegDesc *reg, const FieldDesc *fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
 			const struct rwmem_op *op)
 {
@@ -76,7 +76,7 @@ static void print_field(unsigned high, unsigned low,
 	printq("\n");
 }
 
-static const FieldDesc *find_field_by_pos(const struct reg_desc *reg,
+static const FieldDesc *find_field_by_pos(const RegDesc *reg,
 		unsigned high, unsigned low)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
@@ -89,7 +89,7 @@ static const FieldDesc *find_field_by_pos(const struct reg_desc *reg,
 	return NULL;
 }
 
-static const FieldDesc *find_field_by_name(const struct reg_desc *reg,
+static const FieldDesc *find_field_by_name(const RegDesc *reg,
 		const string& name)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
@@ -106,7 +106,7 @@ static void readwriteprint(const struct rwmem_op *op,
 			   uint64_t paddr, void *vaddr,
 			   uint64_t offset,
 			   unsigned width,
-			   const struct reg_desc *reg)
+			   const RegDesc *reg)
 {
 	if (reg)
 		printq("%s ", reg->name.c_str());
@@ -190,7 +190,7 @@ static int readprint_raw(void *vaddr, unsigned width)
 static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 		     const char *regfile)
 {
-	struct reg_desc *reg = NULL;
+	RegDesc *reg = NULL;
 
 	/* Parse address */
 
@@ -317,7 +317,7 @@ static void do_op(int fd, uint64_t base, const struct rwmem_op *op,
 	uint64_t end_reg_offset = reg_offset + op->range;
 
 	while (reg_offset < end_reg_offset) {
-		struct reg_desc *reg = NULL;
+		RegDesc *reg = NULL;
 
 		if (regfile)
 			reg = find_reg_by_address(regfile, reg_offset);

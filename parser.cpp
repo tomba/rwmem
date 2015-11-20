@@ -13,7 +13,7 @@
 
 #include "rwmem.h"
 
-static void parse_reg_fields(FILE *f, struct reg_desc *reg)
+static void parse_reg_fields(FILE *f, RegDesc *reg)
 {
 	char str[1024];
 	unsigned field_num = 0;
@@ -100,7 +100,7 @@ static bool seek_to_regname(FILE *f, const char *regname)
 	return false;
 }
 
-struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
+RegDesc *find_reg_by_name(const char *regfile, const char *regname)
 {
 	char str[1024];
 
@@ -120,8 +120,8 @@ struct reg_desc *find_reg_by_name(const char *regfile, const char *regname)
 
 	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
 
-	struct reg_desc *reg;
-	reg = (struct reg_desc *)malloc(sizeof(struct reg_desc));
+	RegDesc *reg;
+	reg = (RegDesc *)malloc(sizeof(RegDesc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
@@ -172,7 +172,7 @@ static bool seek_to_regaddr(FILE *f, uint64_t addr)
 	return false;
 }
 
-struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
+RegDesc *find_reg_by_address(const char *regfile, uint64_t addr)
 {
 	char str[1024];
 
@@ -192,8 +192,8 @@ struct reg_desc *find_reg_by_address(const char *regfile, uint64_t addr)
 
 	ERR_ON(r != 3, "Failed to parse register description: '%s'", str);
 
-	struct reg_desc *reg;
-	reg = (struct reg_desc *)malloc(sizeof(struct reg_desc));
+	RegDesc *reg;
+	reg = (RegDesc *)malloc(sizeof(RegDesc));
 	memset(reg, 0, sizeof(*reg));
 	reg->name = strdup(parts[0]);
 	reg->offset = strtoull(parts[1], NULL, 0);
