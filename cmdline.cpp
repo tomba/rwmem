@@ -105,7 +105,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.filename = "/dev/mem";
 	rwmem_opts.regsize = 32;
 	rwmem_opts.write_mode = WriteMode::ReadWriteRead;
-	rwmem_opts.print_mode = PRINT_MODE_REG_FIELDS;
+	rwmem_opts.print_mode = PrintMode::RegFields;
 
 	int c;
 
@@ -155,11 +155,11 @@ void parse_cmdline(int argc, char **argv)
 			break;
 		case 'p':
 			if (strcmp(optarg, "q") == 0)
-				rwmem_opts.print_mode = PRINT_MODE_QUIET;
+				rwmem_opts.print_mode = PrintMode::Quiet;
 			else if (strcmp(optarg, "r") == 0)
-				rwmem_opts.print_mode = PRINT_MODE_REG;
+				rwmem_opts.print_mode = PrintMode::Reg;
 			else if (strcmp(optarg, "rf") == 0)
-				rwmem_opts.print_mode = PRINT_MODE_REG_FIELDS;
+				rwmem_opts.print_mode = PrintMode::RegFields;
 			else
 				ERR("illegal print mode '%s'", optarg);
 			break;

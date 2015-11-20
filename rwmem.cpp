@@ -35,7 +35,7 @@
 
 #define printq(format...) \
 	do { \
-		if (rwmem_opts.print_mode != PRINT_MODE_QUIET) \
+		if (rwmem_opts.print_mode != PrintMode::Quiet) \
 		printf(format); \
 	} while(0)
 
@@ -154,7 +154,7 @@ static void readwriteprint(const struct rwmem_op *op,
 
 	printq("\n");
 
-	if (rwmem_opts.print_mode != PRINT_MODE_REG_FIELDS)
+	if (rwmem_opts.print_mode != PrintMode::RegFields)
 		return;
 
 	if (!op->field_valid) {

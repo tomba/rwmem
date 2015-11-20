@@ -10,10 +10,10 @@ enum class WriteMode {
 	ReadWriteRead,
 };
 
-enum print_mode {
-	PRINT_MODE_QUIET,
-	PRINT_MODE_REG,
-	PRINT_MODE_REG_FIELDS,
+enum class PrintMode{
+	Quiet,
+	Reg,
+	RegFields,
 };
 
 struct field_desc {
@@ -61,7 +61,7 @@ struct rwmem_opts {
 	const char *filename;
 	unsigned regsize;
 	WriteMode write_mode;
-	enum print_mode print_mode;
+	PrintMode print_mode;
 	bool raw_output;
 
 	const char *base;
