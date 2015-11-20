@@ -31,7 +31,7 @@ static void parse_reg_fields(FILE *f, struct reg_desc *reg)
 		if (r != 3)
 			myerr("Failed to parse field description: '%s'", str);
 
-		struct field_desc *fd = &reg->fields[field_num];
+		FieldDesc *fd = &reg->fields[field_num];
 
 		fd->name = strdup(parts[0]);
 		fh = strtoul(parts[1], NULL, 0);

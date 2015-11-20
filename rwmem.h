@@ -17,7 +17,7 @@ enum class PrintMode{
 	RegFields,
 };
 
-struct field_desc {
+struct FieldDesc {
 	unsigned low;
 	unsigned high;
 	unsigned width;
@@ -32,7 +32,7 @@ struct reg_desc {
 
 	std::string name;
 	unsigned num_fields;
-	struct field_desc fields[64];
+	FieldDesc fields[64];
 	unsigned max_field_name_len;
 };
 

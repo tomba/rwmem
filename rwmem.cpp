@@ -42,7 +42,7 @@ using namespace std;
 	} while(0)
 
 static void print_field(unsigned high, unsigned low,
-			const struct reg_desc *reg, const struct field_desc *fd,
+			const struct reg_desc *reg, const FieldDesc *fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
 			const struct rwmem_op *op)
 {
@@ -76,11 +76,11 @@ static void print_field(unsigned high, unsigned low,
 	printq("\n");
 }
 
-static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
+static const FieldDesc *find_field_by_pos(const struct reg_desc *reg,
 		unsigned high, unsigned low)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
-		const struct field_desc *field = &reg->fields[i];
+		const FieldDesc *field = &reg->fields[i];
 
 		if (low == field->low && high == field->high)
 			return field;
@@ -89,11 +89,11 @@ static const struct field_desc *find_field_by_pos(const struct reg_desc *reg,
 	return NULL;
 }
 
-static const struct field_desc *find_field_by_name(const struct reg_desc *reg,
+static const FieldDesc *find_field_by_name(const struct reg_desc *reg,
 		const string& name)
 {
 	for (unsigned i = 0; i < reg->num_fields; ++i) {
-		const struct field_desc *field = &reg->fields[i];
+		const FieldDesc *field = &reg->fields[i];
 
 		if (name == field->name)
 			return field;
@@ -162,13 +162,13 @@ static void readwriteprint(const struct rwmem_op *op,
 	if (!op->field_valid) {
 		if (reg) {
 			for (unsigned i = 0; i < reg->num_fields; ++i) {
-				const struct field_desc *fd = &reg->fields[i];
+				const FieldDesc *fd = &reg->fields[i];
 				print_field(fd->high, fd->low, reg, fd,
 					    newval, userval, oldval, op);
 			}
 		}
 	} else {
-		const struct field_desc *fd = NULL;
+		const FieldDesc *fd = NULL;
 
 		if (reg)
 			fd = find_field_by_pos(reg, op->high, op->low);
@@ -245,7 +245,7 @@ static void parse_op(const struct rwmem_opts_arg *arg, struct rwmem_op *op,
 		}
 
 		if (!ok) {
-			const struct field_desc *field;
+			const FieldDesc *field;
 
 			field = find_field_by_name(reg, arg->field);
 
