@@ -79,11 +79,9 @@ static void print_field(unsigned high, unsigned low,
 static const FieldDesc *find_field_by_pos(const RegDesc *reg,
 		unsigned high, unsigned low)
 {
-	for (unsigned i = 0; i < reg->num_fields; ++i) {
-		const FieldDesc *field = &reg->fields[i];
-
-		if (low == field->low && high == field->high)
-			return field;
+	for (const FieldDesc& field : reg->fields) {
+		if (low == field.low && high == field.high)
+			return &field;
 	}
 
 	return NULL;
@@ -92,11 +90,9 @@ static const FieldDesc *find_field_by_pos(const RegDesc *reg,
 static const FieldDesc *find_field_by_name(const RegDesc *reg,
 		const string& name)
 {
-	for (unsigned i = 0; i < reg->num_fields; ++i) {
-		const FieldDesc *field = &reg->fields[i];
-
-		if (name == field->name)
-			return field;
+	for (const FieldDesc& field : reg->fields) {
+		if (name == field.name)
+			return &field;
 	}
 
 	return NULL;
@@ -161,9 +157,8 @@ static void readwriteprint(const RwmemOp *op,
 
 	if (!op->field_valid) {
 		if (reg) {
-			for (unsigned i = 0; i < reg->num_fields; ++i) {
-				const FieldDesc *fd = &reg->fields[i];
-				print_field(fd->high, fd->low, reg, fd,
+			for (const FieldDesc& fd : reg->fields) {
+				print_field(fd.high, fd.low, reg, &fd,
 					    newval, userval, oldval, op);
 			}
 		}

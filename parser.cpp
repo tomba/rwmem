@@ -13,11 +13,14 @@
 
 #include "rwmem.h"
 
+using namespace std;
+
 static void parse_reg_fields(FILE *f, RegDesc *reg)
 {
 	char str[1024];
-	unsigned field_num = 0;
 	int r;
+
+	vector<FieldDesc> fields;
 
 	while (fgets(str, sizeof(str), f)) {
 		unsigned fh, fl;
@@ -31,25 +34,25 @@ static void parse_reg_fields(FILE *f, RegDesc *reg)
 		if (r != 3)
 			myerr("Failed to parse field description: '%s'", str);
 
-		FieldDesc *fd = &reg->fields[field_num];
+		FieldDesc fd;
 
-		fd->name = strdup(parts[0]);
+		fd.name = parts[0];
 		fh = strtoul(parts[1], NULL, 0);
 		fl = strtoul(parts[2], NULL, 0);
 
-		size_t len = fd->name.length();
+		size_t len = fd.name.length();
 		if (len > reg->max_field_name_len)
 			reg->max_field_name_len = len;
 
-		fd->low = fl;
-		fd->high = fh;
-		fd->width = fh - fl + 1;
-		fd->mask = GENMASK(fh, fl);
+		fd.low = fl;
+		fd.high = fh;
+		fd.width = fh - fl + 1;
+		fd.mask = GENMASK(fh, fl);
 
-		field_num++;
+		fields.push_back(fd);
 	}
 
-	reg->num_fields = field_num;
+	reg->fields = fields;
 }
 
 static bool seek_to_next_reg(FILE *f)

@@ -2,6 +2,7 @@
 #define __RWMEM_H__
 
 #include <string>
+#include <vector>
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -31,8 +32,7 @@ struct RegDesc {
 	unsigned width;
 
 	std::string name;
-	unsigned num_fields;
-	FieldDesc fields[64];
+	std::vector<FieldDesc> fields;
 	unsigned max_field_name_len;
 };
 
