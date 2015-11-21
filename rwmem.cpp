@@ -355,8 +355,9 @@ int main(int argc, char **argv)
 
 	bool read_only = true;
 
-	RwmemOp *ops = (RwmemOp *)malloc(sizeof(RwmemOp) * num_ops);
-	memset(ops, 0, sizeof(RwmemOp) * num_ops);
+	vector<RwmemOp> ops;
+	ops.resize(num_ops);
+
 	for (int i = 0; i < num_ops; ++i) {
 		const RwmemOptsArg *arg = &rwmem_opts.args[i];
 		RwmemOp *op = &ops[i];
