@@ -8,7 +8,7 @@
 
 #include "rwmem.h"
 
-struct rwmem_opts rwmem_opts;
+RwmemOpts rwmem_opts;
 
 __attribute__ ((noreturn))
 static void usage()

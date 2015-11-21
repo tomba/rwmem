@@ -58,7 +58,7 @@ struct RwmemOptsArg {
 	bool range_is_offset;
 };
 
-struct rwmem_opts {
+struct RwmemOpts {
 	const char *filename;
 	unsigned regsize;
 	WriteMode write_mode;
@@ -73,7 +73,7 @@ struct rwmem_opts {
 	RwmemOptsArg *args;
 };
 
-extern struct rwmem_opts rwmem_opts;
+extern RwmemOpts rwmem_opts;
 
 __attribute__ ((noreturn))
 void myerr(const char* format, ... );
