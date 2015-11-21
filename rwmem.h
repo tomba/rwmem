@@ -69,8 +69,7 @@ struct RwmemOpts {
 	const char *aliasfile;
 	const char *regfile;
 
-	int num_args;
-	RwmemOptsArg *args;
+	std::vector<RwmemOptsArg> args;
 };
 
 extern RwmemOpts rwmem_opts;

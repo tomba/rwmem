@@ -351,7 +351,7 @@ int main(int argc, char **argv)
 	if (rwmem_opts.regfile)
 		regfile = rwmem_opts.regfile;
 
-	int num_ops = rwmem_opts.num_args;
+	int num_ops = rwmem_opts.args.size();
 
 	bool read_only = true;
 
