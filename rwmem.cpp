@@ -182,7 +182,7 @@ static int readprint_raw(void *vaddr, unsigned width)
 	return write(STDOUT_FILENO, &v, width);
 }
 
-static void parse_op(const struct rwmem_opts_arg *arg, RwmemOp *op,
+static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 		     const char *regfile)
 {
 	RegDesc *reg = NULL;
@@ -358,7 +358,7 @@ int main(int argc, char **argv)
 	RwmemOp *ops = (RwmemOp *)malloc(sizeof(RwmemOp) * num_ops);
 	memset(ops, 0, sizeof(RwmemOp) * num_ops);
 	for (int i = 0; i < num_ops; ++i) {
-		const struct rwmem_opts_arg *arg = &rwmem_opts.args[i];
+		const RwmemOptsArg *arg = &rwmem_opts.args[i];
 		RwmemOp *op = &ops[i];
 
 		parse_op(arg, op, regfile);

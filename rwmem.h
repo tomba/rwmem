@@ -49,7 +49,7 @@ struct RwmemOp {
 	uint64_t value;
 };
 
-struct rwmem_opts_arg {
+struct RwmemOptsArg {
 	const char *address;
 	const char *range;
 	const char *field;
@@ -70,7 +70,7 @@ struct rwmem_opts {
 	const char *regfile;
 
 	int num_args;
-	struct rwmem_opts_arg *args;
+	RwmemOptsArg *args;
 };
 
 extern struct rwmem_opts rwmem_opts;
