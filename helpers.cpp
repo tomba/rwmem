@@ -75,21 +75,6 @@ void writemem(void *addr, unsigned regsize, uint64_t value)
 	}
 }
 
-char *strip(char *str)
-{
-	while (isspace(*str))
-		str++;
-
-	size_t len = strlen(str);
-
-	while (isspace(*(str + len - 1)))
-		len--;
-
-	str[len] = 0;
-
-	return str;
-}
-
 void split(const string &s, char delim, vector<string> &elems)
 {
 	stringstream ss(s);

@@ -195,8 +195,6 @@ void myerr2(const char* format, ... );
 uint64_t readmem(void *addr, unsigned regsize);
 void writemem(void *addr, unsigned regsize, uint64_t value);
 
-char *strip(char *str);
-
 void parse_cmdline(int argc, char **argv);
 
 /* parser */
