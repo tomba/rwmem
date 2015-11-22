@@ -44,8 +44,6 @@ static void parse_reg_fields(FILE *f, RegDesc *reg)
 
 		fd.low = fl;
 		fd.high = fh;
-		fd.width = fh - fl + 1;
-		fd.mask = GENMASK(fh, fl);
 
 		fields.push_back(fd);
 	}

@@ -21,8 +21,6 @@ enum class PrintMode{
 struct FieldDesc {
 	unsigned low;
 	unsigned high;
-	unsigned width;
-	uint64_t mask;
 
 	std::string name;
 };
