@@ -145,7 +145,7 @@ static void readwriteprint(const RwmemOp *op,
 		unique_ptr<Field> field = nullptr;
 
 		if (reg)
-			field = reg->find_field_by_pos(op->high, op->low);
+			field = reg->find_field(op->high, op->low);
 
 		print_field(op->high, op->low, reg, field.get(), newval, userval, oldval,
 			    op);
@@ -175,7 +175,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 			if (!regfile)
 				ERR("Invalid address '%s'", arg->address);
 
-			reg = regfile->find_reg_by_name(arg->address);
+			reg = regfile->find_reg(arg->address);
 
 			ERR_ON(!reg, "Register not found '%s'", arg->address);
 			op->address = reg->offset();
@@ -220,7 +220,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 		}
 
 		if (!ok) {
-			unique_ptr<Field> field = reg->find_field_by_name(arg->field);
+			unique_ptr<Field> field = reg->find_field(arg->field);
 
 			if (field) {
 				fl = field->low();
@@ -293,7 +293,7 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 		unique_ptr<Register> reg = nullptr;
 
 		if (regfile)
-			reg = regfile->find_reg_by_offset(reg_offset);
+			reg = regfile->find_reg(reg_offset);
 
 		unsigned access_width = reg ? reg->size() : rwmem_opts.regsize;
 
@@ -391,18 +391,18 @@ RegFile::~RegFile()
 	munmap(m_data, m_size);
 }
 
-unique_ptr<Register> RegFile::find_reg_by_name(const char* name) const
+unique_ptr<Register> RegFile::find_reg(const char* name) const
 {
-	return m_ab->find_reg_by_name(name);
+	return m_ab->find_reg(name);
 }
 
-unique_ptr<Register> RegFile::find_reg_by_offset(uint64_t offset) const
+unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 {
-	return m_ab->find_reg_by_offset(offset);
+	return m_ab->find_reg(offset);
 }
 
 
-unique_ptr<Register> AddressBlock::find_reg_by_name(const char* name) const
+unique_ptr<Register> AddressBlock::find_reg(const char* name) const
 {
 	const RegisterData* rd = m_abd->first_reg();
 	const FieldData* fd = m_abd->first_field();
@@ -418,7 +418,7 @@ unique_ptr<Register> AddressBlock::find_reg_by_name(const char* name) const
 	return nullptr;
 }
 
-unique_ptr<Register> AddressBlock::find_reg_by_offset(uint64_t offset) const
+unique_ptr<Register> AddressBlock::find_reg(uint64_t offset) const
 {
 	const RegisterData* rd = m_abd->first_reg();
 	const FieldData* fd = m_abd->first_field();
@@ -436,7 +436,7 @@ unique_ptr<Register> AddressBlock::find_reg_by_offset(uint64_t offset) const
 
 
 
-unique_ptr<Field> Register::find_field_by_name(const char* name)
+unique_ptr<Field> Register::find_field(const char* name)
 {
 	const FieldData* fd = m_fd;
 	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
@@ -447,7 +447,7 @@ unique_ptr<Field> Register::find_field_by_name(const char* name)
 	return nullptr;
 }
 
-unique_ptr<Field> Register::find_field_by_pos(uint8_t high, uint8_t low)
+unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low)
 {
 	const FieldData* fd = m_fd;
 	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {

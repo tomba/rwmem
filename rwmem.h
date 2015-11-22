@@ -106,8 +106,8 @@ public:
 		return std::make_unique<Field>(*this, &m_fd[idx]);
 	}
 
-	std::unique_ptr<Field> find_field_by_name(const char* name);
-	std::unique_ptr<Field> find_field_by_pos(uint8_t high, uint8_t low);
+	std::unique_ptr<Field> find_field(const char* name);
+	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low);
 
 private:
 	const AddressBlock& m_ab;
@@ -124,8 +124,8 @@ public:
 
 	}
 
-	std::unique_ptr<Register> find_reg_by_name(const char* name) const;
-	std::unique_ptr<Register> find_reg_by_offset(uint64_t offset) const;
+	std::unique_ptr<Register> find_reg(const char* name) const;
+	std::unique_ptr<Register> find_reg(uint64_t offset) const;
 
 private:
 	const RegFile& m_regfile;
@@ -138,8 +138,8 @@ public:
 	RegFile(const char* filename);
 	~RegFile();
 
-	std::unique_ptr<Register> find_reg_by_name(const char* name) const;
-	std::unique_ptr<Register> find_reg_by_offset(uint64_t offset) const;
+	std::unique_ptr<Register> find_reg(const char* name) const;
+	std::unique_ptr<Register> find_reg(uint64_t offset) const;
 
 private:
 	const AddressBlock* m_ab;
