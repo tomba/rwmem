@@ -42,7 +42,7 @@ using namespace std;
 	} while(0)
 
 static void print_field(unsigned high, unsigned low,
-			const RegDesc *reg, const FieldDesc *fd,
+			Register* reg, Field* fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
 			const RwmemOp *op)
 {
@@ -53,7 +53,7 @@ static void print_field(unsigned high, unsigned low,
 	userval = (userval & mask) >> low;
 
 	if (fd)
-		printq("\t%-*s ", reg->max_field_name_len, fd->name.c_str());
+		printq("\t%-*s ", reg->max_field_name_len(), fd->name());
 	else
 		printq("\t");
 
@@ -62,7 +62,7 @@ static void print_field(unsigned high, unsigned low,
 	else
 		printq("%2d:%-2d = ", high, low);
 
-	unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
+	unsigned access_width = reg ? reg->size() : rwmem_opts.regsize;
 
 	if (rwmem_opts.write_mode != WriteMode::Write)
 		printq("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
@@ -76,36 +76,14 @@ static void print_field(unsigned high, unsigned low,
 	printq("\n");
 }
 
-static const FieldDesc *find_field_by_pos(const RegDesc *reg,
-		unsigned high, unsigned low)
-{
-	for (const FieldDesc& field : reg->fields) {
-		if (low == field.low && high == field.high)
-			return &field;
-	}
-
-	return NULL;
-}
-
-static const FieldDesc *find_field_by_name(const RegDesc *reg,
-		const string& name)
-{
-	for (const FieldDesc& field : reg->fields) {
-		if (name == field.name)
-			return &field;
-	}
-
-	return NULL;
-}
-
 static void readwriteprint(const RwmemOp *op,
 			   uint64_t paddr, void *vaddr,
 			   uint64_t offset,
 			   unsigned width,
-			   const RegDesc *reg)
+			   Register* reg)
 {
 	if (reg)
-		printq("%s ", reg->name.c_str());
+		printq("%s ", reg->name());
 
 	printq("%#" PRIx64 " ", paddr);
 	if (offset != paddr)
@@ -157,18 +135,19 @@ static void readwriteprint(const RwmemOp *op,
 
 	if (!op->field_valid) {
 		if (reg) {
-			for (const FieldDesc& fd : reg->fields) {
-				print_field(fd.high, fd.low, reg, &fd,
+			for (unsigned i = 0; i < reg->num_fields(); ++i) {
+				unique_ptr<Field> field = reg->field_by_index(i);
+				print_field(field->high(), field->low(), reg, field.get(),
 					    newval, userval, oldval, op);
 			}
 		}
 	} else {
-		const FieldDesc *fd = NULL;
+		unique_ptr<Field> field = nullptr;
 
 		if (reg)
-			fd = find_field_by_pos(reg, op->high, op->low);
+			field = reg->find_field_by_pos(op->high, op->low);
 
-		print_field(op->high, op->low, reg, fd, newval, userval, oldval,
+		print_field(op->high, op->low, reg, field.get(), newval, userval, oldval,
 			    op);
 	}
 }
@@ -183,9 +162,9 @@ static int readprint_raw(void *vaddr, unsigned width)
 }
 
 static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
-		     const char *regfile)
+		     const RegFile* regfile)
 {
-	RegDesc *reg = NULL;
+	unique_ptr<Register> reg = nullptr;
 
 	/* Parse address */
 
@@ -196,9 +175,10 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 			if (!regfile)
 				ERR("Invalid address '%s'", arg->address);
 
-			reg = find_reg_by_name(regfile, arg->address);
+			reg = regfile->find_reg_by_name(arg->address);
+
 			ERR_ON(!reg, "Register not found '%s'", arg->address);
-			op->address = reg->offset;
+			op->address = reg->offset();
 		}
 	}
 
@@ -217,7 +197,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 		op->range_valid = true;
 	} else {
 		if (reg)
-			op->range = reg->width / 8;
+			op->range = reg->size() / 8;
 		else
 			op->range = rwmem_opts.regsize / 8;
 	}
@@ -240,13 +220,11 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 		}
 
 		if (!ok) {
-			const FieldDesc *field;
-
-			field = find_field_by_name(reg, arg->field);
+			unique_ptr<Field> field = reg->find_field_by_name(arg->field);
 
 			if (field) {
-				fl = field->low;
-				fh = field->high;
+				fl = field->low();
+				fh = field->high();
 				ok = true;
 			}
 		}
@@ -285,7 +263,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 }
 
 static void do_op(int fd, uint64_t base, const RwmemOp *op,
-		  const char *regfile)
+		  const RegFile* regfile)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
@@ -312,17 +290,17 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 	uint64_t end_reg_offset = reg_offset + op->range;
 
 	while (reg_offset < end_reg_offset) {
-		RegDesc *reg = NULL;
+		unique_ptr<Register> reg = nullptr;
 
 		if (regfile)
-			reg = find_reg_by_address(regfile, reg_offset);
+			reg = regfile->find_reg_by_offset(reg_offset);
 
-		unsigned access_width = reg ? reg->width : rwmem_opts.regsize;
+		unsigned access_width = reg ? reg->size() : rwmem_opts.regsize;
 
 		if (rwmem_opts.raw_output)
 			readprint_raw(vaddr, access_width);
 		else
-			readwriteprint(op, paddr, vaddr, reg_offset, access_width, reg);
+			readwriteprint(op, paddr, vaddr, reg_offset, access_width, reg.get());
 
 		paddr += access_width / 8;
 		vaddr = (uint8_t*)vaddr + access_width / 8;
@@ -336,20 +314,25 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 int main(int argc, char **argv)
 {
 	uint64_t base;
-	const char *regfile;
+	const char *regfilename;
 
 	parse_cmdline(argc, argv);
 
 	/* Parse base */
 
 	base = 0;
-	regfile = NULL;
+	regfilename = NULL;
 
 	if (rwmem_opts.base)
-		parse_base(rwmem_opts.aliasfile, rwmem_opts.base, &base, &regfile);
+		parse_base(rwmem_opts.aliasfile, rwmem_opts.base, &base, &regfilename);
 
 	if (rwmem_opts.regfile)
-		regfile = rwmem_opts.regfile;
+		regfilename = rwmem_opts.regfile;
+
+	unique_ptr<RegFile> regfile = nullptr;
+
+	if (regfilename)
+		regfile = make_unique<RegFile>(regfilename);
 
 	int num_ops = rwmem_opts.args.size();
 
@@ -362,7 +345,7 @@ int main(int argc, char **argv)
 		const RwmemOptsArg *arg = &rwmem_opts.args[i];
 		RwmemOp *op = &ops[i];
 
-		parse_op(arg, op, regfile);
+		parse_op(arg, op, regfile.get());
 
 		if (op->value_valid)
 			read_only = false;
@@ -379,10 +362,98 @@ int main(int argc, char **argv)
 	for (int i = 0; i < num_ops; ++i) {
 		RwmemOp *op = &ops[i];
 
-		do_op(fd, base, op, regfile);
+		do_op(fd, base, op, regfile.get());
 	}
 
 	close(fd);
 
 	return 0;
+}
+
+RegFile::RegFile(const char* filename)
+{
+	int fd = open(filename, O_RDONLY);
+	ERR_ON_ERRNO(fd < 0, "Open regfile '%s' failed", filename);
+
+	off_t len = lseek(fd, (size_t)0, SEEK_END);
+	lseek(fd, 0, SEEK_SET);
+
+	m_data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	ERR_ON_ERRNO(m_data == MAP_FAILED, "mmap regfile failed");
+
+	m_ab = new AddressBlock(*this, (AddressBlockData*)m_data);
+	m_size = len;
+}
+
+RegFile::~RegFile()
+{
+	delete m_ab;
+	munmap(m_data, m_size);
+}
+
+unique_ptr<Register> RegFile::find_reg_by_name(const char* name) const
+{
+	return m_ab->find_reg_by_name(name);
+}
+
+unique_ptr<Register> RegFile::find_reg_by_offset(uint64_t offset) const
+{
+	return m_ab->find_reg_by_offset(offset);
+}
+
+
+unique_ptr<Register> AddressBlock::find_reg_by_name(const char* name) const
+{
+	const RegisterData* rd = m_abd->first_reg();
+	const FieldData* fd = m_abd->first_field();
+
+	for (unsigned i = 0; i < m_abd->num_regs(); ++i) {
+		if (strcmp(rd->name() , name) == 0)
+			return make_unique<Register>(*this, rd, fd);
+
+		fd += rd->num_fields();
+		rd++;
+	}
+
+	return nullptr;
+}
+
+unique_ptr<Register> AddressBlock::find_reg_by_offset(uint64_t offset) const
+{
+	const RegisterData* rd = m_abd->first_reg();
+	const FieldData* fd = m_abd->first_field();
+
+	for (unsigned i = 0; i < m_abd->num_regs(); ++i) {
+		if (rd->offset() == offset)
+			return make_unique<Register>(*this, rd, fd);
+
+		fd += rd->num_fields();
+		rd++;
+	}
+
+	return nullptr;
+}
+
+
+
+unique_ptr<Field> Register::find_field_by_name(const char* name)
+{
+	const FieldData* fd = m_fd;
+	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
+		if (strcmp(fd->name(), name) == 0)
+			return make_unique<Field>(*this, fd);
+	}
+
+	return nullptr;
+}
+
+unique_ptr<Field> Register::find_field_by_pos(uint8_t high, uint8_t low)
+{
+	const FieldData* fd = m_fd;
+	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
+		if (low == fd->low() && high == fd->high())
+			return make_unique<Field>(*this, fd);
+	}
+
+	return nullptr;
 }

@@ -1,6 +1,7 @@
 #ifndef __RWMEM_H__
 #define __RWMEM_H__
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <inttypes.h>
@@ -18,20 +19,133 @@ enum class PrintMode{
 	RegFields,
 };
 
-struct FieldDesc {
-	unsigned low;
-	unsigned high;
+struct  __attribute__(( packed )) FieldData
+{
+	const char* name() const { return m_name; }
+	uint8_t low() const { return m_low; }
+	uint8_t high() const { return m_high; }
 
-	std::string name;
+private:
+	char m_name[64];
+	uint8_t m_low;
+	uint8_t m_high;
 };
 
-struct RegDesc {
-	uint64_t offset;
-	unsigned width;
+struct __attribute__(( packed )) RegisterData
+{
+	const char* name() const { return m_name; }
+	uint64_t offset() const { return be64toh(m_offset); }
+	uint32_t size() const { return be32toh(m_size); }
 
-	std::string name;
-	std::vector<FieldDesc> fields;
-	unsigned max_field_name_len;
+	uint32_t num_fields() const { return be32toh(m_num_fields); }
+
+private:
+	char m_name[64];
+	uint64_t m_offset;
+	uint32_t m_size;
+
+	uint32_t m_num_fields;
+};
+
+struct __attribute__(( packed )) AddressBlockData
+{
+	const char* name() const { return m_name; }
+	uint32_t num_regs() const { return be32toh(m_num_registers); }
+
+	const RegisterData* first_reg() const { return m_registers; }
+	const FieldData* first_field() const { return (FieldData*)(&m_registers[num_regs()]); }
+
+private:
+	char m_name[64];
+	uint64_t m_size;
+	uint32_t m_num_registers;
+	RegisterData m_registers[];
+};
+
+class AddressBlock;
+class RegFile;
+class Register;
+
+class Field
+{
+public:
+	Field(Register& reg, const FieldData* fd)
+		:m_reg(reg), m_fd(fd)
+	{
+
+	}
+
+	const char* name() const { return m_fd->name(); }
+	uint8_t low() const { return m_fd->low(); }
+	uint8_t high() const { return m_fd->high(); }
+
+private:
+	const Register& m_reg;
+	const FieldData* m_fd;
+};
+
+class Register
+{
+public:
+	Register(const AddressBlock& ab, const RegisterData* rd, const FieldData* fd)
+		: m_ab(ab), m_rd(rd), m_fd(fd)
+	{
+
+	}
+
+	const char* name() const { return m_rd->name(); }
+	uint64_t offset() const { return m_rd->offset(); }
+	uint32_t size() const { return m_rd->size(); }
+
+	uint32_t num_fields() const { return m_rd->num_fields(); }
+
+	uint32_t max_field_name_len() const { return 64; } // XXX
+
+	std::unique_ptr<Field> field_by_index(unsigned idx)
+	{
+		return std::make_unique<Field>(*this, &m_fd[idx]);
+	}
+
+	std::unique_ptr<Field> find_field_by_name(const char* name);
+	std::unique_ptr<Field> find_field_by_pos(uint8_t high, uint8_t low);
+
+private:
+	const AddressBlock& m_ab;
+	const RegisterData* m_rd;
+	const FieldData* m_fd;
+};
+
+class AddressBlock
+{
+public:
+	AddressBlock(const RegFile& regfile, const AddressBlockData* abd)
+		: m_regfile(regfile), m_abd(abd)
+	{
+
+	}
+
+	std::unique_ptr<Register> find_reg_by_name(const char* name) const;
+	std::unique_ptr<Register> find_reg_by_offset(uint64_t offset) const;
+
+private:
+	const RegFile& m_regfile;
+	const AddressBlockData* m_abd;
+};
+
+class RegFile
+{
+public:
+	RegFile(const char* filename);
+	~RegFile();
+
+	std::unique_ptr<Register> find_reg_by_name(const char* name) const;
+	std::unique_ptr<Register> find_reg_by_offset(uint64_t offset) const;
+
+private:
+	const AddressBlock* m_ab;
+
+	void* m_data;
+	size_t m_size;
 };
 
 struct RwmemOp {
@@ -86,8 +200,6 @@ char *strip(char *str);
 void parse_cmdline(int argc, char **argv);
 
 /* parser */
-RegDesc *find_reg_by_name(const char *regfile, const char *regname);
-RegDesc *find_reg_by_address(const char *regfile, uint64_t addr);
 void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);
 int parse_u64(const char *str, uint64_t *value);
