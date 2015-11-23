@@ -11,8 +11,9 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+#include <inttypes.h>
 
-#include "rwmem.h"
+#include "helpers.h"
 
 using namespace std;
 

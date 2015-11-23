@@ -7,6 +7,7 @@
 #include <getopt.h>
 
 #include "rwmem.h"
+#include "helpers.h"
 
 RwmemOpts rwmem_opts;
 

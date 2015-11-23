@@ -11,6 +11,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "helpers.h"
+
 using namespace std;
 
 __attribute__ ((noreturn))

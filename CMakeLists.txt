@@ -9,5 +9,5 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra")
 
-add_executable (rwmem cmdline.cpp helpers.cpp parser.cpp rwmem.cpp rwmem.h)
+add_executable (rwmem cmdline.cpp helpers.cpp parser.cpp rwmem.cpp rwmem.h regs.cpp regs.h helpers.h)
 
