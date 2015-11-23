@@ -438,10 +438,9 @@ unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 
 unique_ptr<Field> Register::find_field(const char* name)
 {
-	const FieldData* fd = m_fd;
 	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
-		if (strcmp(fd->name(), name) == 0)
-			return make_unique<Field>(*this, fd);
+		if (strcmp(m_fd[i].name(), name) == 0)
+			return make_unique<Field>(*this, &m_fd[i]);
 	}
 
 	return nullptr;
@@ -449,10 +448,9 @@ unique_ptr<Field> Register::find_field(const char* name)
 
 unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low)
 {
-	const FieldData* fd = m_fd;
 	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
-		if (low == fd->low() && high == fd->high())
-			return make_unique<Field>(*this, fd);
+		if (low == m_fd[i].low() && high == m_fd[i].high())
+			return make_unique<Field>(*this, &m_fd[i]);
 	}
 
 	return nullptr;
