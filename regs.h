@@ -62,7 +62,6 @@ public:
 	Field(Register& reg, const FieldData* fd)
 		:m_reg(reg), m_fd(fd)
 	{
-
 	}
 
 	const char* name() const { return m_fd->name(); }
@@ -77,17 +76,7 @@ private:
 class Register
 {
 public:
-	Register(const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd)
-		: m_abd(abd), m_rd(rd), m_fd(fd)
-	{
-		uint32_t max = 0;
-		for (unsigned i = 0; i < num_fields(); ++i) {
-			uint32_t len = strlen(m_fd[i].name());
-			if (len > max)
-				max = len;
-		}
-		m_max_field_name_len = max;
-	}
+	Register(const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd);
 
 	const char* name() const { return m_rd->name(); }
 	uint64_t offset() const { return m_rd->offset(); }
@@ -97,10 +86,7 @@ public:
 
 	uint32_t max_field_name_len() const { return m_max_field_name_len; }
 
-	std::unique_ptr<Field> field_by_index(unsigned idx)
-	{
-		return std::make_unique<Field>(*this, &m_fd[idx]);
-	}
+	std::unique_ptr<Field> field_by_index(unsigned idx);
 
 	std::unique_ptr<Field> find_field(const char* name);
 	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low);

@@ -11,6 +11,23 @@
 
 using namespace std;
 
+Register::Register(const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd)
+	: m_abd(abd), m_rd(rd), m_fd(fd)
+{
+	uint32_t max = 0;
+	for (unsigned i = 0; i < num_fields(); ++i) {
+		uint32_t len = strlen(m_fd[i].name());
+		if (len > max)
+			max = len;
+	}
+	m_max_field_name_len = max;
+}
+
+std::unique_ptr<Field> Register::field_by_index(unsigned idx)
+{
+	return std::make_unique<Field>(*this, &m_fd[idx]);
+}
+
 unique_ptr<Field> Register::find_field(const char* name)
 {
 	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
