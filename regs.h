@@ -52,6 +52,10 @@ struct __attribute__(( packed )) RegFileData
 	uint32_t num_blocks() const { return be32toh(m_num_blocks); }
 	uint32_t num_regs() const { return be32toh(m_num_regs); }
 
+	const AddressBlockData* blocks() const { return (AddressBlockData*)((uint8_t*)this + sizeof(RegFileData)); }
+	const RegisterData* registers() const { return (RegisterData*)(&blocks()[num_blocks()]); }
+	const FieldData* fields() const { return (FieldData*)(&registers()[num_regs()]); }
+
 private:
 	char m_name[32];
 	uint32_t m_num_blocks;
@@ -131,8 +135,4 @@ public:
 private:
 	const RegFileData* m_rfd;
 	size_t m_size;
-
-	struct AddressBlockData* m_blocks;
-	struct RegisterData* m_regs;
-	struct FieldData* m_fields;
 };

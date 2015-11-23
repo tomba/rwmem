@@ -61,10 +61,6 @@ RegFile::RegFile(const char* filename)
 
 	m_rfd = (RegFileData*)data;
 	m_size = len;
-
-	m_blocks = (AddressBlockData*)((uint8_t*)m_rfd + sizeof(RegFileData));
-	m_regs = (RegisterData*)(&m_blocks[m_rfd->num_blocks()]);
-	m_fields = (FieldData*)(&m_regs[m_rfd->num_regs()]);
 }
 
 RegFile::~RegFile()
@@ -74,9 +70,9 @@ RegFile::~RegFile()
 
 unique_ptr<Register> RegFile::find_reg(const char* name) const
 {
-	const AddressBlockData* abd = m_blocks;
-	const RegisterData* rd = m_regs;
-	const FieldData* fd = m_fields;
+	const AddressBlockData* abd = m_rfd->blocks();
+	const RegisterData* rd = m_rfd->registers();
+	const FieldData* fd = m_rfd->fields();
 
 	for (unsigned bidx = 0; bidx < m_rfd->num_blocks(); ++bidx) {
 		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx) {
@@ -94,9 +90,9 @@ unique_ptr<Register> RegFile::find_reg(const char* name) const
 
 unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 {
-	const AddressBlockData* abd = m_blocks;
-	const RegisterData* rd = m_regs;
-	const FieldData* fd = m_fields;
+	const AddressBlockData* abd = m_rfd->blocks();
+	const RegisterData* rd = m_rfd->registers();
+	const FieldData* fd = m_rfd->fields();
 
 	for (unsigned bidx = 0; bidx < m_rfd->num_blocks(); ++bidx) {
 		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx) {
