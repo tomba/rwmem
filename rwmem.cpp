@@ -336,14 +336,14 @@ int main(int argc, char **argv)
 	if (regfilename)
 		regfile = make_unique<RegFile>(regfilename);
 
-	int num_ops = rwmem_opts.args.size();
+	unsigned num_ops = rwmem_opts.args.size();
 
 	bool read_only = true;
 
 	vector<RwmemOp> ops;
 	ops.resize(num_ops);
 
-	for (int i = 0; i < num_ops; ++i) {
+	for (unsigned i = 0; i < num_ops; ++i) {
 		const RwmemOptsArg *arg = &rwmem_opts.args[i];
 		RwmemOp *op = &ops[i];
 
@@ -361,7 +361,7 @@ int main(int argc, char **argv)
 	if (fd == -1)
 		myerr2("Failed to open file '%s'", rwmem_opts.filename);
 
-	for (int i = 0; i < num_ops; ++i) {
+	for (unsigned i = 0; i < num_ops; ++i) {
 		RwmemOp *op = &ops[i];
 
 		do_op(fd, base, op, regfile.get());
