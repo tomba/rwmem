@@ -99,7 +99,13 @@ public:
 	Register(const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd)
 		: m_abd(abd), m_rd(rd), m_fd(fd)
 	{
-
+		uint32_t max = 0;
+		for (unsigned i = 0; i < num_fields(); ++i) {
+			uint32_t len = strlen(m_fd[i].name());
+			if (len > max)
+				max = len;
+		}
+		m_max_field_name_len = max;
 	}
 
 	const char* name() const { return m_rd->name(); }
@@ -108,7 +114,7 @@ public:
 
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
-	uint32_t max_field_name_len() const { return 64; } // XXX
+	uint32_t max_field_name_len() const { return m_max_field_name_len; }
 
 	std::unique_ptr<Field> field_by_index(unsigned idx)
 	{
@@ -122,6 +128,8 @@ private:
 	const AddressBlockData* m_abd;
 	const RegisterData* m_rd;
 	const FieldData* m_fd;
+
+	uint32_t m_max_field_name_len;
 };
 
 class AddressBlock
