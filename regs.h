@@ -35,10 +35,13 @@ private:
 struct __attribute__(( packed )) AddressBlockData
 {
 	const char* name() const { return m_name; }
+	uint64_t offset() const { return be64toh(m_offset); }
+	uint64_t size() const { return be64toh(m_size); }
 	uint32_t num_regs() const { return be32toh(m_num_registers); }
 
 private:
 	char m_name[32];
+	uint64_t m_offset;
 	uint64_t m_size;
 	uint32_t m_num_registers;
 };
