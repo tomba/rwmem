@@ -378,57 +378,57 @@ RegFile::RegFile(const char* filename)
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	m_data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
-	ERR_ON_ERRNO(m_data == MAP_FAILED, "mmap regfile failed");
+	void* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	ERR_ON_ERRNO(data == MAP_FAILED, "mmap regfile failed");
 
-	m_ab = new AddressBlock(*this, (AddressBlockData*)m_data);
+	m_rfd = (RegFileData*)data;
 	m_size = len;
+
+	m_blocks = (AddressBlockData*)((uint8_t*)m_rfd + sizeof(RegFileData));
+	m_regs = (RegisterData*)(&m_blocks[m_rfd->num_blocks()]);
+	m_fields = (FieldData*)(&m_regs[m_rfd->num_regs()]);
 }
 
 RegFile::~RegFile()
 {
-	delete m_ab;
-	munmap(m_data, m_size);
+	munmap((void*)m_rfd, m_size);
 }
 
 unique_ptr<Register> RegFile::find_reg(const char* name) const
 {
-	return m_ab->find_reg(name);
-}
+	const AddressBlockData* abd = m_blocks;
+	const RegisterData* rd = m_regs;
+	const FieldData* fd = m_fields;
 
-unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
-{
-	return m_ab->find_reg(offset);
-}
+	for (unsigned bidx = 0; bidx < m_rfd->num_blocks(); ++bidx) {
+		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx) {
+			if (strcmp(rd->name(), name) == 0)
+				return make_unique<Register>(abd, rd, fd);
 
-
-unique_ptr<Register> AddressBlock::find_reg(const char* name) const
-{
-	const RegisterData* rd = m_abd->first_reg();
-	const FieldData* fd = m_abd->first_field();
-
-	for (unsigned i = 0; i < m_abd->num_regs(); ++i) {
-		if (strcmp(rd->name() , name) == 0)
-			return make_unique<Register>(*this, rd, fd);
-
-		fd += rd->num_fields();
-		rd++;
+			fd += rd->num_fields();
+			rd++;
+		}
+		abd++;
 	}
 
 	return nullptr;
 }
 
-unique_ptr<Register> AddressBlock::find_reg(uint64_t offset) const
+unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 {
-	const RegisterData* rd = m_abd->first_reg();
-	const FieldData* fd = m_abd->first_field();
+	const AddressBlockData* abd = m_blocks;
+	const RegisterData* rd = m_regs;
+	const FieldData* fd = m_fields;
 
-	for (unsigned i = 0; i < m_abd->num_regs(); ++i) {
-		if (rd->offset() == offset)
-			return make_unique<Register>(*this, rd, fd);
+	for (unsigned bidx = 0; bidx < m_rfd->num_blocks(); ++bidx) {
+		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx) {
+			if (rd->offset() == offset)
+				return make_unique<Register>(abd, rd, fd);
 
-		fd += rd->num_fields();
-		rd++;
+			fd += rd->num_fields();
+			rd++;
+		}
+		abd++;
 	}
 
 	return nullptr;

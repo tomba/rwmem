@@ -26,7 +26,7 @@ struct  __attribute__(( packed )) FieldData
 	uint8_t high() const { return m_high; }
 
 private:
-	char m_name[64];
+	char m_name[32];
 	uint8_t m_low;
 	uint8_t m_high;
 };
@@ -40,7 +40,7 @@ struct __attribute__(( packed )) RegisterData
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
 
 private:
-	char m_name[64];
+	char m_name[32];
 	uint64_t m_offset;
 	uint32_t m_size;
 
@@ -52,14 +52,23 @@ struct __attribute__(( packed )) AddressBlockData
 	const char* name() const { return m_name; }
 	uint32_t num_regs() const { return be32toh(m_num_registers); }
 
-	const RegisterData* first_reg() const { return m_registers; }
-	const FieldData* first_field() const { return (FieldData*)(&m_registers[num_regs()]); }
-
 private:
-	char m_name[64];
+	char m_name[32];
 	uint64_t m_size;
 	uint32_t m_num_registers;
-	RegisterData m_registers[];
+};
+
+struct __attribute__(( packed )) RegFileData
+{
+	const char* name() const { return m_name; }
+	uint32_t num_blocks() const { return be32toh(m_num_blocks); }
+	uint32_t num_regs() const { return be32toh(m_num_regs); }
+
+private:
+	char m_name[32];
+	uint32_t m_num_blocks;
+	uint32_t m_num_regs;
+	uint32_t m_num_fields;
 };
 
 class AddressBlock;
@@ -87,8 +96,8 @@ private:
 class Register
 {
 public:
-	Register(const AddressBlock& ab, const RegisterData* rd, const FieldData* fd)
-		: m_ab(ab), m_rd(rd), m_fd(fd)
+	Register(const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd)
+		: m_abd(abd), m_rd(rd), m_fd(fd)
 	{
 
 	}
@@ -110,7 +119,7 @@ public:
 	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low);
 
 private:
-	const AddressBlock& m_ab;
+	const AddressBlockData* m_abd;
 	const RegisterData* m_rd;
 	const FieldData* m_fd;
 };
@@ -142,10 +151,12 @@ public:
 	std::unique_ptr<Register> find_reg(uint64_t offset) const;
 
 private:
-	const AddressBlock* m_ab;
-
-	void* m_data;
+	const RegFileData* m_rfd;
 	size_t m_size;
+
+	struct AddressBlockData* m_blocks;
+	struct RegisterData* m_regs;
+	struct FieldData* m_fields;
 };
 
 struct RwmemOp {
