@@ -52,6 +52,9 @@ struct RwmemOpts {
 	const char *aliasfile;
 	const char *regfile;
 
+	bool show_list;
+	const char *show_list_pattern;
+
 	std::vector<RwmemOptsArg> args;
 };
 

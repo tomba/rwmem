@@ -336,6 +336,12 @@ int main(int argc, char **argv)
 	if (regfilename)
 		regfile = make_unique<RegFile>(regfilename);
 
+	if (rwmem_opts.show_list) {
+		ERR_ON(!regfile, "No regfile given");
+		regfile->print(rwmem_opts.show_list_pattern);
+		return 0;
+	}
+
 	unsigned num_ops = rwmem_opts.args.size();
 
 	bool read_only = true;

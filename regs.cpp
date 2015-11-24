@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <inttypes.h>
 
 #include "regs.h"
 #include "helpers.h"
@@ -106,4 +107,85 @@ unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 	}
 
 	return nullptr;
+}
+
+static void print_regfile(const RegFileData* rfd)
+{
+	printf("%s: total %u/%u/%u\n", rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
+}
+
+static void print_address_block(const AddressBlockData* abd)
+{
+	printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n", abd->name(), abd->offset(), abd->size(), abd->num_regs());
+}
+
+static void print_register(const RegisterData* rd)
+{
+	printf("    %s: %#" PRIx64 " %#x, fields %u\n", rd->name(), rd->offset(), rd->size(), rd->num_fields());
+}
+
+static void print_field(const FieldData* fd)
+{
+	printf("      %s: %u:%u\n", fd->name(), fd->high(), fd->low());
+}
+
+static void print_all(const RegFileData* rfd)
+{
+	const AddressBlockData* abd = rfd->blocks();
+	const RegisterData* rd = rfd->registers();
+	const FieldData* fd = rfd->fields();
+
+	print_regfile(rfd);
+
+	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx, abd++) {
+		print_address_block(abd);
+
+		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx, rd++) {
+			print_register(rd);
+
+			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx, fd++) {
+				print_field(fd);
+			}
+		}
+	}
+}
+
+
+void RegFile::print(const char* pattern)
+{
+	if (!pattern) {
+		print_all(m_rfd);
+		return;
+	}
+
+	const AddressBlockData* abd = m_rfd->blocks();
+	const RegisterData* rd = m_rfd->registers();
+	const FieldData* fd = m_rfd->fields();
+
+	bool regfile_printed = false;
+
+	for (unsigned bidx = 0; bidx < m_rfd->num_blocks(); ++bidx, abd++) {
+		bool block_printed = false;
+
+		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx, rd++) {
+			if (strcasestr(rd->name(), pattern) == NULL)
+				continue;
+
+			if (!regfile_printed) {
+				print_regfile(m_rfd);
+				regfile_printed = true;
+			}
+
+			if (!block_printed) {
+				print_address_block(abd);
+				block_printed = true;
+			}
+
+			print_register(rd);
+
+			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx, fd++) {
+				print_field(fd);
+			}
+		}
+	}
 }

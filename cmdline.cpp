@@ -94,6 +94,10 @@ static void parse_longopt(int idx)
 	case 2:	/* conf */
 		rwmem_opts.aliasfile = optarg;
 		break;
+	case 3: /* list */
+		rwmem_opts.show_list = true;
+		rwmem_opts.show_list_pattern = optarg;
+		break;
 	default:
 		usage();
 	}
@@ -116,6 +120,7 @@ void parse_cmdline(int argc, char **argv)
 			{"file", required_argument, 0, 0 },
 			{"regs", required_argument, 0, 0 },
 			{"conf", required_argument, 0, 0 },
+			{"list", optional_argument, 0, 0 },
 			{0, 0, 0, 0 }
 		};
 
@@ -172,7 +177,7 @@ void parse_cmdline(int argc, char **argv)
 
 	int num_args = argc - optind;
 
-	if (num_args == 0)
+	if (num_args == 0 && !rwmem_opts.show_list)
 		usage();
 
 	rwmem_opts.args.resize(num_args);

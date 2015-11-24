@@ -51,6 +51,7 @@ struct __attribute__(( packed )) RegFileData
 	const char* name() const { return m_name; }
 	uint32_t num_blocks() const { return be32toh(m_num_blocks); }
 	uint32_t num_regs() const { return be32toh(m_num_regs); }
+	uint32_t num_fields() const { return be32toh(m_num_fields); }
 
 	const AddressBlockData* blocks() const { return (AddressBlockData*)((uint8_t*)this + sizeof(RegFileData)); }
 	const RegisterData* registers() const { return (RegisterData*)(&blocks()[num_blocks()]); }
@@ -131,6 +132,8 @@ public:
 
 	std::unique_ptr<Register> find_reg(const char* name) const;
 	std::unique_ptr<Register> find_reg(uint64_t offset) const;
+
+	void print(const char* pattern);
 
 private:
 	const RegFileData* m_rfd;
