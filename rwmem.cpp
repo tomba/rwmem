@@ -217,7 +217,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 				ok = true;
 		}
 
-		if (!ok) {
+		if (!ok && reg) {
 			unique_ptr<Field> field = reg->find_field(arg->field);
 
 			if (field) {
