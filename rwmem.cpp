@@ -321,9 +321,6 @@ int main(int argc, char **argv)
 	base = 0;
 	regfilename = NULL;
 
-	if (rwmem_opts.base)
-		parse_base(rwmem_opts.aliasfile, rwmem_opts.base, &base, &regfilename);
-
 	if (rwmem_opts.regfile)
 		regfilename = rwmem_opts.regfile;
 

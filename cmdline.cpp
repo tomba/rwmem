@@ -32,10 +32,8 @@ static void usage()
 		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
 		"	-w <mode>	write mode: w, rw or rwr (default)\n"
 		"	-p <mode>	print mode: q, r or rf (default)\n"
-		"	-b <address>	base address\n"
 		"	-R		raw output mode\n"
 		"	--file <file>	file to open (default: /dev/mem)\n"
-		"	--conf <file>	config file (default: ~/.rwmem/rwmemrc)\n"
 		"	--regs <file>	register set file\n"
 	       );
 
@@ -91,10 +89,7 @@ static void parse_longopt(int idx)
 	case 1:	/* regs */
 		rwmem_opts.regfile = optarg;
 		break;
-	case 2:	/* conf */
-		rwmem_opts.aliasfile = optarg;
-		break;
-	case 3: /* list */
+	case 2: /* list */
 		rwmem_opts.show_list = true;
 		rwmem_opts.show_list_pattern = optarg;
 		break;
@@ -119,12 +114,11 @@ void parse_cmdline(int argc, char **argv)
 		static const struct option lopts[] = {
 			{"file", required_argument, 0, 0 },
 			{"regs", required_argument, 0, 0 },
-			{"conf", required_argument, 0, 0 },
 			{"list", optional_argument, 0, 0 },
 			{0, 0, 0, 0 }
 		};
 
-		c = getopt_long(argc, argv, "s:w:b:hRp:",
+		c = getopt_long(argc, argv, "s:w:hRp:",
 				lopts, &option_index);
 		if (c == -1)
 			break;
@@ -152,9 +146,6 @@ void parse_cmdline(int argc, char **argv)
 				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
 				ERR("illegal write mode '%s'", optarg);
-			break;
-		case 'b':
-			rwmem_opts.base = optarg;
 			break;
 		case 'R':
 			rwmem_opts.raw_output = true;

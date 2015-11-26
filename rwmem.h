@@ -48,8 +48,6 @@ struct RwmemOpts {
 	PrintMode print_mode;
 	bool raw_output;
 
-	const char *base;
-	const char *aliasfile;
 	const char *regfile;
 
 	bool show_list;
@@ -61,9 +59,5 @@ struct RwmemOpts {
 extern RwmemOpts rwmem_opts;
 
 void parse_cmdline(int argc, char **argv);
-
-/* parser */
-void parse_base(const char *file, const char *arg, uint64_t *base,
-		const char **regfile);
 
 #endif /* __RWMEM_H__ */
