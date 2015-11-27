@@ -93,12 +93,12 @@ vector<string> split(const string &s, char delim)
 	return elems;
 }
 
-int parse_u64(const char *str, uint64_t *value)
+int parse_u64(const std::string& str, uint64_t *value)
 {
 	uint64_t v;
 	char *endptr;
 
-	v = strtoull(str, &endptr, 0);
+	v = strtoull(str.c_str(), &endptr, 0);
 	if (*endptr != 0)
 		return -EINVAL;
 
