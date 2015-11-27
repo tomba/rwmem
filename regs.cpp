@@ -29,10 +29,10 @@ std::unique_ptr<Field> Register::field_by_index(unsigned idx)
 	return std::make_unique<Field>(*this, &m_fd[idx]);
 }
 
-unique_ptr<Field> Register::find_field(const char* name)
+unique_ptr<Field> Register::find_field(const string& name)
 {
 	for (unsigned i = 0; i < m_rd->num_fields(); ++i) {
-		if (strcmp(m_fd[i].name(), name) == 0)
+		if (strcmp(m_fd[i].name(), name.c_str()) == 0)
 			return make_unique<Field>(*this, &m_fd[i]);
 	}
 
@@ -69,7 +69,7 @@ RegFile::~RegFile()
 	munmap((void*)m_rfd, m_size);
 }
 
-unique_ptr<Register> RegFile::find_reg(const char* name) const
+unique_ptr<Register> RegFile::find_reg(const std::string& name) const
 {
 	const AddressBlockData* abd = m_rfd->blocks();
 	const RegisterData* rd = m_rfd->registers();
@@ -77,7 +77,7 @@ unique_ptr<Register> RegFile::find_reg(const char* name) const
 
 	for (unsigned bidx = 0; bidx < m_rfd->num_blocks(); ++bidx) {
 		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx) {
-			if (strcmp(rd->name(), name) == 0)
+			if (strcmp(rd->name(), name.c_str()) == 0)
 				return make_unique<Register>(abd, rd, fd);
 
 			fd += rd->num_fields();
