@@ -120,7 +120,7 @@ void parse_cmdline(int argc, char **argv)
 			int rs = stoi(s);
 
 			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-				myerr("Invalid size '%s'", s.c_str());
+				ERR("Invalid size '%s'", s.c_str());
 
 			rwmem_opts.regsize = rs;
 		}),

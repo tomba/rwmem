@@ -171,12 +171,12 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 	/* Parse address */
 
 	if (parse_u64(arg->address, &op->address) != 0) {
-		if (!regfile)
-			ERR("Invalid address '%s'", arg->address);
+		ERR_ON(!regfile, "Invalid address '%s'", arg->address.c_str());
 
 		reg = regfile->find_reg(arg->address);
 
-		ERR_ON(!reg, "Register not found '%s'", arg->address);
+		ERR_ON(!reg, "Register not found '%s'", arg->address.c_str());
+
 		op->address = reg->offset();
 	}
 
@@ -184,11 +184,11 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	if (arg->range_set) {
 		int r = parse_u64(arg->range, &op->range);
-		ERR_ON(r, "Invalid range '%s'", arg->range);
+		ERR_ON(r, "Invalid range '%s'", arg->range.c_str());
 
 		if (!arg->range_is_offset) {
-			if (op->range <= op->address)
-				myerr("range '%s' is <= 0", arg->range);
+			ERR_ON(op->range <= op->address, "range '%s' is <= 0", arg->range.c_str());
+
 			op->range = op->range - op->address;
 		}
 
@@ -227,12 +227,10 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 			}
 		}
 
-		if (!ok)
-			myerr("Field not found '%s'", arg->field);
+		ERR_ON(!ok, "Field not found '%s'", arg->field.c_str());
 
-		if (fl >= rwmem_opts.regsize ||
-		    fh >= rwmem_opts.regsize)
-			myerr("Field bits higher than register size");
+		ERR_ON(fl >= rwmem_opts.regsize || fh >= rwmem_opts.regsize,
+		       "Field bits higher than register size");
 
 		op->low = fl;
 		op->high = fh;
@@ -244,16 +242,14 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 	if (arg->value_set) {
 		uint64_t value;
 		int r = parse_u64(arg->value, &value);
-		ERR_ON(r, "Invalid value '%s'", arg->value);
+		ERR_ON(r, "Invalid value '%s'", arg->value.c_str());
 
 		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize);
 
-		if (value & ~regmask)
-			myerr("Value does not fit into the register size");
+		ERR_ON(value & ~regmask, "Value does not fit into the register size");
 
-		if (op->field_valid &&
-		    (value & ~GENMASK(op->high - op->low, 0)))
-			myerr("Value does not fit into the field");
+		ERR_ON(op->field_valid && (value & ~GENMASK(op->high - op->low, 0)),
+		       "Value does not fit into the field");
 
 		op->value = value;
 		op->value_valid = true;
@@ -280,7 +276,7 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 			       MAP_SHARED, fd, mmap_offset);
 
 	if (mmap_base == MAP_FAILED)
-		myerr2("failed to mmap");
+		ERR_ERRNO("failed to mmap");
 
 	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
@@ -306,7 +302,7 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 	}
 
 	if (munmap(mmap_base, pagesize) == -1)
-		myerr2("failed to munmap");
+		ERR_ERRNO("failed to munmap");
 }
 
 int main(int argc, char **argv)
@@ -358,7 +354,7 @@ int main(int argc, char **argv)
 		      (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	if (fd == -1)
-		myerr2("Failed to open file '%s'", rwmem_opts.filename);
+		ERR_ERRNO("Failed to open file '%s'", rwmem_opts.filename.c_str());
 
 	for (unsigned i = 0; i < num_ops; ++i) {
 		RwmemOp *op = &ops[i];

@@ -15,34 +15,6 @@
 
 using namespace std;
 
-__attribute__ ((noreturn))
-void myerr(const char* format, ... )
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	fputs("\n", stderr);
-
-	exit(1);
-}
-
-__attribute__ ((noreturn))
-void myerr2(const char* format, ... )
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	fprintf(stderr, ": %s\n", strerror(errno));
-
-	exit(1);
-}
-
 uint64_t readmem(void *addr, unsigned regsize)
 {
 	switch (regsize) {
@@ -55,7 +27,7 @@ uint64_t readmem(void *addr, unsigned regsize)
 	case 64:
 		return *((uint64_t *)addr);
 	default:
-		myerr("Illegal data regsize '%c'", regsize);
+		ERR("Illegal data regsize '%c'", regsize);
 	}
 }
 

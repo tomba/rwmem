@@ -5,12 +5,6 @@
 uint64_t readmem(void *addr, unsigned regsize);
 void writemem(void *addr, unsigned regsize, uint64_t value);
 
-__attribute__ ((noreturn))
-void myerr(const char* format, ... );
-
-__attribute__ ((noreturn))
-void myerr2(const char* format, ... );
-
 #define ERR(fmt, ...)						\
 	do {							\
 		fprintf(stderr, fmt "\n", ##__VA_ARGS__);	\
