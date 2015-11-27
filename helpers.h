@@ -11,19 +11,29 @@ void myerr(const char* format, ... );
 __attribute__ ((noreturn))
 void myerr2(const char* format, ... );
 
-#define ERR(format...) myerr(format)
+#define ERR(fmt, ...)						\
+	do {							\
+		fprintf(stderr, fmt "\n", ##__VA_ARGS__);	\
+		exit(1);					\
+	} while(0)
 
-#define ERR_ON(condition, format...) do {	\
-	if (condition)				\
-		ERR(format);			\
-} while (0)
+#define ERR_ON(condition, fmt, ...)			\
+	do {						\
+		if (condition)				\
+			ERR(fmt, ##__VA_ARGS__);	\
+	} while (0)
 
-#define ERR_ERRNO(format...) myerr2(format)
+#define ERR_ERRNO(fmt, ...)							\
+	do {									\
+		fprintf(stderr, fmt ": %s\n", ##__VA_ARGS__, strerror(errno));	\
+		exit(1);							\
+	} while(0)
 
-#define ERR_ON_ERRNO(condition, format...) do {	\
-	if (condition)				\
-		ERR_ERRNO(format);		\
-} while (0)
+#define ERR_ON_ERRNO(condition, fmt, ...)		\
+	do {						\
+		if (condition)				\
+			ERR_ERRNO(fmt, ##__VA_ARGS__);	\
+	} while (0)
 
 #define GENMASK(h, l) (((~0ULL) << (l)) & (~0ULL >> (64 - 1 - (h))))
 
