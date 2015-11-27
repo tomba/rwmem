@@ -92,3 +92,16 @@ vector<string> split(const string &s, char delim)
 	split(s, delim, elems);
 	return elems;
 }
+
+int parse_u64(const char *str, uint64_t *value)
+{
+	uint64_t v;
+	char *endptr;
+
+	v = strtoull(str, &endptr, 0);
+	if (*endptr != 0)
+		return -EINVAL;
+
+	*value = v;
+	return 0;
+}

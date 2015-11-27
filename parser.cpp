@@ -93,16 +93,3 @@ void parse_base(const char *cfgfile, const char *basestr, uint64_t *base,
 
 	*regfile = strdup(path);
 }
-
-int parse_u64(const char *str, uint64_t *value)
-{
-	uint64_t v;
-	char *endptr;
-
-	v = strtoull(str, &endptr, 0);
-	if (*endptr != 0)
-		return -EINVAL;
-
-	*value = v;
-	return 0;
-}

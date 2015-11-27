@@ -65,6 +65,5 @@ void parse_cmdline(int argc, char **argv);
 /* parser */
 void parse_base(const char *file, const char *arg, uint64_t *base,
 		const char **regfile);
-int parse_u64(const char *str, uint64_t *value);
 
 #endif /* __RWMEM_H__ */
