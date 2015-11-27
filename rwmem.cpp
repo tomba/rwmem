@@ -182,7 +182,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse range */
 
-	if (arg->range_set) {
+	if (arg->range.size()) {
 		int r = parse_u64(arg->range, &op->range);
 		ERR_ON(r, "Invalid range '%s'", arg->range.c_str());
 
@@ -202,7 +202,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse field */
 
-	if (arg->field_set) {
+	if (arg->field.size()) {
 		unsigned fl, fh;
 		char *endptr;
 
@@ -239,7 +239,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse value */
 
-	if (arg->value_set) {
+	if (arg->value.size()) {
 		uint64_t value;
 		int r = parse_u64(arg->value, &value);
 		ERR_ON(r, "Invalid value '%s'", arg->value.c_str());

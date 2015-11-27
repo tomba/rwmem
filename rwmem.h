@@ -34,16 +34,11 @@ struct RwmemOp {
 
 struct RwmemOptsArg {
 	std::string address;
-
-	bool range_set;
-	bool range_is_offset;
 	std::string range;
-
-	bool field_set;
 	std::string field;
-
-	bool value_set;
 	std::string value;
+
+	bool range_is_offset;
 };
 
 struct RwmemOpts {

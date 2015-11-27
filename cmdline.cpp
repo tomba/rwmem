@@ -50,48 +50,47 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 
 	if (idx != string::npos) {
 		arg->value = str.substr(idx + 1);
-		arg->value_set = true;
 		str.resize(idx);
+
+		if (arg->value.size() == 0)
+			usage();
 	}
 
 	idx = str.find(':');
 
 	if (idx != string::npos) {
 		arg->field = str.substr(idx + 1);
-		arg->field_set = true;
 		str.resize(idx);
+
+		if (arg->field.size() == 0)
+			usage();
 	}
 
 	idx = str.find('+');
 
 	if (idx != string::npos) {
 		arg->range = str.substr(idx + 1);
-		arg->range_set = true;
 		arg->range_is_offset = true;
 		str.resize(idx);
+
+		if (arg->range.size() == 0)
+			usage();
 	} else {
 		idx = str.find('-');
 
 		if (idx != string::npos) {
 			arg->range = str.substr(idx + 1);
-			arg->range_set = true;
 			arg->range_is_offset = false;
 			str.resize(idx);
+
+			if (arg->range.size() == 0)
+				usage();
 		}
 	}
 
 	arg->address = str;
 
 	if (arg->address.size() == 0)
-		usage();
-
-	if (arg->range_set && arg->range.size() == 0)
-		usage();
-
-	if (arg->field_set && arg->field.size() == 0)
-		usage();
-
-	if (arg->value_set && arg->value.size() == 0)
 		usage();
 }
 
