@@ -21,7 +21,7 @@ static void usage()
 		"\n"
 		"	address		address to access:\n"
 		"			<address>	single address\n"
-		"			<start..end>	range with end address\n"
+		"			<start-end>	range with end address\n"
 		"			<start+len>	range with length\n"
 		"\n"
 		"	field		bitfield (inclusive, start from 0):\n"
@@ -42,71 +42,57 @@ static void usage()
 	exit(1);
 }
 
-static void parse_arg(const std::string arg_str, RwmemOptsArg *arg)
+static void parse_arg(std::string str, RwmemOptsArg *arg)
 {
-	char *str = strdup(arg_str.c_str());
-	char *orig_str = str;
-	char *tmp;
-	const char *address = nullptr;
-	const char *field = nullptr;
-	const char *value = nullptr;
-	const char *range = nullptr;
-	bool range_is_offset;
+	size_t idx;
 
-	address = str;
+	idx = str.find('=');
 
-	tmp = strsep(&str, "=");
-	value = str;
-	str = tmp;
+	if (idx != string::npos) {
+		arg->value = str.substr(idx + 1);
+		arg->value_set = true;
+		str.resize(idx);
+	}
 
-	tmp = strsep(&str, ":");
-	field = str;
+	idx = str.find(':');
 
-	str = tmp;
-	tmp = strsep(&str, "+");
-	if (str) {
-		range = str;
-		range_is_offset = true;
+	if (idx != string::npos) {
+		arg->field = str.substr(idx + 1);
+		arg->field_set = true;
+		str.resize(idx);
+	}
+
+	idx = str.find('+');
+
+	if (idx != string::npos) {
+		arg->range = str.substr(idx + 1);
+		arg->range_set = true;
+		arg->range_is_offset = true;
+		str.resize(idx);
 	} else {
-		str = strstr(tmp, "..");
-		if (str) {
-			*str = 0;
-			range = str + 2;
-			range_is_offset = false;
+		idx = str.find('-');
+
+		if (idx != string::npos) {
+			arg->range = str.substr(idx + 1);
+			arg->range_set = true;
+			arg->range_is_offset = false;
+			str.resize(idx);
 		}
 	}
 
-	if (strlen(address) == 0)
+	arg->address = str;
+
+	if (arg->address.size() == 0)
 		usage();
 
-	if (range && strlen(range) == 0)
+	if (arg->range_set && arg->range.size() == 0)
 		usage();
 
-	if (field && strlen(field) == 0)
+	if (arg->field_set && arg->field.size() == 0)
 		usage();
 
-	if (value && strlen(value) == 0)
+	if (arg->value_set && arg->value.size() == 0)
 		usage();
-
-	arg->address = address;
-
-	if (field) {
-		arg->field = field;
-		arg->field_set = true;
-	}
-
-	if (range) {
-		arg->range = range;
-		arg->range_set = true;
-		arg->range_is_offset = range_is_offset;
-	}
-
-	if (value) {
-		arg->value = value;
-		arg->value_set = true;
-	}
-
-	free(orig_str);
 }
 
 void parse_cmdline(int argc, char **argv)
