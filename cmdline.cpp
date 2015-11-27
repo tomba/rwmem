@@ -40,44 +40,66 @@ static void usage()
 	exit(1);
 }
 
-static void parse_arg(char *str, RwmemOptsArg *arg)
+static void parse_arg(const char *arg_str, RwmemOptsArg *arg)
 {
-	char *addr;
+	char *str = strdup(arg_str);
+	char *orig_str = str;
+	char *tmp;
+	const char *address = nullptr;
+	const char *field = nullptr;
+	const char *value = nullptr;
+	const char *range = nullptr;
+	bool range_is_offset;
 
-	arg->address = str;
+	address = str;
 
-	addr = strsep(&str, "=");
-	arg->value = str;
-	str = addr;
+	tmp = strsep(&str, "=");
+	value = str;
+	str = tmp;
 
-	addr = strsep(&str, ":");
-	arg->field = str;
+	tmp = strsep(&str, ":");
+	field = str;
 
-	str = addr;
-	addr = strsep(&str, "+");
+	str = tmp;
+	tmp = strsep(&str, "+");
 	if (str) {
-		arg->range = str;
-		arg->range_is_offset = true;
+		range = str;
+		range_is_offset = true;
 	} else {
-		str = strstr(addr, "..");
+		str = strstr(tmp, "..");
 		if (str) {
 			*str = 0;
-			arg->range = str + 2;
-			arg->range_is_offset = false;
+			range = str + 2;
+			range_is_offset = false;
 		}
 	}
 
-	if (strlen(arg->address) == 0)
+	if (strlen(address) == 0)
 		usage();
 
-	if (arg->range && strlen(arg->range) == 0)
+	if (range && strlen(range) == 0)
 		usage();
 
-	if (arg->field && strlen(arg->field) == 0)
+	if (field && strlen(field) == 0)
 		usage();
 
-	if (arg->value && strlen(arg->value) == 0)
+	if (value && strlen(value) == 0)
 		usage();
+
+	arg->address = address;
+
+	if (field)
+		arg->field = field;
+
+	if (range) {
+		arg->range = range;
+		arg->range_is_offset = range_is_offset;
+	}
+
+	if (value)
+		arg->value = value;
+
+	free(orig_str);
 }
 
 static void parse_longopt(int idx)

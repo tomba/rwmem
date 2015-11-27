@@ -182,7 +182,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse range */
 
-	if (arg->range) {
+	if (arg->range_set) {
 		int r = parse_u64(arg->range, &op->range);
 		ERR_ON(r, "Invalid range '%s'", arg->range);
 
@@ -202,17 +202,17 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse field */
 
-	if (arg->field) {
+	if (arg->field_set) {
 		unsigned fl, fh;
 		char *endptr;
 
 		bool ok = false;
 
-		if (sscanf(arg->field, "%i:%i", &fh, &fl) == 2)
+		if (sscanf(arg->field.c_str(), "%i:%i", &fh, &fl) == 2)
 			ok = true;
 
 		if (!ok) {
-			fl = fh = strtoull(arg->field, &endptr, 0);
+			fl = fh = strtoull(arg->field.c_str(), &endptr, 0);
 			if (*endptr == 0)
 				ok = true;
 		}
@@ -241,7 +241,7 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse value */
 
-	if (arg->value) {
+	if (arg->value_set) {
 		uint64_t value;
 		int r = parse_u64(arg->value, &value);
 		ERR_ON(r, "Invalid value '%s'", arg->value);
