@@ -321,8 +321,8 @@ int main(int argc, char **argv)
 	base = 0;
 	regfilename = NULL;
 
-	if (rwmem_opts.regfile)
-		regfilename = rwmem_opts.regfile;
+	if (!rwmem_opts.regfile.empty())
+		regfilename = rwmem_opts.regfile.c_str();
 
 	unique_ptr<RegFile> regfile = nullptr;
 
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
 
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
-		regfile->print(rwmem_opts.show_list_pattern);
+		regfile->print(rwmem_opts.show_list_pattern.c_str());
 		return 0;
 	}
 
@@ -354,7 +354,7 @@ int main(int argc, char **argv)
 
 	/* Open the file and mmap */
 
-	int fd = open(rwmem_opts.filename,
+	int fd = open(rwmem_opts.filename.c_str(),
 		      (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	if (fd == -1)

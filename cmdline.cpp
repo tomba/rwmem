@@ -4,10 +4,12 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
-#include <getopt.h>
 
 #include "rwmem.h"
 #include "helpers.h"
+#include "opts.h"
+
+using namespace std;
 
 RwmemOpts rwmem_opts;
 
@@ -40,9 +42,9 @@ static void usage()
 	exit(1);
 }
 
-static void parse_arg(const char *arg_str, RwmemOptsArg *arg)
+static void parse_arg(const std::string arg_str, RwmemOptsArg *arg)
 {
-	char *str = strdup(arg_str);
+	char *str = strdup(arg_str.c_str());
 	char *orig_str = str;
 	char *tmp;
 	const char *address = nullptr;
@@ -102,24 +104,6 @@ static void parse_arg(const char *arg_str, RwmemOptsArg *arg)
 	free(orig_str);
 }
 
-static void parse_longopt(int idx)
-{
-	switch (idx) {
-	case 0:	/* file */
-		rwmem_opts.filename = optarg;
-		break;
-	case 1:	/* regs */
-		rwmem_opts.regfile = optarg;
-		break;
-	case 2: /* list */
-		rwmem_opts.show_list = true;
-		rwmem_opts.show_list_pattern = optarg;
-		break;
-	default:
-		usage();
-	}
-}
-
 void parse_cmdline(int argc, char **argv)
 {
 	memset(&rwmem_opts, 0, sizeof(rwmem_opts));
@@ -129,72 +113,71 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 	rwmem_opts.print_mode = PrintMode::RegFields;
 
-	int c;
-
-	while (1) {
-		int option_index = 0;
-		static const struct option lopts[] = {
-			{"file", required_argument, 0, 0 },
-			{"regs", required_argument, 0, 0 },
-			{"list", optional_argument, 0, 0 },
-			{0, 0, 0, 0 }
-		};
-
-		c = getopt_long(argc, argv, "s:w:hRp:",
-				lopts, &option_index);
-		if (c == -1)
-			break;
-
-		switch (c) {
-		case 0:
-			parse_longopt(option_index);
-			break;
-
-		case 's': {
-			int rs = atoi(optarg);
+	OptionSet optionset = {
+		Option("s=",
+		[&](string s)
+		{
+			int rs = stoi(s);
 
 			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-				myerr("Invalid size '%s'", optarg);
+				myerr("Invalid size '%s'", s.c_str());
 
 			rwmem_opts.regsize = rs;
-			break;
-		}
-		case 'w':
-			if (strcmp(optarg, "w") == 0)
+		}),
+		Option("w=", [&](string s)
+		{
+			if (s == "w")
 				rwmem_opts.write_mode = WriteMode::Write;
-			else if (strcmp(optarg, "rw") == 0)
+			else if (s == "rw")
 				rwmem_opts.write_mode = WriteMode::ReadWrite;
-			else if (strcmp(optarg, "rwr") == 0)
+			else if (s == "rwr")
 				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
-				ERR("illegal write mode '%s'", optarg);
-			break;
-		case 'R':
+				ERR("illegal write mode '%s'", s.c_str());
+		}),
+		Option("R", [&]()
+		{
 			rwmem_opts.raw_output = true;
-			break;
-		case 'p':
-			if (strcmp(optarg, "q") == 0)
+		}),
+		Option("p=", [&](string s)
+		{
+			if (s == "q")
 				rwmem_opts.print_mode = PrintMode::Quiet;
-			else if (strcmp(optarg, "r") == 0)
+			else if (s == "r")
 				rwmem_opts.print_mode = PrintMode::Reg;
-			else if (strcmp(optarg, "rf") == 0)
+			else if (s == "rf")
 				rwmem_opts.print_mode = PrintMode::RegFields;
 			else
-				ERR("illegal print mode '%s'", optarg);
-			break;
-		case 'h':
-		default:
+				ERR("illegal print mode '%s'", s.c_str());
+		}),
+		Option("|file=", [&](string s)
+		{
+			rwmem_opts.filename = s;
+		}),
+		Option("|regs=", [&](string s)
+		{
+			rwmem_opts.regfile = s;
+		}),
+		Option("|list?", [&](string s)
+		{
+			rwmem_opts.show_list = true;
+			rwmem_opts.show_list_pattern = s;
+		}),
+		Option("h|help", [&]()
+		{
 			usage();
-		}
-	}
+		}),
+	};
 
-	int num_args = argc - optind;
+	optionset.parse(argc, argv);
 
-	if (num_args == 0 && !rwmem_opts.show_list)
+	const vector<string> params = optionset.params();
+
+	if (params.size() == 0 && !rwmem_opts.show_list)
 		usage();
 
-	rwmem_opts.args.resize(num_args);
+	rwmem_opts.args.resize(params.size());
 
-	for (int i = 0; i < num_args; ++i)
-		parse_arg(argv[optind + i], &rwmem_opts.args[i]);
+	for (unsigned i = 0; i < params.size(); ++i)
+		parse_arg(params[i], &rwmem_opts.args[i]);
 }

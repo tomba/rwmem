@@ -47,16 +47,16 @@ struct RwmemOptsArg {
 };
 
 struct RwmemOpts {
-	const char *filename;
+	std::string filename;
 	unsigned regsize;
 	WriteMode write_mode;
 	PrintMode print_mode;
 	bool raw_output;
 
-	const char *regfile;
+	std::string regfile;
 
 	bool show_list;
-	const char *show_list_pattern;
+	std::string show_list_pattern;
 
 	std::vector<RwmemOptsArg> args;
 };
