@@ -40,7 +40,7 @@ using namespace std;
 #define printq(format...) \
 	do { \
 		if (rwmem_opts.print_mode != PrintMode::Quiet) \
-		printf(format); \
+			printf(format); \
 	} while(0)
 
 static void print_field(unsigned high, unsigned low,

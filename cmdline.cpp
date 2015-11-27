@@ -37,7 +37,7 @@ static void usage()
 		"	-R		raw output mode\n"
 		"	--file <file>	file to open (default: /dev/mem)\n"
 		"	--regs <file>	register set file\n"
-	       );
+		);
 
 	exit(1);
 }
