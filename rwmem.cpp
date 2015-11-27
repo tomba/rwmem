@@ -170,18 +170,14 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 
 	/* Parse address */
 
-	{
-		char *endptr;
-		op->address = strtoull(arg->address, &endptr, 0);
-		if (*endptr != 0) {
-			if (!regfile)
-				ERR("Invalid address '%s'", arg->address);
+	if (parse_u64(arg->address, &op->address) != 0) {
+		if (!regfile)
+			ERR("Invalid address '%s'", arg->address);
 
-			reg = regfile->find_reg(arg->address);
+		reg = regfile->find_reg(arg->address);
 
-			ERR_ON(!reg, "Register not found '%s'", arg->address);
-			op->address = reg->offset();
-		}
+		ERR_ON(!reg, "Register not found '%s'", arg->address);
+		op->address = reg->offset();
 	}
 
 	/* Parse range */
