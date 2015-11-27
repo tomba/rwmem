@@ -116,9 +116,6 @@ public:
 
 	}
 
-	std::unique_ptr<Register> find_reg(const char* name) const;
-	std::unique_ptr<Register> find_reg(uint64_t offset) const;
-
 private:
 	const RegFile& m_regfile;
 	const AddressBlockData* m_abd;
