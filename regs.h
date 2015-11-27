@@ -6,26 +6,26 @@ class Register;
 
 struct  __attribute__(( packed )) FieldData
 {
-	const char* name() const { return m_name; }
+	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint8_t low() const { return m_low; }
 	uint8_t high() const { return m_high; }
 
 private:
-	char m_name[32];
+	uint32_t m_name_offset;
 	uint8_t m_low;
 	uint8_t m_high;
 };
 
 struct __attribute__(( packed )) RegisterData
 {
-	const char* name() const { return m_name; }
+	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
 	uint32_t size() const { return be32toh(m_size); }
 
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
 
 private:
-	char m_name[32];
+	uint32_t m_name_offset;
 	uint64_t m_offset;
 	uint32_t m_size;
 
@@ -34,13 +34,13 @@ private:
 
 struct __attribute__(( packed )) AddressBlockData
 {
-	const char* name() const { return m_name; }
+	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
 	uint64_t size() const { return be64toh(m_size); }
 	uint32_t num_regs() const { return be32toh(m_num_registers); }
 
 private:
-	char m_name[32];
+	uint32_t m_name_offset;
 	uint64_t m_offset;
 	uint64_t m_size;
 	uint32_t m_num_registers;
@@ -48,7 +48,7 @@ private:
 
 struct __attribute__(( packed )) RegFileData
 {
-	const char* name() const { return m_name; }
+	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint32_t num_blocks() const { return be32toh(m_num_blocks); }
 	uint32_t num_regs() const { return be32toh(m_num_regs); }
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
@@ -56,9 +56,10 @@ struct __attribute__(( packed )) RegFileData
 	const AddressBlockData* blocks() const { return (AddressBlockData*)((uint8_t*)this + sizeof(RegFileData)); }
 	const RegisterData* registers() const { return (RegisterData*)(&blocks()[num_blocks()]); }
 	const FieldData* fields() const { return (FieldData*)(&registers()[num_regs()]); }
+	const char* strings() const { return (const char*)(&fields()[num_fields()]); }
 
 private:
-	char m_name[32];
+	uint32_t m_name_offset;
 	uint32_t m_num_blocks;
 	uint32_t m_num_regs;
 	uint32_t m_num_fields;
@@ -72,7 +73,8 @@ public:
 	{
 	}
 
-	const char* name() const { return m_fd->name(); }
+	const char* name() const;
+
 	uint8_t low() const { return m_fd->low(); }
 	uint8_t high() const { return m_fd->high(); }
 
@@ -84,9 +86,11 @@ private:
 class Register
 {
 public:
-	Register(const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd);
+	Register(const RegFile& regfile, const AddressBlockData* abd, const RegisterData* rd, const FieldData* fd);
 
-	const char* name() const { return m_rd->name(); }
+	const RegFile& regfile() const { return m_regfile; }
+
+	const char* name() const;
 	uint64_t offset() const { return m_rd->offset(); }
 	uint32_t size() const { return m_rd->size(); }
 
@@ -100,6 +104,7 @@ public:
 	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low);
 
 private:
+	const RegFile& m_regfile;
 	const AddressBlockData* m_abd;
 	const RegisterData* m_rd;
 	const FieldData* m_fd;
@@ -131,6 +136,8 @@ public:
 	std::unique_ptr<Register> find_reg(uint64_t offset) const;
 
 	void print(const char* pattern);
+
+	const char* get_str(uint32_t offset) const { return m_rfd->strings() + offset; }
 
 private:
 	const RegFileData* m_rfd;
