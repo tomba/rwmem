@@ -90,16 +90,21 @@ static void parse_arg(const std::string arg_str, RwmemOptsArg *arg)
 
 	arg->address = address;
 
-	if (field)
+	if (field) {
 		arg->field = field;
+		arg->field_set = true;
+	}
 
 	if (range) {
 		arg->range = range;
+		arg->range_set = true;
 		arg->range_is_offset = range_is_offset;
 	}
 
-	if (value)
+	if (value) {
 		arg->value = value;
+		arg->value_set = true;
+	}
 
 	free(orig_str);
 }
