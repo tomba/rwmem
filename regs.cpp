@@ -162,9 +162,9 @@ static void print_all(const RegFileData* rfd)
 }
 
 
-void RegFile::print(const char* pattern)
+void RegFile::print(const string& pattern)
 {
-	if (!pattern) {
+	if (pattern.empty()) {
 		print_all(m_rfd);
 		return;
 	}
@@ -180,7 +180,7 @@ void RegFile::print(const char* pattern)
 		bool block_printed = false;
 
 		for (unsigned ridx = 0; ridx < abd->num_regs(); ++ridx, rd++) {
-			if (strcasestr(get_str(rd->name_offset()), pattern) == NULL)
+			if (strcasestr(get_str(rd->name_offset()), pattern.c_str()) == NULL)
 				continue;
 
 			if (!regfile_printed) {

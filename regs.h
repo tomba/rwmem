@@ -135,7 +135,7 @@ public:
 	std::unique_ptr<Register> find_reg(const std::string& name) const;
 	std::unique_ptr<Register> find_reg(uint64_t offset) const;
 
-	void print(const char* pattern);
+	void print(const std::string& pattern);
 
 	const char* get_str(uint32_t offset) const { return m_rfd->strings() + offset; }
 

@@ -327,7 +327,7 @@ int main(int argc, char **argv)
 
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
-		regfile->print(rwmem_opts.show_list_pattern.c_str());
+		regfile->print(rwmem_opts.show_list_pattern);
 		return 0;
 	}
 
