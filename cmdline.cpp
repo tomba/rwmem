@@ -102,8 +102,7 @@ void parse_cmdline(int argc, char **argv)
 	rwmem_opts.print_mode = PrintMode::RegFields;
 
 	OptionSet optionset = {
-		Option("s=",
-		[&](string s)
+		Option("s=", [](string s)
 		{
 			int rs = stoi(s);
 
@@ -112,7 +111,7 @@ void parse_cmdline(int argc, char **argv)
 
 			rwmem_opts.regsize = rs;
 		}),
-		Option("w=", [&](string s)
+		Option("w=", [](string s)
 		{
 			if (s == "w")
 				rwmem_opts.write_mode = WriteMode::Write;
@@ -123,11 +122,11 @@ void parse_cmdline(int argc, char **argv)
 			else
 				ERR("illegal write mode '%s'", s.c_str());
 		}),
-		Option("R", [&]()
+		Option("R", []()
 		{
 			rwmem_opts.raw_output = true;
 		}),
-		Option("p=", [&](string s)
+		Option("p=", [](string s)
 		{
 			if (s == "q")
 				rwmem_opts.print_mode = PrintMode::Quiet;
@@ -138,20 +137,20 @@ void parse_cmdline(int argc, char **argv)
 			else
 				ERR("illegal print mode '%s'", s.c_str());
 		}),
-		Option("|file=", [&](string s)
+		Option("|file=", [](string s)
 		{
 			rwmem_opts.filename = s;
 		}),
-		Option("|regs=", [&](string s)
+		Option("|regs=", [](string s)
 		{
 			rwmem_opts.regfile = s;
 		}),
-		Option("|list?", [&](string s)
+		Option("|list?", [](string s)
 		{
 			rwmem_opts.show_list = true;
 			rwmem_opts.show_list_pattern = s;
 		}),
-		Option("h|help", [&]()
+		Option("h|help", []()
 		{
 			usage();
 		}),
