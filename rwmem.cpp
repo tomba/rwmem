@@ -282,9 +282,16 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 	off_t mmap_offset = paddr & ~pagemask;
 	size_t mmap_len = op->range + (paddr & pagemask);
 
+	off_t file_len = lseek(fd, (size_t)0, SEEK_END);
+	lseek(fd, 0, SEEK_SET);
+
+	// note: use file_len only if lseek() succeeded
+	ERR_ON(file_len != (off_t)-1 && file_len < mmap_offset + (off_t)mmap_len,
+	       "Trying to access file past its end");
+
 	/*
-	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx\n",
-		op->range, paddr, mmap_offset, mmap_len);
+	printf("range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx, file_len 0x%zx\n",
+		op->range, paddr, mmap_offset, mmap_len, file_len);
 	*/
 
 	void *mmap_base = mmap(0, mmap_len,
