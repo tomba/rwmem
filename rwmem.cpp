@@ -185,28 +185,32 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 
 	/* Parse base */
 
+	std::unique_ptr<AddressBlock> ab = nullptr;
+
 	if (arg.base.size()) {
 		ERR_ON(!regfile, "Invalid base '%s'", arg.base.c_str());
 
-		op.ab = regfile->find_address_block(arg.base);
-		ERR_ON(!op.ab, "Invalid base '%s'", arg.base.c_str());
+		ab = regfile->find_address_block(arg.base);
+		ERR_ON(!ab, "Invalid base '%s'", arg.base.c_str());
 
-		op.base = op.ab->offset();
+		op.ab_offset = ab->offset();
 	}
 
 	/* Parse address */
 
-	if (parse_u64(arg.address, &op.address) != 0) {
+	std::unique_ptr<Register> reg = nullptr;
+
+	if (parse_u64(arg.address, &op.reg_offset) != 0) {
 		ERR_ON(!regfile, "Invalid address '%s'", arg.address.c_str());
 
-		if (op.ab)
-			op.reg = op.ab->find_reg(arg.address);
+		if (ab)
+			reg = ab->find_reg(arg.address);
 		else
-			op.reg = regfile->find_reg(arg.address);
+			reg = regfile->find_reg(arg.address);
 
-		ERR_ON(!op.reg, "Register not found '%s'", arg.address.c_str());
+		ERR_ON(!reg, "Register not found '%s'", arg.address.c_str());
 
-		op.address = op.reg->offset();
+		op.reg_offset = reg->offset();
 	}
 
 	/* Parse range */
@@ -216,15 +220,15 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 		ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
 
 		if (!arg.range_is_offset) {
-			ERR_ON(op.range <= op.address, "range '%s' is <= 0", arg.range.c_str());
+			ERR_ON(op.range <= op.reg_offset, "range '%s' is <= 0", arg.range.c_str());
 
-			op.range = op.range - op.address;
+			op.range = op.range - op.reg_offset;
 		}
 
 		op.range_valid = true;
 	} else {
-		if (op.reg)
-			op.range = op.reg->size() / 8;
+		if (reg)
+			op.range = reg->size() / 8;
 		else
 			op.range = rwmem_opts.regsize / 8;
 	}
@@ -246,8 +250,8 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 				ok = true;
 		}
 
-		if (!ok && op.reg) {
-			unique_ptr<Field> field = op.reg->find_field(arg.field);
+		if (!ok && reg) {
+			unique_ptr<Field> field = reg->find_field(arg.field);
 
 			if (field) {
 				fl = field->low();
@@ -292,17 +296,17 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 
-	uint64_t paddr = op.base + op.address;
-	off_t mmap_offset = paddr & ~pagemask;
-	size_t mmap_len = op.range + (paddr & pagemask);
+	const uint64_t file_base = (rwmem_opts.ignore_base ? 0 : op.ab_offset) + op.reg_offset;
+	const off_t mmap_offset = file_base & ~pagemask;
+	const size_t mmap_len = op.range + (file_base & pagemask);
 
-	off_t file_len = lseek(fd, (size_t)0, SEEK_END);
+	const off_t file_len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
 	if (rwmem_opts.verbose)
 		fprintf(stderr,
 			"range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx, file_len 0x%zx\n",
-			op.range, paddr, mmap_offset, mmap_len, file_len);
+			op.range, file_base, mmap_offset, mmap_len, file_len);
 
 	// note: use file_len only if lseek() succeeded
 	ERR_ON(file_len != (off_t)-1 && file_len < mmap_offset + (off_t)mmap_len,
@@ -312,30 +316,31 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 			       op.value_valid ? PROT_WRITE : PROT_READ,
 			       MAP_SHARED, fd, mmap_offset);
 
-	if (mmap_base == MAP_FAILED)
-		ERR_ERRNO("failed to mmap");
+	ERR_ON_ERRNO(mmap_base == MAP_FAILED, "failed to mmap");
 
-	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
+	const void *vaddr = (uint8_t* )mmap_base + (file_base & pagemask);
 
-	uint64_t reg_offset = op.address;
-	uint64_t end_reg_offset = reg_offset + op.range;
+	const uint64_t regfile_base = op.ab_offset + op.reg_offset;
+	const uint64_t reg_base = op.reg_offset;
 
-	while (reg_offset < end_reg_offset) {
+	uint64_t offset = 0;
+
+	while (offset < op.range) {
 		unique_ptr<Register> reg = nullptr;
 
 		if (regfile)
-			reg = regfile->find_reg(reg_offset);
+			reg = regfile->find_reg(regfile_base + offset);
 
 		unsigned access_width = reg ? reg->size() : rwmem_opts.regsize;
 
-		if (rwmem_opts.raw_output)
-			readprint_raw(vaddr, access_width);
-		else
-			readwriteprint(op, paddr, vaddr, reg_offset, access_width, reg.get());
+		void* va = (uint8_t*)vaddr + offset;
 
-		paddr += access_width / 8;
-		vaddr = (uint8_t*)vaddr + access_width / 8;
-		reg_offset += access_width / 8;
+		if (rwmem_opts.raw_output)
+			readprint_raw(va, access_width);
+		else
+			readwriteprint(op, file_base + offset, va, reg_base + offset, access_width, reg.get());
+
+		offset += access_width / 8;
 	}
 
 	if (munmap(mmap_base, pagesize) == -1)
@@ -375,13 +380,12 @@ int main(int argc, char **argv)
 		ops.push_back(move(op));
 	}
 
-	/* Open the file and mmap */
+	/* Open the file */
 
 	int fd = open(rwmem_opts.filename.c_str(),
 		      (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
-	if (fd == -1)
-		ERR_ERRNO("Failed to open file '%s'", rwmem_opts.filename.c_str());
+	ERR_ON_ERRNO(fd == -1, "Failed to open file '%s'", rwmem_opts.filename.c_str());
 
 	for (const RwmemOp& op : ops)
 		do_op(fd, op, regfile.get());

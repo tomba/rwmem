@@ -161,6 +161,10 @@ void parse_cmdline(int argc, char **argv)
 			rwmem_opts.show_list = true;
 			rwmem_opts.show_list_pattern = s;
 		}),
+		Option("|ignore-base", []()
+		{
+			rwmem_opts.ignore_base = true;
+		}),
 		Option("v|verbose", []()
 		{
 			rwmem_opts.verbose = true;

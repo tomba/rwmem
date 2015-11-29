@@ -134,10 +134,16 @@ unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
 		const AddressBlock ab = address_block(bidx);
 
+		if (offset < ab.offset())
+			continue;
+
+		if (offset >= ab.offset() + ab.size())
+			continue;
+
 		for (unsigned ridx = 0; ridx < ab.num_regs(); ++ridx) {
 			Register reg = ab.reg(ridx);
 
-			if (reg.offset() == offset)
+			if (reg.offset() == offset - ab.offset())
 				return make_unique<Register>(reg);
 		}
 	}

@@ -22,11 +22,8 @@ enum class PrintMode{
 };
 
 struct RwmemOp {
-	std::unique_ptr<AddressBlock> ab;
-	uint64_t base;
-
-	std::unique_ptr<Register> reg;
-	uint64_t address;
+	uint64_t ab_offset;
+	uint64_t reg_offset;
 
 	bool range_valid;
 	uint64_t range;
@@ -63,6 +60,7 @@ struct RwmemOpts {
 	std::vector<RwmemOptsArg> args;
 
 	bool verbose;
+	bool ignore_base;
 };
 
 extern RwmemOpts rwmem_opts;
