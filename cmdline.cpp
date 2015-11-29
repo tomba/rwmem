@@ -88,7 +88,18 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		}
 	}
 
-	arg->address = str;
+	idx = str.find('/');
+
+	if (idx != string::npos) {
+		arg->address = str.substr(idx + 1);
+		str.resize(idx);
+		arg->base = str;
+
+		if (arg->base.size() == 0)
+			usage();
+	} else {
+		arg->address = str;
+	}
 
 	if (arg->address.size() == 0)
 		usage();

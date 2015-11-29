@@ -62,7 +62,7 @@ static uint32_t get_max_field_name_len(const Register* reg)
 static void print_field(unsigned high, unsigned low,
 			Register* reg, Field* fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
-			const RwmemOp *op)
+			const RwmemOp& op)
 {
 	uint64_t mask = GENMASK(high, low);
 
@@ -85,7 +85,7 @@ static void print_field(unsigned high, unsigned low,
 	if (rwmem_opts.write_mode != WriteMode::Write)
 		printq("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
 
-	if (op->value_valid) {
+	if (op.value_valid) {
 		printq(":= %-#*" PRIx64 " ", access_width / 4 + 2, userval);
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead)
 			printq("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
@@ -94,7 +94,7 @@ static void print_field(unsigned high, unsigned low,
 	printq("\n");
 }
 
-static void readwriteprint(const RwmemOp *op,
+static void readwriteprint(const RwmemOp& op,
 			   uint64_t paddr, void *vaddr,
 			   uint64_t offset,
 			   unsigned width,
@@ -119,15 +119,15 @@ static void readwriteprint(const RwmemOp *op,
 		newval = oldval;
 	}
 
-	if (op->value_valid) {
+	if (op.value_valid) {
 		uint64_t v;
 
-		if (op->field_valid) {
+		if (op.field_valid) {
 			v = oldval;
-			v &= ~GENMASK(op->high, op->low);
-			v |= op->value << op->low;
+			v &= ~GENMASK(op.high, op.low);
+			v |= op.value << op.low;
 		} else {
-			v = op->value;
+			v = op.value;
 		}
 
 		printq(":= %0#*" PRIx64 " ", width / 4 + 2, v);
@@ -151,7 +151,7 @@ static void readwriteprint(const RwmemOp *op,
 	if (rwmem_opts.print_mode != PrintMode::RegFields)
 		return;
 
-	if (!op->field_valid) {
+	if (!op.field_valid) {
 		if (reg) {
 			for (unsigned i = 0; i < reg->num_fields(); ++i) {
 				Field field = reg->field(i);
@@ -163,9 +163,9 @@ static void readwriteprint(const RwmemOp *op,
 		unique_ptr<Field> field = nullptr;
 
 		if (reg)
-			field = reg->find_field(op->high, op->low);
+			field = reg->find_field(op.high, op.low);
 
-		print_field(op->high, op->low, reg, field.get(), newval, userval, oldval,
+		print_field(op.high, op.low, reg, field.get(), newval, userval, oldval,
 			    op);
 	}
 }
@@ -179,62 +179,75 @@ static int readprint_raw(void *vaddr, unsigned width)
 	return write(STDOUT_FILENO, &v, width);
 }
 
-static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
-		     const RegFile* regfile)
+static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 {
-	unique_ptr<Register> reg = nullptr;
+	RwmemOp op { };
+
+	/* Parse base */
+
+	if (arg.base.size()) {
+		ERR_ON(!regfile, "Invalid base '%s'", arg.base.c_str());
+
+		op.ab = regfile->find_address_block(arg.base);
+		ERR_ON(!op.ab, "Invalid base '%s'", arg.base.c_str());
+
+		op.base = op.ab->offset();
+	}
 
 	/* Parse address */
 
-	if (parse_u64(arg->address, &op->address) != 0) {
-		ERR_ON(!regfile, "Invalid address '%s'", arg->address.c_str());
+	if (parse_u64(arg.address, &op.address) != 0) {
+		ERR_ON(!regfile, "Invalid address '%s'", arg.address.c_str());
 
-		reg = regfile->find_reg(arg->address);
+		if (op.ab)
+			op.reg = op.ab->find_reg(arg.address);
+		else
+			op.reg = regfile->find_reg(arg.address);
 
-		ERR_ON(!reg, "Register not found '%s'", arg->address.c_str());
+		ERR_ON(!op.reg, "Register not found '%s'", arg.address.c_str());
 
-		op->address = reg->offset();
+		op.address = op.reg->offset();
 	}
 
 	/* Parse range */
 
-	if (arg->range.size()) {
-		int r = parse_u64(arg->range, &op->range);
-		ERR_ON(r, "Invalid range '%s'", arg->range.c_str());
+	if (arg.range.size()) {
+		int r = parse_u64(arg.range, &op.range);
+		ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
 
-		if (!arg->range_is_offset) {
-			ERR_ON(op->range <= op->address, "range '%s' is <= 0", arg->range.c_str());
+		if (!arg.range_is_offset) {
+			ERR_ON(op.range <= op.address, "range '%s' is <= 0", arg.range.c_str());
 
-			op->range = op->range - op->address;
+			op.range = op.range - op.address;
 		}
 
-		op->range_valid = true;
+		op.range_valid = true;
 	} else {
-		if (reg)
-			op->range = reg->size() / 8;
+		if (op.reg)
+			op.range = op.reg->size() / 8;
 		else
-			op->range = rwmem_opts.regsize / 8;
+			op.range = rwmem_opts.regsize / 8;
 	}
 
 	/* Parse field */
 
-	if (arg->field.size()) {
+	if (arg.field.size()) {
 		unsigned fl, fh;
 		char *endptr;
 
 		bool ok = false;
 
-		if (sscanf(arg->field.c_str(), "%i:%i", &fh, &fl) == 2)
+		if (sscanf(arg.field.c_str(), "%i:%i", &fh, &fl) == 2)
 			ok = true;
 
 		if (!ok) {
-			fl = fh = strtoull(arg->field.c_str(), &endptr, 0);
+			fl = fh = strtoull(arg.field.c_str(), &endptr, 0);
 			if (*endptr == 0)
 				ok = true;
 		}
 
-		if (!ok && reg) {
-			unique_ptr<Field> field = reg->find_field(arg->field);
+		if (!ok && op.reg) {
+			unique_ptr<Field> field = op.reg->find_field(arg.field);
 
 			if (field) {
 				fl = field->low();
@@ -243,44 +256,45 @@ static void parse_op(const RwmemOptsArg *arg, RwmemOp *op,
 			}
 		}
 
-		ERR_ON(!ok, "Field not found '%s'", arg->field.c_str());
+		ERR_ON(!ok, "Field not found '%s'", arg.field.c_str());
 
 		ERR_ON(fl >= rwmem_opts.regsize || fh >= rwmem_opts.regsize,
 		       "Field bits higher than register size");
 
-		op->low = fl;
-		op->high = fh;
-		op->field_valid = true;
+		op.low = fl;
+		op.high = fh;
+		op.field_valid = true;
 	}
 
 	/* Parse value */
 
-	if (arg->value.size()) {
+	if (arg.value.size()) {
 		uint64_t value;
-		int r = parse_u64(arg->value, &value);
-		ERR_ON(r, "Invalid value '%s'", arg->value.c_str());
+		int r = parse_u64(arg.value, &value);
+		ERR_ON(r, "Invalid value '%s'", arg.value.c_str());
 
 		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize);
 
 		ERR_ON(value & ~regmask, "Value does not fit into the register size");
 
-		ERR_ON(op->field_valid && (value & ~GENMASK(op->high - op->low, 0)),
+		ERR_ON(op.field_valid && (value & ~GENMASK(op.high - op.low, 0)),
 		       "Value does not fit into the field");
 
-		op->value = value;
-		op->value_valid = true;
+		op.value = value;
+		op.value_valid = true;
 	}
+
+	return op;
 }
 
-static void do_op(int fd, uint64_t base, const RwmemOp *op,
-		  const RegFile* regfile)
+static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 
-	uint64_t paddr = base + op->address;
+	uint64_t paddr = op.base + op.address;
 	off_t mmap_offset = paddr & ~pagemask;
-	size_t mmap_len = op->range + (paddr & pagemask);
+	size_t mmap_len = op.range + (paddr & pagemask);
 
 	off_t file_len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
@@ -288,14 +302,14 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 	if (rwmem_opts.verbose)
 		fprintf(stderr,
 			"range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx, file_len 0x%zx\n",
-			op->range, paddr, mmap_offset, mmap_len, file_len);
+			op.range, paddr, mmap_offset, mmap_len, file_len);
 
 	// note: use file_len only if lseek() succeeded
 	ERR_ON(file_len != (off_t)-1 && file_len < mmap_offset + (off_t)mmap_len,
 	       "Trying to access file past its end");
 
 	void *mmap_base = mmap(0, mmap_len,
-			       op->value_valid ? PROT_WRITE : PROT_READ,
+			       op.value_valid ? PROT_WRITE : PROT_READ,
 			       MAP_SHARED, fd, mmap_offset);
 
 	if (mmap_base == MAP_FAILED)
@@ -303,8 +317,8 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 
 	void *vaddr = (uint8_t* )mmap_base + (paddr & pagemask);
 
-	uint64_t reg_offset = op->address;
-	uint64_t end_reg_offset = reg_offset + op->range;
+	uint64_t reg_offset = op.address;
+	uint64_t end_reg_offset = reg_offset + op.range;
 
 	while (reg_offset < end_reg_offset) {
 		unique_ptr<Register> reg = nullptr;
@@ -330,15 +344,9 @@ static void do_op(int fd, uint64_t base, const RwmemOp *op,
 
 int main(int argc, char **argv)
 {
-	uint64_t base;
-	const char *regfilename;
-
 	parse_cmdline(argc, argv);
 
-	/* Parse base */
-
-	base = 0;
-	regfilename = NULL;
+	const char *regfilename = nullptr;
 
 	if (!rwmem_opts.regfile.empty())
 		regfilename = rwmem_opts.regfile.c_str();
@@ -354,21 +362,17 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	unsigned num_ops = rwmem_opts.args.size();
-
 	bool read_only = true;
 
 	vector<RwmemOp> ops;
-	ops.resize(num_ops);
 
-	for (unsigned i = 0; i < num_ops; ++i) {
-		const RwmemOptsArg *arg = &rwmem_opts.args[i];
-		RwmemOp *op = &ops[i];
+	for (const RwmemOptsArg& arg : rwmem_opts.args) {
+		RwmemOp op = parse_op(arg, regfile.get());
 
-		parse_op(arg, op, regfile.get());
-
-		if (op->value_valid)
+		if (op.value_valid)
 			read_only = false;
+
+		ops.push_back(move(op));
 	}
 
 	/* Open the file and mmap */
@@ -379,11 +383,8 @@ int main(int argc, char **argv)
 	if (fd == -1)
 		ERR_ERRNO("Failed to open file '%s'", rwmem_opts.filename.c_str());
 
-	for (unsigned i = 0; i < num_ops; ++i) {
-		RwmemOp *op = &ops[i];
-
-		do_op(fd, base, op, regfile.get());
-	}
+	for (const RwmemOp& op : ops)
+		do_op(fd, op, regfile.get());
 
 	close(fd);
 

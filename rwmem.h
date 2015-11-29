@@ -7,6 +7,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "regs.h"
+
 enum class WriteMode {
 	Write,
 	ReadWrite,
@@ -20,6 +22,10 @@ enum class PrintMode{
 };
 
 struct RwmemOp {
+	std::unique_ptr<AddressBlock> ab;
+	uint64_t base;
+
+	std::unique_ptr<Register> reg;
 	uint64_t address;
 
 	bool range_valid;
@@ -33,6 +39,7 @@ struct RwmemOp {
 };
 
 struct RwmemOptsArg {
+	std::string base;
 	std::string address;
 	std::string range;
 	std::string field;

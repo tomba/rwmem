@@ -59,6 +59,18 @@ Register AddressBlock::reg(uint32_t idx) const
 	return Register(m_rfd, m_abd, rd);
 }
 
+unique_ptr<Register> AddressBlock::find_reg(const string& name) const
+{
+	for (unsigned ridx = 0; ridx < num_regs(); ++ridx) {
+		Register reg = this->reg(ridx);
+
+		if (strcmp(reg.name(), name.c_str()) == 0)
+			return make_unique<Register>(reg);
+	}
+
+	return nullptr;
+}
+
 
 RegFile::RegFile(const char* filename)
 {
@@ -89,6 +101,18 @@ AddressBlock RegFile::address_block(uint32_t idx) const
 	return AddressBlock(m_rfd, abd);
 }
 
+unique_ptr<AddressBlock> RegFile::find_address_block(const string& name) const
+{
+	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
+		const AddressBlock ab = address_block(bidx);
+
+		if (strcmp(ab.name(), name.c_str()) == 0)
+			return make_unique<AddressBlock>(ab);
+	}
+
+	return nullptr;
+}
+
 unique_ptr<Register> RegFile::find_reg(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
@@ -97,9 +121,8 @@ unique_ptr<Register> RegFile::find_reg(const string& name) const
 		for (unsigned ridx = 0; ridx < ab.num_regs(); ++ridx) {
 			Register reg = ab.reg(ridx);
 
-			if (strcmp(reg.name(), name.c_str()) == 0) {
+			if (strcmp(reg.name(), name.c_str()) == 0)
 				return make_unique<Register>(reg);
-			}
 		}
 	}
 

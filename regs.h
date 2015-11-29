@@ -122,6 +122,8 @@ public:
 
 	Register reg(uint32_t idx) const;
 
+	std::unique_ptr<Register> find_reg(const std::string& name) const;
+
 private:
 	const RegFileData* m_rfd;
 	const AddressBlockData* m_abd;
@@ -139,6 +141,8 @@ public:
 	uint32_t num_fields() const { return m_rfd->num_fields(); }
 
 	AddressBlock address_block(uint32_t idx) const;
+
+	std::unique_ptr<AddressBlock> find_address_block(const std::string& name) const;
 
 	std::unique_ptr<Register> find_reg(const std::string& name) const;
 	std::unique_ptr<Register> find_reg(uint64_t offset) const;
