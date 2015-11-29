@@ -150,6 +150,10 @@ void parse_cmdline(int argc, char **argv)
 			rwmem_opts.show_list = true;
 			rwmem_opts.show_list_pattern = s;
 		}),
+		Option("v|verbose", []()
+		{
+			rwmem_opts.verbose = true;
+		}),
 		Option("h|help", []()
 		{
 			usage();
@@ -162,7 +166,7 @@ void parse_cmdline(int argc, char **argv)
 	}
 	catch(std::exception const& e)
 	{
-		printf("Failed to parse options: %s\n", e.what());
+		fprintf(stderr, "Failed to parse options: %s\n", e.what());
 		exit(1);
 	}
 

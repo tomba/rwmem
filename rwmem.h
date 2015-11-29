@@ -54,6 +54,8 @@ struct RwmemOpts {
 	std::string show_list_pattern;
 
 	std::vector<RwmemOptsArg> args;
+
+	bool verbose;
 };
 
 extern RwmemOpts rwmem_opts;
