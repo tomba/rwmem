@@ -166,8 +166,7 @@ void parse_cmdline(int argc, char **argv)
 	}
 	catch(std::exception const& e)
 	{
-		fprintf(stderr, "Failed to parse options: %s\n", e.what());
-		exit(1);
+		ERR("Failed to parse options: %s\n", e.what());
 	}
 
 	const vector<string> params = optionset.params();
