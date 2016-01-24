@@ -288,10 +288,8 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 	const off_t file_len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	if (rwmem_opts.verbose)
-		fprintf(stderr,
-			"range %#" PRIx64 " paddr %#" PRIx64 " pa_offset 0x%lx, len 0x%zx, file_len 0x%zx\n",
-			op.range, file_base, mmap_offset, mmap_len, file_len);
+	vprint("mmap: base=%#" PRIx64 " range=%#" PRIx64 " mmap_offset=0x%lx mmap_len=0x%zx file_len=0x%zx\n",
+	       file_base, op.range, mmap_offset, mmap_len, file_len);
 
 	// note: use file_len only if lseek() succeeded
 	ERR_ON(file_len != (off_t)-1 && file_len < mmap_offset + (off_t)mmap_len,
@@ -343,8 +341,10 @@ int main(int argc, char **argv)
 
 	unique_ptr<RegFile> regfile = nullptr;
 
-	if (regfilename)
+	if (regfilename) {
+		vprint("Reading regfile '%s'\n", regfilename);
 		regfile = make_unique<RegFile>(regfilename);
+	}
 
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
@@ -367,13 +367,19 @@ int main(int argc, char **argv)
 
 	/* Open the file */
 
+	vprint("Opening target file '%s'\n", rwmem_opts.filename.c_str());
+
 	int fd = open(rwmem_opts.filename.c_str(),
 		      (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	ERR_ON_ERRNO(fd == -1, "Failed to open file '%s'", rwmem_opts.filename.c_str());
 
-	for (const RwmemOp& op : ops)
+	for (const RwmemOp& op : ops) {
+		vprint("Op ab_offset=%#" PRIx64 " reg_offset=%#" PRIx64 " range=%#" PRIx64 " field=%d:%d value=%#" PRIx64 "\n",
+		       op.ab_offset, op.reg_offset, op.range, op.low, op.high, op.value);
+
 		do_op(fd, op, regfile.get());
+	}
 
 	close(fd);
 

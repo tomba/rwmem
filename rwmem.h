@@ -67,4 +67,10 @@ extern RwmemOpts rwmem_opts;
 
 void parse_cmdline(int argc, char **argv);
 
+#define vprint(format...) \
+	do { \
+		if (rwmem_opts.verbose) \
+			fprintf(stderr, format); \
+	} while(0)
+
 #endif /* __RWMEM_H__ */
