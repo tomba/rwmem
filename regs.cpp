@@ -49,6 +49,25 @@ unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low)
 	return nullptr;
 }
 
+uint32_t Register::get_max_field_name_len()
+{
+	if (m_max_field_name_len)
+		return m_max_field_name_len;
+
+	uint32_t max = 0;
+
+	for (unsigned i = 0; i < num_fields(); ++i) {
+		Field f = field(i);
+		uint32_t len = strlen(f.name());
+		if (len > max)
+			max = len;
+	}
+
+	m_max_field_name_len = max;
+
+	return max;
+}
+
 
 Register AddressBlock::reg(uint32_t idx) const
 {

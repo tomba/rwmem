@@ -44,21 +44,6 @@ using namespace std;
 	} while(0)
 
 
-// XXX call this once, instead of every print_field
-static uint32_t get_max_field_name_len(const Register* reg)
-{
-	uint32_t max = 0;
-
-	for (unsigned i = 0; i < reg->num_fields(); ++i) {
-		Field f = reg->field(i);
-		uint32_t len = strlen(f.name());
-		if (len > max)
-			max = len;
-	}
-
-	return max;
-}
-
 static void print_field(unsigned high, unsigned low,
 			Register* reg, Field* fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
@@ -71,7 +56,7 @@ static void print_field(unsigned high, unsigned low,
 	userval = (userval & mask) >> low;
 
 	if (fd)
-		printq("\t%-*s ", get_max_field_name_len(reg), fd->name());
+		printq("\t%-*s ", reg->get_max_field_name_len(), fd->name());
 	else
 		printq("\t");
 

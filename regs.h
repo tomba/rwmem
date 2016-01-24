@@ -101,10 +101,13 @@ public:
 	std::unique_ptr<Field> find_field(const std::string& name);
 	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low);
 
+	uint32_t get_max_field_name_len();
+
 private:
 	const RegFileData* m_rfd;
 	const AddressBlockData* m_abd;
 	const RegisterData* m_rd;
+	uint32_t m_max_field_name_len = 0;
 };
 
 class AddressBlock
