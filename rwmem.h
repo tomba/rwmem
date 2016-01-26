@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 #include "regs.h"
+#include "inireader.h"
 
 enum class WriteMode {
 	Write,
@@ -61,11 +62,17 @@ struct RwmemOpts {
 
 	bool verbose;
 	bool ignore_base;
+
+	std::string platform;
 };
 
 extern RwmemOpts rwmem_opts;
 
 void parse_cmdline(int argc, char **argv);
+
+extern INIReader rwmem_ini;
+
+void load_opts_from_ini();
 
 #define vprint(format...) \
 	do { \

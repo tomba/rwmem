@@ -332,6 +332,9 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 
 int main(int argc, char **argv)
 {
+	rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
+	load_opts_from_ini();
+
 	parse_cmdline(argc, argv);
 
 	unique_ptr<RegFile> regfile = nullptr;

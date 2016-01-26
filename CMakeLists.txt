@@ -9,7 +9,7 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra")
 
-set(SOURCES cmdline.cpp helpers.cpp rwmem.cpp rwmem.h regs.cpp regs.h helpers.h opts.cpp opts.h)
+set(SOURCES cmdline.cpp helpers.cpp rwmem.cpp rwmem.h regs.cpp regs.h helpers.h opts.cpp opts.h inifile.cpp)
 
 set(SOURCES ${SOURCES} inireader.cpp inireader.h)
 
