@@ -135,7 +135,7 @@ private:
 class RegFile
 {
 public:
-	RegFile(const char* filename);
+	RegFile(std::string filename);
 	~RegFile();
 
 	const char* name() const { return m_rfd->strings() + m_rfd->name_offset(); }

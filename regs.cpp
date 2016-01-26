@@ -91,10 +91,10 @@ unique_ptr<Register> AddressBlock::find_reg(const string& name) const
 }
 
 
-RegFile::RegFile(const char* filename)
+RegFile::RegFile(string filename)
 {
-	int fd = open(filename, O_RDONLY);
-	ERR_ON_ERRNO(fd < 0, "Open regfile '%s' failed", filename);
+	int fd = open(filename.c_str(), O_RDONLY);
+	ERR_ON_ERRNO(fd < 0, "Open regfile '%s' failed", filename.c_str());
 
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);

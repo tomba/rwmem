@@ -334,16 +334,11 @@ int main(int argc, char **argv)
 {
 	parse_cmdline(argc, argv);
 
-	const char *regfilename = nullptr;
-
-	if (!rwmem_opts.regfile.empty())
-		regfilename = rwmem_opts.regfile.c_str();
-
 	unique_ptr<RegFile> regfile = nullptr;
 
-	if (regfilename) {
-		vprint("Reading regfile '%s'\n", regfilename);
-		regfile = make_unique<RegFile>(regfilename);
+	if (!rwmem_opts.regfile.empty()) {
+		vprint("Reading regfile '%s'\n", rwmem_opts.regfile.c_str());
+		regfile = make_unique<RegFile>(rwmem_opts.regfile.c_str());
 	}
 
 	if (rwmem_opts.show_list) {
