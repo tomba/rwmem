@@ -46,10 +46,10 @@ struct RwmemOptsArg {
 };
 
 struct RwmemOpts {
-	std::string filename;
-	unsigned regsize;
-	WriteMode write_mode;
-	PrintMode print_mode;
+	std::string filename = "/dev/mem";
+	unsigned regsize = 32;
+	WriteMode write_mode = WriteMode::ReadWriteRead;
+	PrintMode print_mode = PrintMode::RegFields;
 	bool raw_output;
 
 	std::string regfile;

@@ -107,11 +107,6 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 
 void parse_cmdline(int argc, char **argv)
 {
-	rwmem_opts.filename = "/dev/mem";
-	rwmem_opts.regsize = 32;
-	rwmem_opts.write_mode = WriteMode::ReadWriteRead;
-	rwmem_opts.print_mode = PrintMode::RegFields;
-
 	OptionSet optionset = {
 		Option("s=", [](string s)
 		{
