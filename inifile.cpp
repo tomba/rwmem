@@ -38,12 +38,15 @@ static string detect_platform()
 
 void load_opts_from_ini()
 {
-	rwmem_opts.platform = detect_platform();
-
 	unsigned rs = rwmem_ini.get_int("main", "regsize", rwmem_opts.regsize);
 
 	if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
 		ERR("Invalid size '%d'", rs);
 
 	rwmem_opts.regsize = rs;
+
+	rwmem_opts.platform = detect_platform();
+
+	string plat_key = string("platform \"") + rwmem_opts.platform + "\"";
+	rwmem_opts.regfile = rwmem_ini.get(plat_key, "regfile", "");
 }
