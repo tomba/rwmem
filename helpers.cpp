@@ -27,7 +27,7 @@ uint64_t readmem(void *addr, unsigned regsize)
 	case 64:
 		return *((uint64_t *)addr);
 	default:
-		ERR("Illegal data regsize '%c'", regsize);
+		ERR("Illegal data regsize '%d'", regsize);
 	}
 }
 
@@ -46,6 +46,8 @@ void writemem(void *addr, unsigned regsize, uint64_t value)
 	case 64:
 		*((uint64_t *)addr) = value;
 		break;
+	default:
+		ERR("Illegal data regsize '%d'", regsize);
 	}
 }
 
