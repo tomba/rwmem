@@ -18,6 +18,11 @@ Register::Register(const RegFileData* rfd, const RegisterBlockData* rbd, const R
 {
 }
 
+const RegisterBlock Register::register_block() const
+{
+	return RegisterBlock(m_rfd, m_rbd);
+}
+
 const Field Register::field(uint32_t idx) const
 {
 	if (idx >= m_rd->num_fields())

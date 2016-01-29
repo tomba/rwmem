@@ -96,6 +96,7 @@ public:
 	uint32_t size() const { return m_rd->size(); }
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
+	const RegisterBlock register_block() const;
 	const Field field(uint32_t idx) const;
 
 	std::unique_ptr<Field> find_field(const std::string& name);

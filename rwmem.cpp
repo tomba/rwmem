@@ -196,6 +196,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 		ERR_ON(!reg, "Register not found '%s'", arg.address.c_str());
 
 		op.reg_offset = reg->offset();
+		op.regblock_offset = reg->register_block().offset();
 	}
 
 	/* Parse range */
