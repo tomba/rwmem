@@ -93,9 +93,9 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 	if (idx != string::npos) {
 		arg->address = str.substr(idx + 1);
 		str.resize(idx);
-		arg->base = str;
+		arg->register_block = str;
 
-		if (arg->base.size() == 0)
+		if (arg->register_block.size() == 0)
 			usage();
 	} else {
 		arg->address = str;

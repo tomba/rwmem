@@ -23,7 +23,7 @@ enum class PrintMode{
 };
 
 struct RwmemOp {
-	uint64_t ab_offset;
+	uint64_t regblock_offset;
 	uint64_t reg_offset;
 
 	bool range_valid;
@@ -37,7 +37,7 @@ struct RwmemOp {
 };
 
 struct RwmemOptsArg {
-	std::string base;
+	std::string register_block;
 	std::string address;
 	std::string range;
 	std::string field;

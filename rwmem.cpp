@@ -168,17 +168,17 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 {
 	RwmemOp op { };
 
-	/* Parse base */
+	/* Parse register block */
 
-	std::unique_ptr<AddressBlock> ab = nullptr;
+	std::unique_ptr<RegisterBlock> regblock = nullptr;
 
-	if (arg.base.size()) {
-		ERR_ON(!regfile, "Invalid base '%s'", arg.base.c_str());
+	if (arg.register_block.size()) {
+		ERR_ON(!regfile, "Invalid register block '%s'", arg.register_block.c_str());
 
-		ab = regfile->find_address_block(arg.base);
-		ERR_ON(!ab, "Invalid base '%s'", arg.base.c_str());
+		regblock = regfile->find_register_block(arg.register_block);
+		ERR_ON(!regblock, "Invalid register block '%s'", arg.register_block.c_str());
 
-		op.ab_offset = ab->offset();
+		op.regblock_offset = regblock->offset();
 	}
 
 	/* Parse address */
@@ -188,8 +188,8 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 	if (parse_u64(arg.address, &op.reg_offset) != 0) {
 		ERR_ON(!regfile, "Invalid address '%s'", arg.address.c_str());
 
-		if (ab)
-			reg = ab->find_reg(arg.address);
+		if (regblock)
+			reg = regblock->find_reg(arg.address);
 		else
 			reg = regfile->find_reg(arg.address);
 
@@ -281,7 +281,7 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
 
-	const uint64_t file_base = (rwmem_opts.ignore_base ? 0 : op.ab_offset) + op.reg_offset;
+	const uint64_t file_base = (rwmem_opts.ignore_base ? 0 : op.regblock_offset) + op.reg_offset;
 	const off_t mmap_offset = file_base & ~pagemask;
 	const size_t mmap_len = op.range + (file_base & pagemask);
 
@@ -303,7 +303,7 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 
 	const void *vaddr = (uint8_t* )mmap_base + (file_base & pagemask);
 
-	const uint64_t regfile_base = op.ab_offset + op.reg_offset;
+	const uint64_t regfile_base = op.regblock_offset + op.reg_offset;
 	const uint64_t reg_base = op.reg_offset;
 
 	uint64_t offset = 0;
@@ -373,8 +373,8 @@ int main(int argc, char **argv)
 	ERR_ON_ERRNO(fd == -1, "Failed to open file '%s'", rwmem_opts.filename.c_str());
 
 	for (const RwmemOp& op : ops) {
-		vprint("Op ab_offset=%#" PRIx64 " reg_offset=%#" PRIx64 " range=%#" PRIx64 " field=%d:%d value=%#" PRIx64 "\n",
-		       op.ab_offset, op.reg_offset, op.range, op.low, op.high, op.value);
+		vprint("Op rb_offset=%#" PRIx64 " reg_offset=%#" PRIx64 " range=%#" PRIx64 " field=%d:%d value=%#" PRIx64 "\n",
+		       op.regblock_offset, op.reg_offset, op.range, op.low, op.high, op.value);
 
 		do_op(fd, op, regfile.get());
 	}

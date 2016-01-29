@@ -13,8 +13,8 @@
 
 using namespace std;
 
-Register::Register(const RegFileData* rfd, const AddressBlockData* abd, const RegisterData* rd)
-	: m_rfd(rfd), m_abd(abd), m_rd(rd)
+Register::Register(const RegFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd)
+	: m_rfd(rfd), m_rbd(rbd), m_rd(rd)
 {
 }
 
@@ -69,16 +69,16 @@ uint32_t Register::get_max_field_name_len()
 }
 
 
-Register AddressBlock::reg(uint32_t idx) const
+Register RegisterBlock::reg(uint32_t idx) const
 {
-	if (idx >= m_abd->num_regs())
+	if (idx >= m_rbd->num_regs())
 		throw runtime_error("register idx too high");
 
-	const RegisterData* rd = &m_rfd->registers()[m_abd->regs_offset() + idx];
-	return Register(m_rfd, m_abd, rd);
+	const RegisterData* rd = &m_rfd->registers()[m_rbd->regs_offset() + idx];
+	return Register(m_rfd, m_rbd, rd);
 }
 
-unique_ptr<Register> AddressBlock::find_reg(const string& name) const
+unique_ptr<Register> RegisterBlock::find_reg(const string& name) const
 {
 	for (unsigned ridx = 0; ridx < num_regs(); ++ridx) {
 		Register reg = this->reg(ridx);
@@ -111,22 +111,22 @@ RegFile::~RegFile()
 	munmap((void*)m_rfd, m_size);
 }
 
-AddressBlock RegFile::address_block(uint32_t idx) const
+RegisterBlock RegFile::register_block(uint32_t idx) const
 {
 	if (idx >= m_rfd->num_blocks())
-		throw runtime_error("address block idx too high");
+		throw runtime_error("register block idx too high");
 
-	const AddressBlockData* abd = &m_rfd->blocks()[idx];
-	return AddressBlock(m_rfd, abd);
+	const RegisterBlockData* rbd = &m_rfd->blocks()[idx];
+	return RegisterBlock(m_rfd, rbd);
 }
 
-unique_ptr<AddressBlock> RegFile::find_address_block(const string& name) const
+unique_ptr<RegisterBlock> RegFile::find_register_block(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const AddressBlock ab = address_block(bidx);
+		const RegisterBlock rb = register_block(bidx);
 
-		if (strcmp(ab.name(), name.c_str()) == 0)
-			return make_unique<AddressBlock>(ab);
+		if (strcmp(rb.name(), name.c_str()) == 0)
+			return make_unique<RegisterBlock>(rb);
 	}
 
 	return nullptr;
@@ -135,10 +135,10 @@ unique_ptr<AddressBlock> RegFile::find_address_block(const string& name) const
 unique_ptr<Register> RegFile::find_reg(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const AddressBlock ab = address_block(bidx);
+		const RegisterBlock rb = register_block(bidx);
 
-		for (unsigned ridx = 0; ridx < ab.num_regs(); ++ridx) {
-			Register reg = ab.reg(ridx);
+		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
+			Register reg = rb.reg(ridx);
 
 			if (strcmp(reg.name(), name.c_str()) == 0)
 				return make_unique<Register>(reg);
@@ -151,18 +151,18 @@ unique_ptr<Register> RegFile::find_reg(const string& name) const
 unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const AddressBlock ab = address_block(bidx);
+		const RegisterBlock rb = register_block(bidx);
 
-		if (offset < ab.offset())
+		if (offset < rb.offset())
 			continue;
 
-		if (offset >= ab.offset() + ab.size())
+		if (offset >= rb.offset() + rb.size())
 			continue;
 
-		for (unsigned ridx = 0; ridx < ab.num_regs(); ++ridx) {
-			Register reg = ab.reg(ridx);
+		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
+			Register reg = rb.reg(ridx);
 
-			if (reg.offset() == offset - ab.offset())
+			if (reg.offset() == offset - rb.offset())
 				return make_unique<Register>(reg);
 		}
 	}
@@ -175,9 +175,9 @@ static void print_regfile(const RegFile& rf)
 	printf("%s: total %u/%u/%u\n", rf.name(), rf.num_blocks(), rf.num_regs(), rf.num_fields());
 }
 
-static void print_address_block(const AddressBlock& ab)
+static void print_register_block(const RegisterBlock& rb)
 {
-	printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n", ab.name(), ab.offset(), ab.size(), ab.num_regs());
+	printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n", rb.name(), rb.offset(), rb.size(), rb.num_regs());
 }
 
 static void print_register(const Register& reg)
@@ -195,11 +195,11 @@ static void print_all(const RegFile& rf)
 	print_regfile(rf);
 
 	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
-		AddressBlock ab = rf.address_block(bidx);
-		print_address_block(ab);
+		RegisterBlock rb = rf.register_block(bidx);
+		print_register_block(rb);
 
-		for (unsigned ridx = 0; ridx < ab.num_regs(); ++ridx) {
-			Register reg = ab.reg(ridx);
+		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
+			Register reg = rb.reg(ridx);
 			print_register(reg);
 
 			for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
@@ -215,12 +215,12 @@ static void print_pattern(const RegFile& rf, const string& pattern)
 	bool regfile_printed = false;
 
 	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
-		AddressBlock ab = rf.address_block(bidx);
+		RegisterBlock rb = rf.register_block(bidx);
 
 		bool block_printed = false;
 
-		for (unsigned ridx = 0; ridx < ab.num_regs(); ++ridx) {
-			Register reg = ab.reg(ridx);
+		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
+			Register reg = rb.reg(ridx);
 
 			if (strcasestr(reg.name(), pattern.c_str()) == NULL)
 				continue;
@@ -231,7 +231,7 @@ static void print_pattern(const RegFile& rf, const string& pattern)
 			}
 
 			if (!block_printed) {
-				print_address_block(ab);
+				print_register_block(rb);
 				block_printed = true;
 			}
 
