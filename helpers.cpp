@@ -18,13 +18,13 @@ using namespace std;
 uint64_t readmem(void *addr, unsigned regsize)
 {
 	switch (regsize) {
-	case 8:
+	case 1:
 		return *((uint8_t *)addr);
-	case 16:
+	case 2:
 		return *((uint16_t *)addr);
-	case 32:
+	case 4:
 		return *((uint32_t *)addr);
-	case 64:
+	case 8:
 		return *((uint64_t *)addr);
 	default:
 		ERR("Illegal data regsize '%d'", regsize);
@@ -34,16 +34,16 @@ uint64_t readmem(void *addr, unsigned regsize)
 void writemem(void *addr, unsigned regsize, uint64_t value)
 {
 	switch (regsize) {
-	case 8:
+	case 1:
 		*((uint8_t *)addr) = value;
 		break;
-	case 16:
+	case 2:
 		*((uint16_t *)addr) = value;
 		break;
-	case 32:
+	case 4:
 		*((uint32_t *)addr) = value;
 		break;
-	case 64:
+	case 8:
 		*((uint64_t *)addr) = value;
 		break;
 	default:

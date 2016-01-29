@@ -65,15 +65,15 @@ static void print_field(unsigned high, unsigned low,
 	else
 		printq("%2d:%-2d = ", high, low);
 
-	unsigned access_width = reg ? reg->size() : rwmem_opts.regsize;
+	unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
 
 	if (rwmem_opts.write_mode != WriteMode::Write)
-		printq("%-#*" PRIx64 " ", access_width / 4 + 2, oldval);
+		printq("%-#*" PRIx64 " ", access_size * 2 + 2, oldval);
 
 	if (op.value_valid) {
-		printq(":= %-#*" PRIx64 " ", access_width / 4 + 2, userval);
+		printq(":= %-#*" PRIx64 " ", access_size * 2 + 2, userval);
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead)
-			printq("-> %-#*" PRIx64 " ", access_width / 4 + 2, newval);
+			printq("-> %-#*" PRIx64 " ", access_size * 2 + 2, newval);
 	}
 
 	printq("\n");
@@ -99,7 +99,7 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		oldval = readmem(vaddr, width);
 
-		printq("= %0#*" PRIx64 " ", width / 4 + 2, oldval);
+		printq("= %0#*" PRIx64 " ", width * 2 + 2, oldval);
 
 		newval = oldval;
 	}
@@ -115,7 +115,7 @@ static void readwriteprint(const RwmemOp& op,
 			v = op.value;
 		}
 
-		printq(":= %0#*" PRIx64 " ", width / 4 + 2, v);
+		printq(":= %0#*" PRIx64 " ", width * 2 + 2, v);
 
 		fflush(stdout);
 
@@ -127,7 +127,7 @@ static void readwriteprint(const RwmemOp& op,
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			newval = readmem(vaddr, width);
 
-			printq("-> %0#*" PRIx64 " ", width / 4 + 2, newval);
+			printq("-> %0#*" PRIx64 " ", width * 2 + 2, newval);
 		}
 	}
 
@@ -155,13 +155,11 @@ static void readwriteprint(const RwmemOp& op,
 	}
 }
 
-static int readprint_raw(void *vaddr, unsigned width)
+static int readprint_raw(void *vaddr, unsigned size)
 {
-	uint64_t v = readmem(vaddr, width);
+	uint64_t v = readmem(vaddr, size);
 
-	width /= 8;
-
-	return write(STDOUT_FILENO, &v, width);
+	return write(STDOUT_FILENO, &v, size);
 }
 
 static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
@@ -214,9 +212,9 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 		op.range_valid = true;
 	} else {
 		if (reg)
-			op.range = reg->size() / 8;
+			op.range = reg->size();
 		else
-			op.range = rwmem_opts.regsize / 8;
+			op.range = rwmem_opts.regsize;
 	}
 
 	/* Parse field */
@@ -248,7 +246,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 
 		ERR_ON(!ok, "Field not found '%s'", arg.field.c_str());
 
-		ERR_ON(fl >= rwmem_opts.regsize || fh >= rwmem_opts.regsize,
+		ERR_ON(fl >= rwmem_opts.regsize * 8 || fh >= rwmem_opts.regsize * 8,
 		       "Field bits higher than register size");
 
 		op.low = fl;
@@ -263,7 +261,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 		int r = parse_u64(arg.value, &value);
 		ERR_ON(r, "Invalid value '%s'", arg.value.c_str());
 
-		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize);
+		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize * 8);
 
 		ERR_ON(value & ~regmask, "Value does not fit into the register size");
 
@@ -315,16 +313,16 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 		if (regfile)
 			reg = regfile->find_reg(regfile_base + offset);
 
-		unsigned access_width = reg ? reg->size() : rwmem_opts.regsize;
+		unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
 
 		void* va = (uint8_t*)vaddr + offset;
 
 		if (rwmem_opts.raw_output)
-			readprint_raw(va, access_width);
+			readprint_raw(va, access_size);
 		else
-			readwriteprint(op, file_base + offset, va, reg_base + offset, access_width, reg.get());
+			readwriteprint(op, file_base + offset, va, reg_base + offset, access_size, reg.get());
 
-		offset += access_width / 8;
+		offset += access_size;
 	}
 
 	if (munmap(mmap_base, pagesize) == -1)
