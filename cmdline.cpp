@@ -52,7 +52,7 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		arg->value = str.substr(idx + 1);
 		str.resize(idx);
 
-		if (arg->value.size() == 0)
+		if (arg->value.empty())
 			usage();
 	}
 
@@ -62,7 +62,7 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		arg->field = str.substr(idx + 1);
 		str.resize(idx);
 
-		if (arg->field.size() == 0)
+		if (arg->field.empty())
 			usage();
 	}
 
@@ -73,7 +73,7 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		arg->range_is_offset = true;
 		str.resize(idx);
 
-		if (arg->range.size() == 0)
+		if (arg->range.empty())
 			usage();
 	} else {
 		idx = str.find('-');
@@ -83,7 +83,7 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 			arg->range_is_offset = false;
 			str.resize(idx);
 
-			if (arg->range.size() == 0)
+			if (arg->range.empty())
 				usage();
 		}
 	}
@@ -95,13 +95,13 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		str.resize(idx);
 		arg->register_block = str;
 
-		if (arg->register_block.size() == 0)
+		if (arg->register_block.empty())
 			usage();
 	} else {
 		arg->address = str;
 	}
 
-	if (arg->address.size() == 0)
+	if (arg->address.empty())
 		usage();
 }
 
@@ -181,7 +181,7 @@ void parse_cmdline(int argc, char **argv)
 
 	const vector<string> params = optionset.params();
 
-	if (params.size() == 0 && !rwmem_opts.show_list)
+	if (params.empty() && !rwmem_opts.show_list)
 		usage();
 
 	rwmem_opts.args.resize(params.size());
