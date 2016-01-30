@@ -12,8 +12,8 @@ struct  __attribute__(( packed )) FieldData
 
 private:
 	uint32_t m_name_offset;
-	uint8_t m_low;
 	uint8_t m_high;
+	uint8_t m_low;
 };
 
 struct __attribute__(( packed )) RegisterData
