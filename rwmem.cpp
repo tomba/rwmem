@@ -68,12 +68,12 @@ static void print_field(unsigned high, unsigned low,
 	unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
 
 	if (rwmem_opts.write_mode != WriteMode::Write)
-		printq("%-#*" PRIx64 " ", access_size * 2 + 2, oldval);
+		printq("0x%-*" PRIx64 " ", access_size * 2, oldval);
 
 	if (op.value_valid) {
-		printq(":= %-#*" PRIx64 " ", access_size * 2 + 2, userval);
+		printq(":= 0x%-*" PRIx64 " ", access_size * 2, userval);
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead)
-			printq("-> %-#*" PRIx64 " ", access_size * 2 + 2, newval);
+			printq("-> 0x%-*" PRIx64 " ", access_size * 2, newval);
 	}
 
 	printq("\n");
@@ -88,9 +88,9 @@ static void readwriteprint(const RwmemOp& op,
 	if (reg)
 		printq("%s ", reg->name());
 
-	printq("%#" PRIx64 " ", paddr);
+	printq("0x%" PRIx64 " ", paddr);
 	if (offset != paddr)
-		printq("(+%#" PRIx64 ") ", offset);
+		printq("(+0x%" PRIx64 ") ", offset);
 
 	uint64_t oldval, userval, newval;
 
@@ -99,7 +99,7 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		oldval = readmem(vaddr, width);
 
-		printq("= %0#*" PRIx64 " ", width * 2 + 2, oldval);
+		printq("= 0x%0*" PRIx64 " ", width * 2, oldval);
 
 		newval = oldval;
 	}
@@ -111,7 +111,7 @@ static void readwriteprint(const RwmemOp& op,
 		v &= ~GENMASK(op.high, op.low);
 		v |= op.value << op.low;
 
-		printq(":= %0#*" PRIx64 " ", width * 2 + 2, v);
+		printq(":= 0x%0*" PRIx64 " ", width * 2, v);
 
 		fflush(stdout);
 
@@ -123,7 +123,7 @@ static void readwriteprint(const RwmemOp& op,
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			newval = readmem(vaddr, width);
 
-			printq("-> %0#*" PRIx64 " ", width * 2 + 2, newval);
+			printq("-> 0x%0*" PRIx64 " ", width * 2, newval);
 		}
 	}
 
