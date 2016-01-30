@@ -186,27 +186,35 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 	if (parse_u64(arg.address, &op.reg_offset) != 0) {
 		ERR_ON(!regfile, "Invalid address '%s'", arg.address.c_str());
 
-		if (regblock)
-			reg = regblock->find_reg(arg.address);
-		else
-			reg = regfile->find_reg(arg.address);
+		if (regblock && arg.address == "*") {
+			op.reg_offset = 0;
+		} else {
+			if (regblock)
+				reg = regblock->find_reg(arg.address);
+			else
+				reg = regfile->find_reg(arg.address);
 
-		ERR_ON(!reg, "Register not found '%s'", arg.address.c_str());
+			ERR_ON(!reg, "Register not found '%s'", arg.address.c_str());
 
-		op.reg_offset = reg->offset();
-		op.regblock_offset = reg->register_block().offset();
+			op.reg_offset = reg->offset();
+			op.regblock_offset = reg->register_block().offset();
+		}
 	}
 
 	/* Parse range */
 
 	if (arg.range.size()) {
-		int r = parse_u64(arg.range, &op.range);
-		ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
+		if (regblock && arg.range == "*") {
+			op.range = regblock->size();
+		} else {
+			int r = parse_u64(arg.range, &op.range);
+			ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
 
-		if (!arg.range_is_offset) {
-			ERR_ON(op.range <= op.reg_offset, "range '%s' is <= 0", arg.range.c_str());
+			if (!arg.range_is_offset) {
+				ERR_ON(op.range <= op.reg_offset, "range '%s' is <= 0", arg.range.c_str());
 
-			op.range = op.range - op.reg_offset;
+				op.range = op.range - op.reg_offset;
+			}
 		}
 
 		op.range_valid = true;

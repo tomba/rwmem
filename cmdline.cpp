@@ -103,6 +103,16 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 
 	if (arg->address.empty())
 		usage();
+
+	if (arg->address == "*") {
+		if (arg->register_block.empty())
+			usage();
+		if (!arg->range.empty())
+			usage();
+
+		arg->range = "*";
+		arg->range_is_offset = false;
+	}
 }
 
 void parse_cmdline(int argc, char **argv)
