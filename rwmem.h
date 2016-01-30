@@ -26,7 +26,6 @@ struct RwmemOp {
 	uint64_t regblock_offset;
 	uint64_t reg_offset;
 
-	bool range_valid;
 	uint64_t range;
 
 	bool field_valid;

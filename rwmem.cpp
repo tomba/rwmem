@@ -216,8 +216,6 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 				op.range = op.range - op.reg_offset;
 			}
 		}
-
-		op.range_valid = true;
 	} else {
 		if (reg)
 			op.range = reg->size();
