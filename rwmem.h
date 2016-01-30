@@ -28,7 +28,6 @@ struct RwmemOp {
 
 	uint64_t range;
 
-	bool field_valid;
 	unsigned low, high;
 
 	bool value_valid;

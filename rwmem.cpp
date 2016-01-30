@@ -107,13 +107,9 @@ static void readwriteprint(const RwmemOp& op,
 	if (op.value_valid) {
 		uint64_t v;
 
-		if (op.field_valid) {
-			v = oldval;
-			v &= ~GENMASK(op.high, op.low);
-			v |= op.value << op.low;
-		} else {
-			v = op.value;
-		}
+		v = oldval;
+		v &= ~GENMASK(op.high, op.low);
+		v |= op.value << op.low;
 
 		printq(":= %0#*" PRIx64 " ", width * 2 + 2, v);
 
@@ -136,21 +132,16 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.print_mode != PrintMode::RegFields)
 		return;
 
-	if (!op.field_valid) {
-		if (reg) {
-			for (unsigned i = 0; i < reg->num_fields(); ++i) {
-				Field field = reg->field(i);
+	if (reg) {
+		for (unsigned i = 0; i < reg->num_fields(); ++i) {
+			Field field = reg->field(i);
+
+			if (field.high() >= op.low && field.low() <= op.high)
 				print_field(field.high(), field.low(), reg, &field,
 					    newval, userval, oldval, op);
-			}
 		}
 	} else {
-		unique_ptr<Field> field = nullptr;
-
-		if (reg)
-			field = reg->find_field(op.high, op.low);
-
-		print_field(op.high, op.low, reg, field.get(), newval, userval, oldval,
+		print_field(op.high, op.low, nullptr, nullptr, newval, userval, oldval,
 			    op);
 	}
 }
@@ -257,7 +248,9 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 
 		op.low = fl;
 		op.high = fh;
-		op.field_valid = true;
+	} else {
+		op.low = 0;
+		op.high = rwmem_opts.regsize * 8 - 1;
 	}
 
 	/* Parse value */
@@ -271,7 +264,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 
 		ERR_ON(value & ~regmask, "Value does not fit into the register size");
 
-		ERR_ON(op.field_valid && (value & ~GENMASK(op.high - op.low, 0)),
+		ERR_ON(value & ~GENMASK(op.high - op.low, 0),
 		       "Value does not fit into the field");
 
 		op.value = value;
