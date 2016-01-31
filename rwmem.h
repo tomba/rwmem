@@ -62,6 +62,8 @@ struct RwmemOpts {
 	bool ignore_base;
 
 	std::string platform;
+
+	bool print_known_regs = true; // XXX get from cmdline
 };
 
 extern RwmemOpts rwmem_opts;

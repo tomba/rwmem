@@ -309,8 +309,13 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 	while (offset < op.range) {
 		unique_ptr<Register> reg = nullptr;
 
-		if (regfile)
+		if (regfile) {
 			reg = regfile->find_reg(regfile_base + offset);
+			if (rwmem_opts.print_known_regs && !reg) {
+				offset += rwmem_opts.regsize;
+				continue;
+			}
+		}
 
 		unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
 
