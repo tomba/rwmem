@@ -66,6 +66,13 @@ struct RwmemOpts {
 	bool print_known_regs = true; // XXX get from cmdline
 };
 
+struct RwmemFormatting {
+	unsigned name_chars;
+	unsigned address_chars;
+	unsigned offset_chars;
+	unsigned value_chars;
+};
+
 extern RwmemOpts rwmem_opts;
 
 void parse_cmdline(int argc, char **argv);

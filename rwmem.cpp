@@ -45,9 +45,10 @@ using namespace std;
 
 
 static void print_field(unsigned high, unsigned low,
-			Register* reg, Field* fd,
+			Field* field,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
-			const RwmemOp& op)
+			const RwmemOp& op,
+			const RwmemFormatting& formatting)
 {
 	uint64_t mask = GENMASK(high, low);
 
@@ -55,25 +56,23 @@ static void print_field(unsigned high, unsigned low,
 	oldval = (oldval & mask) >> low;
 	userval = (userval & mask) >> low;
 
-	if (fd)
-		printq("\t%-*s ", reg->get_max_field_name_len(), fd->name());
-	else
-		printq("\t");
+	printq("  ");
+
+	if (field)
+		printq("%-*s ", formatting.name_chars, field->name());
 
 	if (high == low)
 		printq("   %-2d = ", low);
 	else
 		printq("%2d:%-2d = ", high, low);
 
-	unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
-
 	if (rwmem_opts.write_mode != WriteMode::Write)
-		printq("0x%-*" PRIx64 " ", access_size * 2, oldval);
+		printq("0x%-*" PRIx64 " ", formatting.value_chars, oldval);
 
 	if (op.value_valid) {
-		printq(":= 0x%-*" PRIx64 " ", access_size * 2, userval);
+		printq(":= 0x%-*" PRIx64 " ", formatting.value_chars, userval);
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead)
-			printq("-> 0x%-*" PRIx64 " ", access_size * 2, newval);
+			printq("-> 0x%-*" PRIx64 " ", formatting.value_chars, newval);
 	}
 
 	printq("\n");
@@ -83,14 +82,16 @@ static void readwriteprint(const RwmemOp& op,
 			   uint64_t paddr, void *vaddr,
 			   uint64_t offset,
 			   unsigned width,
-			   Register* reg)
+			   Register* reg,
+			   const RwmemFormatting& formatting)
 {
 	if (reg)
-		printq("%s ", reg->name());
+		printq("%-*s ", formatting.name_chars, reg->name());
 
-	printq("0x%" PRIx64 " ", paddr);
+	printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
+
 	if (offset != paddr)
-		printq("(+0x%" PRIx64 ") ", offset);
+		printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, offset);
 
 	uint64_t oldval, userval, newval;
 
@@ -99,7 +100,7 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		oldval = readmem(vaddr, width);
 
-		printq("= 0x%0*" PRIx64 " ", width * 2, oldval);
+		printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
 
 		newval = oldval;
 	}
@@ -111,7 +112,7 @@ static void readwriteprint(const RwmemOp& op,
 		v &= ~GENMASK(op.high, op.low);
 		v |= op.value << op.low;
 
-		printq(":= 0x%0*" PRIx64 " ", width * 2, v);
+		printq(":= 0x%0*" PRIx64 " ", formatting.value_chars, v);
 
 		fflush(stdout);
 
@@ -123,7 +124,7 @@ static void readwriteprint(const RwmemOp& op,
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			newval = readmem(vaddr, width);
 
-			printq("-> 0x%0*" PRIx64 " ", width * 2, newval);
+			printq("-> 0x%0*" PRIx64 " ", formatting.value_chars, newval);
 		}
 	}
 
@@ -137,12 +138,12 @@ static void readwriteprint(const RwmemOp& op,
 			Field field = reg->field(i);
 
 			if (field.high() >= op.low && field.low() <= op.high)
-				print_field(field.high(), field.low(), reg, &field,
-					    newval, userval, oldval, op);
+				print_field(field.high(), field.low(), &field,
+					    newval, userval, oldval, op, formatting);
 		}
 	} else {
-		print_field(op.high, op.low, nullptr, nullptr, newval, userval, oldval,
-			    op);
+		print_field(op.high, op.low, nullptr, newval, userval, oldval,
+			    op, formatting);
 	}
 }
 
@@ -304,6 +305,13 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 	const uint64_t regfile_base = op.regblock_offset + op.reg_offset;
 	const uint64_t reg_base = op.reg_offset;
 
+	RwmemFormatting formatting;
+
+	formatting.name_chars = 30;
+	formatting.address_chars = file_base > 0xffffffff ? 16 : 8;
+	formatting.offset_chars = DIV_ROUND_UP(fls(op.range), 4);
+	formatting.value_chars = rwmem_opts.regsize * 2;
+
 	uint64_t offset = 0;
 
 	while (offset < op.range) {
@@ -324,7 +332,7 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 		if (rwmem_opts.raw_output)
 			readprint_raw(va, access_size);
 		else
-			readwriteprint(op, file_base + offset, va, reg_base + offset, access_size, reg.get());
+			readwriteprint(op, file_base + offset, va, reg_base + offset, access_size, reg.get(), formatting);
 
 		offset += access_size;
 	}
