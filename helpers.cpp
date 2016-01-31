@@ -79,3 +79,11 @@ int parse_u64(const std::string& str, uint64_t *value)
 	*value = v;
 	return 0;
 }
+
+int fls(uint64_t num)
+{
+	int i = 0;
+	while (num >>= 1)
+		++i;
+	return i;
+}
