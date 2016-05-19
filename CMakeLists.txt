@@ -7,7 +7,15 @@ IF(NOT CMAKE_BUILD_TYPE)
       FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
+set(RWMEM_ENABLE_LTO OFF CACHE BOOL "Enable LTO")
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra")
+
+if(RWMEM_ENABLE_LTO)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fwhole-program")
+    set(CMAKE_AR gcc-ar)
+    set(CMAKE_RANLIB gcc-ranlib)
+endif()
 
 set(SOURCES cmdline.cpp helpers.cpp rwmem.cpp rwmem.h regs.cpp regs.h helpers.h opts.cpp opts.h inifile.cpp)
 
