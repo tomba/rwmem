@@ -287,7 +287,7 @@ static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
 	const off_t file_len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	vprint("mmap: base=%#" PRIx64 " range=%#" PRIx64 " mmap_offset=0x%lx mmap_len=0x%zx file_len=0x%zx\n",
+	vprint("mmap: base=%#" PRIx64 " range=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx file_len=0x%jx\n",
 	       file_base, op.range, mmap_offset, mmap_len, file_len);
 
 	// note: use file_len only if lseek() succeeded
