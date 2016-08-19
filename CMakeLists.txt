@@ -1,20 +1,26 @@
 cmake_minimum_required(VERSION 2.8)
 project(rwmem)
 
+include(CheckCXXCompilerFlag)
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release CACHE STRING
       "Choose the type of build, options are: Debug, Release."
       FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
-set(RWMEM_ENABLE_LTO OFF CACHE BOOL "Enable LTO")
+string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra")
 
-if(RWMEM_ENABLE_LTO)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -fwhole-program")
-    set(CMAKE_AR gcc-ar)
-    set(CMAKE_RANLIB gcc-ranlib)
+if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
+	CHECK_CXX_COMPILER_FLAG("-flto" HAS_LTO_FLAG)
+
+	if (HAS_LTO_FLAG)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+		set(CMAKE_AR gcc-ar)
+		set(CMAKE_RANLIB gcc-ranlib)
+	endif()
 endif()
 
 set(SOURCES cmdline.cpp helpers.cpp rwmem.cpp rwmem.h regs.cpp regs.h helpers.h opts.cpp opts.h inifile.cpp)
