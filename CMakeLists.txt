@@ -16,6 +16,7 @@ ENDIF()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
 option(BUILD_SHARED_LIBS "Build shared libs" FALSE)
+set(RWMEM_ENABLE_PYTHON ON CACHE BOOL "Enable Python wrappers")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra")
 
@@ -29,6 +30,11 @@ if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
 	endif()
 endif()
 
+find_package(PkgConfig REQUIRED)
+
 add_subdirectory(librwmem)
 add_subdirectory(rwmem)
 
+if(RWMEM_ENABLE_PYTHON)
+        add_subdirectory(py)
+endif()

@@ -96,7 +96,7 @@ unique_ptr<Register> RegisterBlock::find_reg(const string& name) const
 }
 
 
-RegisterFile::RegisterFile(string filename)
+RegisterFile::RegisterFile(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
 	ERR_ON_ERRNO(fd < 0, "Open regfile '%s' failed", filename.c_str());

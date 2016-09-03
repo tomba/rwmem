@@ -1,4 +1,4 @@
-#include "regmap.h"
+#include "memmap.h"
 
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -11,17 +11,17 @@
 
 using namespace std;
 
-RegMap::RegMap(const string& filename, uint64_t offset, uint64_t length, bool read_only)
+static const unsigned pagesize = sysconf(_SC_PAGESIZE);
+static const unsigned pagemask = pagesize - 1;
+
+MemMap::MemMap(const string& filename, uint64_t offset, uint64_t length, bool read_only)
 {
 	m_fd = open(filename.c_str(), (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
 
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '%s'", filename.c_str());
 
-	const unsigned pagesize = sysconf(_SC_PAGESIZE);
-	const unsigned pagemask = pagesize - 1;
-
 	const off_t mmap_offset = offset & ~pagemask;
-	const size_t mmap_len = length + (offset & pagemask);
+	const size_t mmap_len = (offset + length + pagesize - 1) & ~pagemask;
 
 	printf("mmap: offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
 	       offset, length, mmap_offset, mmap_len);
@@ -38,17 +38,34 @@ RegMap::RegMap(const string& filename, uint64_t offset, uint64_t length, bool re
 		       "Trying to access file past its end");
 	}
 
-	void *mmap_base = mmap(0, mmap_len,
+	m_map_base = mmap(0, mmap_len,
 			       PROT_READ | (read_only ? 0 : PROT_WRITE),
 			       MAP_SHARED, m_fd, mmap_offset);
 
-	ERR_ON_ERRNO(mmap_base == MAP_FAILED, "failed to mmap");
+	ERR_ON_ERRNO(m_map_base == MAP_FAILED, "failed to mmap");
 
-	m_vaddr = (uint8_t* )mmap_base + (offset & pagemask);
-
+	m_vaddr = (uint8_t* )m_map_base + (offset & pagemask);
 }
 
-RegMap::~RegMap()
+MemMap::~MemMap()
 {
+	if (munmap(m_map_base, pagesize) == -1)
+		ERR_ERRNO("failed to munmap");
+
 	close(m_fd);
+}
+
+static volatile uint32_t* addr32(void* base, uint64_t offset)
+{
+	return (volatile uint32_t*)((uint8_t*)base + offset);
+}
+
+uint32_t MemMap::read32(uint64_t addr)
+{
+	return *addr32(m_vaddr, addr);
+}
+
+void MemMap::write32(uint64_t addr, uint32_t value)
+{
+	*addr32(m_vaddr, addr) = value;
 }
