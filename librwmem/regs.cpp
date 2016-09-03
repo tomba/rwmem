@@ -116,7 +116,7 @@ RegisterFile::~RegisterFile()
 	munmap((void*)m_rfd, m_size);
 }
 
-RegisterBlock RegisterFile::register_block(uint32_t idx) const
+RegisterBlock RegisterFile::at(uint32_t idx) const
 {
 	if (idx >= m_rfd->num_blocks())
 		throw runtime_error("register block idx too high");
@@ -128,7 +128,7 @@ RegisterBlock RegisterFile::register_block(uint32_t idx) const
 unique_ptr<RegisterBlock> RegisterFile::find_register_block(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const RegisterBlock rb = register_block(bidx);
+		const RegisterBlock rb = at(bidx);
 
 		if (strcmp(rb.name(), name.c_str()) == 0)
 			return make_unique<RegisterBlock>(rb);
@@ -140,7 +140,7 @@ unique_ptr<RegisterBlock> RegisterFile::find_register_block(const string& name) 
 unique_ptr<Register> RegisterFile::find_reg(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const RegisterBlock rb = register_block(bidx);
+		const RegisterBlock rb = at(bidx);
 
 		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
 			Register reg = rb.reg(ridx);
@@ -156,7 +156,7 @@ unique_ptr<Register> RegisterFile::find_reg(const string& name) const
 unique_ptr<Register> RegisterFile::find_reg(uint64_t offset) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const RegisterBlock rb = register_block(bidx);
+		const RegisterBlock rb = at(bidx);
 
 		if (offset < rb.offset())
 			continue;
@@ -200,7 +200,7 @@ static void print_all(const RegisterFile& rf)
 	print_regfile(rf);
 
 	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
-		RegisterBlock rb = rf.register_block(bidx);
+		RegisterBlock rb = rf.at(bidx);
 		print_register_block(rb);
 
 		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
@@ -220,7 +220,7 @@ static void print_pattern(const RegisterFile& rf, const string& pattern)
 	bool regfile_printed = false;
 
 	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
-		RegisterBlock rb = rf.register_block(bidx);
+		RegisterBlock rb = rf.at(bidx);
 
 		bool block_printed = false;
 

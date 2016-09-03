@@ -17,8 +17,8 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def_property_readonly("num_blocks", &RegisterFile::num_blocks)
 			.def_property_readonly("num_regs", &RegisterFile::num_regs)
 			.def_property_readonly("num_fields", &RegisterFile::num_fields)
-			.def("block", &RegisterFile::register_block)
-			.def("find_block", &RegisterFile::find_register_block)
+			.def("__getitem__", &RegisterFile::at)
+			.def("__getitem__", &RegisterFile::find_register_block)
 			.def("find_reg", (std::unique_ptr<Register> (RegisterFile::*)(const string&) const)&RegisterFile::find_reg)
 			.def("find_reg", (std::unique_ptr<Register> (RegisterFile::*)(uint64_t) const)&RegisterFile::find_reg)
 			;

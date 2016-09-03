@@ -14,8 +14,8 @@ import pyrwmem
 rf = pyrwmem.RegisterFile("/home/tomba/work-lappy/rwmem-db/k2g.bin")
 print("RF {} blocks:{} regs:{} fields:{}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
 
-rb = rf.block(0)
-rb = rf.find_block("DSS")
+rb = rf[0]
+rb = rf["DSS"]
 print("RB {} offset:{:#x} size:{} regs:{}".format(rb.name, rb.offset, rb.size, rb.num_regs))
 
 r = rb.reg(0)

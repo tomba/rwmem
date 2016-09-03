@@ -81,10 +81,8 @@ public:
 	uint32_t num_regs() const { return m_rfd->num_regs(); }
 	uint32_t num_fields() const { return m_rfd->num_fields(); }
 
-	RegisterBlock register_block(uint32_t idx) const;
-
+	RegisterBlock at(uint32_t idx) const;
 	std::unique_ptr<RegisterBlock> find_register_block(const std::string& name) const;
-
 	std::unique_ptr<Register> find_reg(const std::string& name) const;
 	std::unique_ptr<Register> find_reg(uint64_t offset) const;
 
