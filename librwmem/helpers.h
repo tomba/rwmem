@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string.h>
 
 uint64_t readmem(void *addr, unsigned regsize);
 void writemem(void *addr, unsigned regsize, uint64_t value);
