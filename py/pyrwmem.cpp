@@ -18,6 +18,9 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def_property_readonly("num_regs", &RegisterFile::num_regs)
 			.def_property_readonly("num_fields", &RegisterFile::num_fields)
 			.def("block", &RegisterFile::register_block)
+			.def("find_block", &RegisterFile::find_register_block)
+			.def("find_reg", (std::unique_ptr<Register> (RegisterFile::*)(const string&) const)&RegisterFile::find_reg)
+			.def("find_reg", (std::unique_ptr<Register> (RegisterFile::*)(uint64_t) const)&RegisterFile::find_reg)
 			;
 
 	py::class_<RegisterBlock>(m, "RegisterBlock")
@@ -26,6 +29,7 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def_property_readonly("size", &RegisterBlock::size)
 			.def_property_readonly("num_regs", &RegisterBlock::num_regs)
 			.def("reg", &RegisterBlock::reg)
+			.def("find_reg", &RegisterBlock::find_reg)
 			;
 
 	py::class_<Register>(m, "Register")
@@ -34,6 +38,8 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def_property_readonly("size", &Register::size)
 			.def_property_readonly("num_fields", &Register::num_fields)
 			.def("field", &Register::field)
+			.def("find_field", (std::unique_ptr<Field> (Register::*)(const string&) const)&Register::find_field)
+			.def("find_field", (std::unique_ptr<Field> (Register::*)(uint8_t, uint8_t) const)&Register::find_field)
 			;
 
 	py::class_<Field>(m, "Field")

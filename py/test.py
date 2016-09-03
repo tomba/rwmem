@@ -15,10 +15,15 @@ rf = pyrwmem.RegisterFile("/home/tomba/work-lappy/rwmem-db/k2g.bin")
 print("RF {} blocks:{} regs:{} fields:{}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
 
 rb = rf.block(0)
+rb = rf.find_block("DSS")
 print("RB {} offset:{:#x} size:{} regs:{}".format(rb.name, rb.offset, rb.size, rb.num_regs))
 
 r = rb.reg(0)
-print("R {} offset:{:#x} size:{} regs:{}".format(r.name, r.offset, r.size, r.num_fields))
+print("R {} offset:{:#x} size:{} fields:{}".format(r.name, r.offset, r.size, r.num_fields))
 
 f = r.field(0)
 print("F {} low:{} high:{}".format(f.name, f.low, f.high))
+
+
+r = rf.find_reg("DSS_REVISION")
+print("R {} offset:{:#x} size:{} fields:{}".format(r.name, r.offset, r.size, r.num_fields))

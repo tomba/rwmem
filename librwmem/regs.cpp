@@ -32,7 +32,7 @@ const Field Register::field(uint32_t idx) const
 	return Field(m_rfd, fd);
 }
 
-unique_ptr<Field> Register::find_field(const string& name)
+unique_ptr<Field> Register::find_field(const string& name) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
 		Field f = field(i);
@@ -43,7 +43,7 @@ unique_ptr<Field> Register::find_field(const string& name)
 	return nullptr;
 }
 
-unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low)
+unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
 		Field f = field(i);

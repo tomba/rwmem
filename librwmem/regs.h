@@ -36,8 +36,8 @@ public:
 	const RegisterBlock register_block() const;
 	const Field field(uint32_t idx) const;
 
-	std::unique_ptr<Field> find_field(const std::string& name);
-	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low);
+	std::unique_ptr<Field> find_field(const std::string& name) const;
+	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low) const;
 
 	uint32_t get_max_field_name_len();
 
