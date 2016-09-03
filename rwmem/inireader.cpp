@@ -5,7 +5,7 @@
 #include <exception>
 #include <stdexcept>
 
-#include "inih/ini.h"
+#include "ini.h"
 #include "inireader.h"
 
 using namespace std;
