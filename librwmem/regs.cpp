@@ -13,7 +13,7 @@
 
 using namespace std;
 
-Register::Register(const RegFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd)
+Register::Register(const RegisterFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd)
 	: m_rfd(rfd), m_rbd(rbd), m_rd(rd)
 {
 }
@@ -96,7 +96,7 @@ unique_ptr<Register> RegisterBlock::find_reg(const string& name) const
 }
 
 
-RegFile::RegFile(string filename)
+RegisterFile::RegisterFile(string filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
 	ERR_ON_ERRNO(fd < 0, "Open regfile '%s' failed", filename.c_str());
@@ -107,16 +107,16 @@ RegFile::RegFile(string filename)
 	void* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	ERR_ON_ERRNO(data == MAP_FAILED, "mmap regfile failed");
 
-	m_rfd = (RegFileData*)data;
+	m_rfd = (RegisterFileData*)data;
 	m_size = len;
 }
 
-RegFile::~RegFile()
+RegisterFile::~RegisterFile()
 {
 	munmap((void*)m_rfd, m_size);
 }
 
-RegisterBlock RegFile::register_block(uint32_t idx) const
+RegisterBlock RegisterFile::register_block(uint32_t idx) const
 {
 	if (idx >= m_rfd->num_blocks())
 		throw runtime_error("register block idx too high");
@@ -125,7 +125,7 @@ RegisterBlock RegFile::register_block(uint32_t idx) const
 	return RegisterBlock(m_rfd, rbd);
 }
 
-unique_ptr<RegisterBlock> RegFile::find_register_block(const string& name) const
+unique_ptr<RegisterBlock> RegisterFile::find_register_block(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
 		const RegisterBlock rb = register_block(bidx);
@@ -137,7 +137,7 @@ unique_ptr<RegisterBlock> RegFile::find_register_block(const string& name) const
 	return nullptr;
 }
 
-unique_ptr<Register> RegFile::find_reg(const string& name) const
+unique_ptr<Register> RegisterFile::find_reg(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
 		const RegisterBlock rb = register_block(bidx);
@@ -153,7 +153,7 @@ unique_ptr<Register> RegFile::find_reg(const string& name) const
 	return nullptr;
 }
 
-unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
+unique_ptr<Register> RegisterFile::find_reg(uint64_t offset) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
 		const RegisterBlock rb = register_block(bidx);
@@ -175,7 +175,7 @@ unique_ptr<Register> RegFile::find_reg(uint64_t offset) const
 	return nullptr;
 }
 
-static void print_regfile(const RegFile& rf)
+static void print_regfile(const RegisterFile& rf)
 {
 	printf("%s: total %u/%u/%u\n", rf.name(), rf.num_blocks(), rf.num_regs(), rf.num_fields());
 }
@@ -195,7 +195,7 @@ static void print_field(const Field& field)
 	printf("      %s: %u:%u\n", field.name(), field.high(), field.low());
 }
 
-static void print_all(const RegFile& rf)
+static void print_all(const RegisterFile& rf)
 {
 	print_regfile(rf);
 
@@ -215,7 +215,7 @@ static void print_all(const RegFile& rf)
 	}
 }
 
-static void print_pattern(const RegFile& rf, const string& pattern)
+static void print_pattern(const RegisterFile& rf, const string& pattern)
 {
 	bool regfile_printed = false;
 
@@ -251,7 +251,7 @@ static void print_pattern(const RegFile& rf, const string& pattern)
 	}
 }
 
-void RegFile::print(const string& pattern)
+void RegisterFile::print(const string& pattern)
 {
 	if (pattern.empty())
 		print_all(*this);

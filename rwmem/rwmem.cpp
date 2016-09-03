@@ -154,7 +154,7 @@ static int readprint_raw(void *vaddr, unsigned size)
 	return write(STDOUT_FILENO, &v, size);
 }
 
-static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
+static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 {
 	RwmemOp op { };
 
@@ -275,7 +275,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegFile* regfile)
 	return op;
 }
 
-static void do_op(int fd, const RwmemOp& op, const RegFile* regfile)
+static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
 {
 	const unsigned pagesize = sysconf(_SC_PAGESIZE);
 	const unsigned pagemask = pagesize - 1;
@@ -348,11 +348,11 @@ int main(int argc, char **argv)
 
 	parse_cmdline(argc, argv);
 
-	unique_ptr<RegFile> regfile = nullptr;
+	unique_ptr<RegisterFile> regfile = nullptr;
 
 	if (!rwmem_opts.regfile.empty()) {
 		vprint("Reading regfile '%s'\n", rwmem_opts.regfile.c_str());
-		regfile = make_unique<RegFile>(rwmem_opts.regfile.c_str());
+		regfile = make_unique<RegisterFile>(rwmem_opts.regfile.c_str());
 	}
 
 	if (rwmem_opts.show_list) {
