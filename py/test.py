@@ -6,6 +6,15 @@ import pyrwmem
 #dss = mem["dss"]
 #reg = dss["revision"]
 
+map = map("/dev/mem", "/home/tomba/work-lappy/rwmem-db/k2g.bin", "DSS", True)
+map.read32("DSS_REVISION")
+
+map = map("/dev/mem", 0x5000000, 0x1000, True)
+map.read32(0x10)
+
+
+#map.modify32(0x10, [2, 1, 0x10], [4, 3, 0x20])
+#map.modify32("DSS_CONFIG", ["KALA", 0x10], ["KISSA", 0x20])
 
 #mem = pyrwmem.MemMap("LICENSE", 0x80, 0x1000, True)
 #v = mem.read32(0x10)
@@ -27,3 +36,7 @@ print("F {} low:{} high:{}".format(f.name, f.low, f.high))
 
 r = rf.find_reg("DSS_REVISION")
 print("R {} offset:{:#x} size:{} fields:{}".format(r.name, r.offset, r.size, r.num_fields))
+
+map = pyrwmem.MappedRegisterBlock(rb, "LICENSE", 0x80, 0x1000, True)
+
+# XXX i2c?

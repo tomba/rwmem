@@ -3,6 +3,7 @@
 
 #include "memmap.h"
 #include "regs.h"
+#include "mappedregs.h"
 
 namespace py = pybind11;
 

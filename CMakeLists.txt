@@ -33,7 +33,7 @@ endif()
 find_package(PkgConfig REQUIRED)
 
 add_subdirectory(librwmem)
-add_subdirectory(rwmem)
+#add_subdirectory(rwmem)
 
 if(RWMEM_ENABLE_PYTHON)
         add_subdirectory(py)
