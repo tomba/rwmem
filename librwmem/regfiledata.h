@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 
 struct  __attribute__(( packed )) FieldData

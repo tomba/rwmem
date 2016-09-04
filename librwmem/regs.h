@@ -1,5 +1,7 @@
 #pragma once
 
+#include "memmap.h"
+
 class RegisterBlock;
 class RegisterFile;
 class Register;
