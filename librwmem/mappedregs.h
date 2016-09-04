@@ -27,3 +27,18 @@ public:
 private:
 	const Register m_reg;
 };
+
+
+class RegMap
+{
+public:
+	RegMap(const std::string& mapfile, const std::string& regfile, const std::string& blockname);
+	RegMap(const std::string& mapfile, uint64_t offset, uint64_t length);
+
+	uint32_t read32(const std::string& regname);
+	uint32_t read32(uint64_t offset);
+
+private:
+	//RegisterBlock m_rb;
+	//std::unique_ptr<MemMap> m_map;
+};

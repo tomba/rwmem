@@ -6,10 +6,10 @@ import pyrwmem
 #dss = mem["dss"]
 #reg = dss["revision"]
 
-map = map("/dev/mem", "/home/tomba/work-lappy/rwmem-db/k2g.bin", "DSS", True)
+map = map("/dev/mem", "/home/tomba/work-lappy/rwmem-db/k2g.bin", "DSS")
 map.read32("DSS_REVISION")
 
-map = map("/dev/mem", 0x5000000, 0x1000, True)
+map = map("/dev/mem", 0x5000000, 0x1000)
 map.read32(0x10)
 
 

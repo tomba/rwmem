@@ -32,3 +32,20 @@ uint32_t MappedRegisterBlock::read32(const string& regname)
 	auto r = m_rb.find_reg(regname);
 	return m_map.read32(r->offset());
 }
+
+RegMap::RegMap(const string& mapfile, const string& regfile, const string& blockname)
+{
+//	auto rf = RegisterFile(regfile);
+//
+//	m_rb = *rf.find_register_block(blockname);
+//
+//	m_map = make_unique<MemMap>(mapfile, m_rb.offset(), m_rb.size(), false);
+}
+
+uint32_t RegMap::read32(const string& regname)
+{
+//	Register r = m_rb.find_reg(regname);
+//
+//	return m_map->read32(r.offset());
+	return 0;
+}
