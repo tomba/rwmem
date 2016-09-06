@@ -90,6 +90,8 @@ public:
 
 	void print(const std::string& pattern);
 
+	const RegisterFileData* data() const { return m_rfd; }
+
 private:
 	const RegisterFileData* m_rfd;
 	size_t m_size;

@@ -1,51 +1,106 @@
 #include "mappedregs.h"
+#include "helpers.h"
 
 using namespace std;
 
-void test()
+MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, const string& regfile, const string& blockname)
 {
-	auto rf = RegisterFile("/home/tomba/work-lappy/rwmem-db/k2g.bin");
-	auto rb = *rf.find_register_block("DSS").get();
+	m_rf = make_unique<RegisterFile>(regfile);
 
-	auto mrb2 = new MappedRegisterBlock(rb, "/dev/mem", true);
+	m_rbd = m_rf->data()->find_block(blockname);
 
-	auto mrb = new MappedRegisterBlock(rb, "LICENSE", 0x80, 0x1000, true);
-	uint32_t val = mrb->read32("DSS_REVISION");
-
-	printf("tuli %x\n", val);
+	m_map = make_unique<MemMap>(mapfile, m_rbd->offset(), m_rbd->size(), false);
 }
 
-MappedRegisterBlock::MappedRegisterBlock(const RegisterBlock rb, const string& filename, bool read_only)
-	: m_rb(rb), m_map(filename, rb.offset(), rb.size(), read_only)
+MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset, const string& regfile, const string& blockname)
+{
+	m_rf = make_unique<RegisterFile>(regfile);
+
+	m_rbd = m_rf->data()->find_block(blockname);
+
+	m_map = make_unique<MemMap>(mapfile, offset, m_rbd->size(), false);
+}
+
+MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset, uint64_t length)
+{
+	m_map = make_unique<MemMap>(mapfile, offset, length, false);
+}
+
+uint32_t MappedRegisterBlock::read32(const string& regname) const
+{
+	if (!m_rf)
+		throw runtime_error("no register file");
+
+	const RegisterData* rd = m_rbd->find_register(m_rf->data(), regname);
+
+	return m_map->read32(rd->offset());
+}
+
+uint32_t MappedRegisterBlock::read32(uint64_t offset) const
+{
+	return m_map->read32(offset);
+}
+
+MappedRegister MappedRegisterBlock::find_register(const string& regname)
+{
+	if (!m_rf)
+		throw runtime_error("no register file");
+
+	const RegisterData* rd = m_rbd->find_register(m_rf->data(), regname);
+
+	return MappedRegister(this, rd);
+}
+
+MappedRegister MappedRegisterBlock::get_register(uint64_t offset)
+{
+	return MappedRegister(this, offset);
+}
+
+
+MappedRegister::MappedRegister(MappedRegisterBlock* mrb, const RegisterData* rd)
+	: m_mrb(mrb), m_rd(rd), m_offset(rd->offset())
 {
 
 }
 
-MappedRegisterBlock::MappedRegisterBlock(const RegisterBlock rb, const string& filename, uint64_t offset, uint64_t length, bool read_only)
-	: m_rb(rb), m_map(filename, offset, length, read_only)
+MappedRegister::MappedRegister(MappedRegisterBlock* mrb, uint64_t offset)
+	: m_mrb(mrb), m_rd(nullptr), m_offset(offset)
 {
 
 }
 
-uint32_t MappedRegisterBlock::read32(const string& regname)
+uint32_t MappedRegister::read32() const
 {
-	auto r = m_rb.find_reg(regname);
-	return m_map.read32(r->offset());
+	return m_mrb->m_map->read32(m_offset);
 }
 
-RegMap::RegMap(const string& mapfile, const string& regfile, const string& blockname)
+RegisterValue MappedRegister::read32value() const
 {
-//	auto rf = RegisterFile(regfile);
-//
-//	m_rb = *rf.find_register_block(blockname);
-//
-//	m_map = make_unique<MemMap>(mapfile, m_rb.offset(), m_rb.size(), false);
+	return RegisterValue(m_mrb, m_rd, read32());
 }
 
-uint32_t RegMap::read32(const string& regname)
+RegisterValue::RegisterValue(MappedRegisterBlock* mrb, const RegisterData* rd, uint64_t value)
+	:m_mrb(mrb), m_rd(rd), m_value(value)
 {
-//	Register r = m_rb.find_reg(regname);
-//
-//	return m_map->read32(r.offset());
-	return 0;
+
+}
+
+uint64_t RegisterValue::field_value(const string& fieldname) const
+{
+	if (!m_mrb->m_rf)
+		throw runtime_error("no register file");
+
+	const FieldData* fd = m_rd->find_field(m_mrb->m_rf->data(), fieldname);
+
+	if (!fd)
+		throw runtime_error("field not found");
+
+	return field_value(fd->high(), fd->low());
+}
+
+uint64_t RegisterValue::field_value(uint8_t high, uint8_t low) const
+{
+	uint64_t mask = GENMASK(high, low);
+
+	return (m_value & mask) >> low;
 }

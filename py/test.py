@@ -6,12 +6,25 @@ import pyrwmem
 #dss = mem["dss"]
 #reg = dss["revision"]
 
-map = map("/dev/mem", "/home/tomba/work-lappy/rwmem-db/k2g.bin", "DSS")
+map = pyrwmem.MappedRegisterBlock("LICENSE", 0, "/home/tomba/work-lappy/rwmem-db/k2g.bin", "DSS")
 map.read32("DSS_REVISION")
 
-map = map("/dev/mem", 0x5000000, 0x1000)
+r = map.find_register("DSS_REVISION")
+r.read32()
+
+v = r.read32value()
+v.field_value("REV")
+
+
+exit(0)
+
+map = pyrwmem.MappedRegisterBlock("LICENSE", 0x0, 0x1000)
 map.read32(0x10)
 
+r = map.get_register(0x10)
+r.read32()
+
+exit(0)
 
 #map.modify32(0x10, [2, 1, 0x10], [4, 3, 0x20])
 #map.modify32("DSS_CONFIG", ["KALA", 0x10], ["KISSA", 0x20])

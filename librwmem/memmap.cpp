@@ -23,8 +23,8 @@ MemMap::MemMap(const string& filename, uint64_t offset, uint64_t length, bool re
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length + pagesize - 1) & ~pagemask;
 
-	printf("mmap: offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
-	       offset, length, mmap_offset, mmap_len);
+	printf("mmap '%s' offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
+	       filename.c_str(), offset, length, mmap_offset, mmap_len);
 
 	// how to do the check only for normal files?
 	bool check_file_len = true;
@@ -60,7 +60,7 @@ static volatile uint32_t* addr32(void* base, uint64_t offset)
 	return (volatile uint32_t*)((uint8_t*)base + offset);
 }
 
-uint32_t MemMap::read32(uint64_t addr)
+uint32_t MemMap::read32(uint64_t addr) const
 {
 	return *addr32(m_vaddr, addr);
 }
