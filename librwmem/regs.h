@@ -35,10 +35,11 @@ public:
 	uint32_t size() const { return m_rd->size(); }
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
-	Field field(uint32_t idx) const;
+	Field at(uint32_t idx) const;
+	int find_field(const std::string& name) const;
 
-	std::unique_ptr<Field> find_field(const std::string& name) const;
-	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low) const;
+	Field get_field(const std::string& name) const;
+	Field get_field(uint8_t high, uint8_t low) const;
 
 private:
 	const RegisterFileData* m_rfd;
@@ -58,9 +59,10 @@ public:
 	uint64_t size() const { return m_rbd->size(); }
 	uint32_t num_regs() const { return m_rbd->num_regs(); }
 
-	Register reg(uint32_t idx) const;
+	Register at(uint32_t idx) const;
+	int find_register(const std::string& name) const;
 
-	std::unique_ptr<Register> find_reg(const std::string& name) const;
+	Register get_register(const std::string& name) const;
 
 private:
 	const RegisterFileData* m_rfd;
@@ -79,9 +81,9 @@ public:
 	uint32_t num_fields() const { return m_rfd->num_fields(); }
 
 	RegisterBlock at(uint32_t idx) const;
-	std::unique_ptr<RegisterBlock> find_register_block(const std::string& name) const;
-	std::unique_ptr<Register> find_reg(const std::string& name) const;
-	std::unique_ptr<Register> find_reg(uint64_t offset) const;
+	RegisterBlock get_register_block(const std::string& name) const;
+	Register get_reg(const std::string& name) const;
+	Register get_reg(uint64_t offset) const;
 
 	void print(const std::string& pattern);
 
