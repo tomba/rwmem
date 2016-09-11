@@ -13,17 +13,12 @@
 
 using namespace std;
 
-Register::Register(const RegisterFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd)
-	: m_rfd(rfd), m_rbd(rbd), m_rd(rd)
+Register::Register(const RegisterFileData* rfd, const RegisterData* rd)
+	: m_rfd(rfd), m_rd(rd)
 {
 }
 
-const RegisterBlock Register::register_block() const
-{
-	return RegisterBlock(m_rfd, m_rbd);
-}
-
-const Field Register::field(uint32_t idx) const
+Field Register::field(uint32_t idx) const
 {
 	if (idx >= m_rd->num_fields())
 		throw runtime_error("field idx too high");
@@ -54,33 +49,13 @@ unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low) const
 	return nullptr;
 }
 
-uint32_t Register::get_max_field_name_len()
-{
-	if (m_max_field_name_len)
-		return m_max_field_name_len;
-
-	uint32_t max = 0;
-
-	for (unsigned i = 0; i < num_fields(); ++i) {
-		Field f = field(i);
-		uint32_t len = strlen(f.name());
-		if (len > max)
-			max = len;
-	}
-
-	m_max_field_name_len = max;
-
-	return max;
-}
-
-
 Register RegisterBlock::reg(uint32_t idx) const
 {
 	if (idx >= m_rbd->num_regs())
 		throw runtime_error("register idx too high");
 
 	const RegisterData* rd = &m_rfd->registers()[m_rbd->regs_offset() + idx];
-	return Register(m_rfd, m_rbd, rd);
+	return Register(m_rfd, rd);
 }
 
 unique_ptr<Register> RegisterBlock::find_reg(const string& name) const

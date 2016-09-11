@@ -16,7 +16,7 @@ public:
 	{
 	}
 
-	const char* name() const { return m_rfd->strings() + m_fd->name_offset(); }
+	const char* name() const { return m_fd->name(m_rfd); }
 	uint8_t low() const { return m_fd->low(); }
 	uint8_t high() const { return m_fd->high(); }
 
@@ -28,26 +28,21 @@ private:
 class Register
 {
 public:
-	Register(const RegisterFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd);
+	Register(const RegisterFileData* rfd, const RegisterData* rd);
 
-	const char* name() const { return m_rfd->strings() + m_rd->name_offset(); }
+	const char* name() const { return m_rd->name(m_rfd); }
 	uint64_t offset() const { return m_rd->offset(); }
 	uint32_t size() const { return m_rd->size(); }
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
-	const RegisterBlock register_block() const;
-	const Field field(uint32_t idx) const;
+	Field field(uint32_t idx) const;
 
 	std::unique_ptr<Field> find_field(const std::string& name) const;
 	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low) const;
 
-	uint32_t get_max_field_name_len();
-
 private:
 	const RegisterFileData* m_rfd;
-	const RegisterBlockData* m_rbd;
 	const RegisterData* m_rd;
-	uint32_t m_max_field_name_len = 0;
 };
 
 class RegisterBlock
@@ -58,7 +53,7 @@ public:
 	{
 	}
 
-	const char* name() const { return m_rfd->strings() + m_rbd->name_offset(); }
+	const char* name() const { return m_rbd->name(m_rfd); }
 	uint64_t offset() const { return m_rbd->offset(); }
 	uint64_t size() const { return m_rbd->size(); }
 	uint32_t num_regs() const { return m_rbd->num_regs(); }
@@ -78,7 +73,7 @@ public:
 	RegisterFile(const std::string& filename);
 	~RegisterFile();
 
-	const char* name() const { return m_rfd->strings() + m_rfd->name_offset(); }
+	const char* name() const { return m_rfd->name(); }
 	uint32_t num_blocks() const { return m_rfd->num_blocks(); }
 	uint32_t num_regs() const { return m_rfd->num_regs(); }
 	uint32_t num_fields() const { return m_rfd->num_fields(); }

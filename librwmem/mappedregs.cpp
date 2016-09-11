@@ -22,6 +22,7 @@ MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset,
 }
 
 MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset, uint64_t length)
+	: m_rf(nullptr), m_rbd(nullptr)
 {
 	m_map = make_unique<MemMap>(mapfile, offset, length, false);
 }
