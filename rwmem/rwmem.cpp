@@ -135,7 +135,7 @@ static void readwriteprint(const RwmemOp& op,
 
 	if (reg) {
 		for (unsigned i = 0; i < reg->num_fields(); ++i) {
-			Field field = reg->field(i);
+			Field field = reg->at(i);
 
 			if (field.high() >= op.low && field.low() <= op.high)
 				print_field(field.high(), field.low(), &field,
@@ -165,8 +165,11 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	if (arg.register_block.size()) {
 		ERR_ON(!regfile, "Invalid register block '%s'", arg.register_block.c_str());
 
-		regblock = regfile->find_register_block(arg.register_block);
-		ERR_ON(!regblock, "Invalid register block '%s'", arg.register_block.c_str());
+		try {
+			regblock = make_unique<RegisterBlock>(regfile->get_register_block(arg.register_block));
+		} catch(...) {
+			ERR("Invalid register block '%s'", arg.register_block.c_str());
+		}
 
 		op.regblock_offset = regblock->offset();
 	}
@@ -182,9 +185,9 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 			op.reg_offset = 0;
 		} else {
 			if (regblock)
-				reg = regblock->find_reg(arg.address);
+				reg = make_unique<Register>(regblock->get_register(arg.address));
 			else
-				reg = regfile->find_reg(arg.address);
+				reg = make_unique<Register>(regfile->get_register(arg.address));
 
 			ERR_ON(!reg, "Register not found '%s'", arg.address.c_str());
 
@@ -233,12 +236,14 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 		}
 
 		if (!ok && reg) {
-			unique_ptr<Field> field = reg->find_field(arg.field);
+			try {
+				Field field = reg->get_field(arg.field);
 
-			if (field) {
-				fl = field->low();
-				fh = field->high();
+				fl = field.low();
+				fh = field.high();
 				ok = true;
+			} catch(...) {
+
 			}
 		}
 
@@ -318,7 +323,12 @@ static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
 		unique_ptr<Register> reg = nullptr;
 
 		if (regfile) {
-			reg = regfile->find_reg(regfile_base + offset);
+			try {
+				reg = make_unique<Register>(regfile->get_register(regfile_base + offset));
+			} catch(...) {
+				reg = nullptr;
+			}
+
 			if (rwmem_opts.print_known_regs && !reg) {
 				offset += rwmem_opts.regsize;
 				continue;

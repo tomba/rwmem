@@ -13,8 +13,8 @@
 
 using namespace std;
 
-Register::Register(const RegisterFileData* rfd, const RegisterData* rd)
-	: m_rfd(rfd), m_rd(rd)
+Register::Register(const RegisterFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd)
+	: m_rfd(rfd), m_rbd(rbd), m_rd(rd)
 {
 }
 
@@ -60,13 +60,18 @@ Field Register::get_field(uint8_t high, uint8_t low) const
 	throw runtime_error("field not found");
 }
 
+RegisterBlock Register::register_block() const
+{
+	return RegisterBlock(m_rfd, m_rbd);
+}
+
 Register RegisterBlock::at(uint32_t idx) const
 {
 	if (idx >= m_rbd->num_regs())
 		throw runtime_error("register idx too high");
 
 	const RegisterData* rd = m_rbd->at(m_rfd, idx);
-	return Register(m_rfd, rd);
+	return Register(m_rfd, m_rbd, rd);
 }
 
 int RegisterBlock::find_register(const string& name) const
@@ -131,7 +136,7 @@ RegisterBlock RegisterFile::get_register_block(const string& name) const
 	throw runtime_error("register block not found");
 }
 
-Register RegisterFile::get_reg(const string& name) const
+Register RegisterFile::get_register(const string& name) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
 		const RegisterBlock rb = at(bidx);
@@ -147,7 +152,7 @@ Register RegisterFile::get_reg(const string& name) const
 	throw runtime_error("register not found");
 }
 
-Register RegisterFile::get_reg(uint64_t offset) const
+Register RegisterFile::get_register(uint64_t offset) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
 		const RegisterBlock rb = at(bidx);

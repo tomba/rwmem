@@ -20,8 +20,8 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def_property_readonly("num_fields", &RegisterFile::num_fields)
 			.def("__getitem__", &RegisterFile::at)
 			.def("__getitem__", &RegisterFile::get_register_block)
-			.def("get_reg", (Register (RegisterFile::*)(const string&) const)&RegisterFile::get_reg)
-			.def("get_reg", (Register (RegisterFile::*)(uint64_t) const)&RegisterFile::get_reg)
+			.def("get_register", (Register (RegisterFile::*)(const string&) const)&RegisterFile::get_register)
+			.def("get_register", (Register (RegisterFile::*)(uint64_t) const)&RegisterFile::get_register)
 			;
 
 	py::class_<RegisterBlock>(m, "RegisterBlock")

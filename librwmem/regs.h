@@ -28,7 +28,7 @@ private:
 class Register
 {
 public:
-	Register(const RegisterFileData* rfd, const RegisterData* rd);
+	Register(const RegisterFileData* rfd, const RegisterBlockData* rbd, const RegisterData* rd);
 
 	const char* name() const { return m_rd->name(m_rfd); }
 	uint64_t offset() const { return m_rd->offset(); }
@@ -41,8 +41,11 @@ public:
 	Field get_field(const std::string& name) const;
 	Field get_field(uint8_t high, uint8_t low) const;
 
+	RegisterBlock register_block() const;
+
 private:
 	const RegisterFileData* m_rfd;
+	const RegisterBlockData* m_rbd;
 	const RegisterData* m_rd;
 };
 
@@ -82,8 +85,8 @@ public:
 
 	RegisterBlock at(uint32_t idx) const;
 	RegisterBlock get_register_block(const std::string& name) const;
-	Register get_reg(const std::string& name) const;
-	Register get_reg(uint64_t offset) const;
+	Register get_register(const std::string& name) const;
+	Register get_register(uint64_t offset) const;
 
 	void print(const std::string& pattern);
 
