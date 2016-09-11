@@ -56,7 +56,7 @@ struct RwmemOpts {
 	bool show_list;
 	std::string show_list_pattern;
 
-	std::vector<RwmemOptsArg> args;
+	RwmemOptsArg arg;
 
 	bool verbose;
 	bool ignore_base;

@@ -194,8 +194,8 @@ void parse_cmdline(int argc, char **argv)
 	if (params.empty() && !rwmem_opts.show_list)
 		usage();
 
-	rwmem_opts.args.resize(params.size());
+	if (params.size() > 1)
+		usage();
 
-	for (unsigned i = 0; i < params.size(); ++i)
-		parse_arg(params[i], &rwmem_opts.args[i]);
+	parse_arg(params[0], &rwmem_opts.arg);
 }

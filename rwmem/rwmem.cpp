@@ -158,49 +158,48 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 {
 	RwmemOp op { };
 
+	const RegisterFileData* rfd = regfile->data();
+
 	/* Parse register block */
 
-	std::unique_ptr<RegisterBlock> regblock = nullptr;
+	const RegisterBlockData* rbd = nullptr;
 
 	if (arg.register_block.size()) {
 		ERR_ON(!regfile, "Invalid register block '%s'", arg.register_block.c_str());
 
-		try {
-			regblock = make_unique<RegisterBlock>(regfile->get_register_block(arg.register_block));
-		} catch(...) {
-			ERR("Invalid register block '%s'", arg.register_block.c_str());
-		}
+		rbd = rfd->find_block(arg.register_block);
+		ERR_ON(!rbd, "Invalid register block '%s'", arg.register_block.c_str());
 
-		op.regblock_offset = regblock->offset();
+		op.regblock_offset = rbd->offset();
 	}
 
 	/* Parse address */
 
-	std::unique_ptr<Register> reg = nullptr;
+	const RegisterData* rd = nullptr;
 
 	if (parse_u64(arg.address, &op.reg_offset) != 0) {
 		ERR_ON(!regfile, "Invalid address '%s'", arg.address.c_str());
 
-		if (regblock && arg.address == "*") {
+		if (rbd && arg.address == "*") {
 			op.reg_offset = 0;
 		} else {
-			if (regblock)
-				reg = make_unique<Register>(regblock->get_register(arg.address));
+			if (rbd)
+				rd = rbd->find_register(rfd, arg.address);
 			else
-				reg = make_unique<Register>(regfile->get_register(arg.address));
+				rd = rfd->find_register(arg.address, &rbd);
 
-			ERR_ON(!reg, "Register not found '%s'", arg.address.c_str());
+			ERR_ON(!rd, "Register not found '%s'", arg.address.c_str());
 
-			op.reg_offset = reg->offset();
-			op.regblock_offset = reg->register_block().offset();
+			op.reg_offset = rd->offset();
+			op.regblock_offset = rbd->offset();
 		}
 	}
 
 	/* Parse range */
 
 	if (arg.range.size()) {
-		if (regblock && arg.range == "*") {
-			op.range = regblock->size();
+		if (rbd && arg.range == "*") {
+			op.range = rbd->size();
 		} else {
 			int r = parse_u64(arg.range, &op.range);
 			ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
@@ -212,8 +211,8 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 			}
 		}
 	} else {
-		if (reg)
-			op.range = reg->size();
+		if (rd)
+			op.range = rd->size();
 		else
 			op.range = rwmem_opts.regsize;
 	}
@@ -235,15 +234,12 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 				ok = true;
 		}
 
-		if (!ok && reg) {
-			try {
-				Field field = reg->get_field(arg.field);
-
-				fl = field.low();
-				fh = field.high();
+		if (!ok && rd) {
+			const FieldData* fd = rd->find_field(rfd, arg.field);
+			if (fd) {
+				fl = fd->low();
+				fh = fd->high();
 				ok = true;
-			} catch(...) {
-
 			}
 		}
 
@@ -373,16 +369,10 @@ int main(int argc, char **argv)
 
 	bool read_only = true;
 
-	vector<RwmemOp> ops;
+	RwmemOp op = parse_op(rwmem_opts.arg, regfile.get());
 
-	for (const RwmemOptsArg& arg : rwmem_opts.args) {
-		RwmemOp op = parse_op(arg, regfile.get());
-
-		if (op.value_valid)
-			read_only = false;
-
-		ops.push_back(move(op));
-	}
+	if (op.value_valid)
+		read_only = false;
 
 	/* Open the file */
 
@@ -393,12 +383,10 @@ int main(int argc, char **argv)
 
 	ERR_ON_ERRNO(fd == -1, "Failed to open file '%s'", rwmem_opts.filename.c_str());
 
-	for (const RwmemOp& op : ops) {
-		vprint("Op rb_offset=%#" PRIx64 " reg_offset=%#" PRIx64 " range=%#" PRIx64 " field=%d:%d value=%#" PRIx64 "\n",
-		       op.regblock_offset, op.reg_offset, op.range, op.low, op.high, op.value);
+	vprint("Op rb_offset=%#" PRIx64 " reg_offset=%#" PRIx64 " range=%#" PRIx64 " field=%d:%d value=%#" PRIx64 "\n",
+	       op.regblock_offset, op.reg_offset, op.range, op.low, op.high, op.value);
 
-		do_op(fd, op, regfile.get());
-	}
+	do_op(fd, op, regfile.get());
 
 	close(fd);
 
