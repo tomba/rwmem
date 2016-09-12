@@ -30,7 +30,7 @@ static std::map<std::string, std::map<std::string, std::string>> parse_file(stri
 	std::map<std::string, std::map<std::string, std::string>> map;
 
 	int r = ini_parse(filename.c_str(), value_handler, &map);
-	if (r > 0)
+	if (r != 0)
 		throw exception(); // parse error
 
 	return map;
