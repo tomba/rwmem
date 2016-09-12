@@ -38,6 +38,8 @@ static string detect_platform()
 
 void load_opts_from_ini()
 {
+	vprint("Reading settings from rwmem.ini\n");
+
 	unsigned rs = rwmem_ini.get_int("main", "regsize", rwmem_opts.regsize * 8);
 
 	if (rs != 8 && rs != 16 && rs != 32 && rs != 64)

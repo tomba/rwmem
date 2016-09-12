@@ -158,14 +158,16 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 {
 	RwmemOp op { };
 
-	const RegisterFileData* rfd = regfile->data();
+	const RegisterFileData* rfd = nullptr;
+	if (regfile)
+		rfd = regfile->data();
 
 	/* Parse register block */
 
 	const RegisterBlockData* rbd = nullptr;
 
 	if (arg.register_block.size()) {
-		ERR_ON(!regfile, "Invalid register block '%s'", arg.register_block.c_str());
+		ERR_ON(!rfd, "Invalid register block '%s'", arg.register_block.c_str());
 
 		rbd = rfd->find_block(arg.register_block);
 		ERR_ON(!rbd, "Invalid register block '%s'", arg.register_block.c_str());
@@ -178,7 +180,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	const RegisterData* rd = nullptr;
 
 	if (parse_u64(arg.address, &op.reg_offset) != 0) {
-		ERR_ON(!regfile, "Invalid address '%s'", arg.address.c_str());
+		ERR_ON(!rfd, "Invalid address '%s'", arg.address.c_str());
 
 		if (rbd && arg.address == "*") {
 			op.reg_offset = 0;
@@ -349,8 +351,11 @@ static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
 
 int main(int argc, char **argv)
 {
-	rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
-	load_opts_from_ini();
+	try {
+		rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
+		load_opts_from_ini();
+	} catch(...) {
+	}
 
 	parse_cmdline(argc, argv);
 
