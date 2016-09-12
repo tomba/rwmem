@@ -26,6 +26,7 @@ struct __attribute__(( packed )) RegisterFileData
 	const RegisterBlockData* find_block(const std::string& name) const;
 
 	const RegisterData* find_register(const std::string& name, const RegisterBlockData** rbd) const;
+	const RegisterData* find_register(uint64_t offset, const RegisterBlockData** rbd) const;
 
 private:
 	uint32_t m_name_offset;

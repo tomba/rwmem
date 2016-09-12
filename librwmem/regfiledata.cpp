@@ -52,6 +52,28 @@ const RegisterData* RegisterFileData::find_register(const std::string& name, con
 	return nullptr;
 }
 
+const RegisterData* RegisterFileData::find_register(uint64_t offset, const RegisterBlockData** rbd) const
+{
+	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
+		*rbd = at(bidx);
+
+		if (offset < (*rbd)->offset())
+			continue;
+
+		if (offset >= (*rbd)->offset() + (*rbd)->size())
+			continue;
+
+		for (unsigned ridx = 0; ridx < (*rbd)->num_regs(); ++ridx) {
+			const RegisterData* rd = (*rbd)->at(this, ridx);
+
+			if (rd->offset() == offset - (*rbd)->offset())
+				return rd;
+		}
+	}
+
+	return nullptr;
+}
+
 const RegisterData* RegisterBlockData::at(const RegisterFileData* rfd, uint32_t idx) const
 {
 	return &rfd->registers()[regs_offset() + idx];
