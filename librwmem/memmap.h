@@ -14,6 +14,8 @@ public:
 	uint32_t read32(uint64_t addr) const;
 	void write32(uint64_t addr, uint32_t value);
 
+	void* vaddr() const { return m_vaddr; }
+
 private:
 	int m_fd;
 	void* m_map_base;

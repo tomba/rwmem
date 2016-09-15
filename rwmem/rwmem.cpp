@@ -278,32 +278,13 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	return op;
 }
 
-static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
+static void do_op(const string& filename, const RwmemOp& op, const RegisterFile* regfile)
 {
-	const unsigned pagesize = sysconf(_SC_PAGESIZE);
-	const unsigned pagemask = pagesize - 1;
+	bool read_only = !op.value_valid;
 
 	const uint64_t file_base = (rwmem_opts.ignore_base ? 0 : op.regblock_offset) + op.reg_offset;
-	const off_t mmap_offset = file_base & ~pagemask;
-	const size_t mmap_len = op.range + (file_base & pagemask);
 
-	const off_t file_len = lseek(fd, (size_t)0, SEEK_END);
-	lseek(fd, 0, SEEK_SET);
-
-	vprint("mmap: base=%#" PRIx64 " range=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx file_len=0x%jx\n",
-	       file_base, op.range, mmap_offset, mmap_len, file_len);
-
-	// note: use file_len only if lseek() succeeded
-	ERR_ON(file_len != (off_t)-1 && file_len < mmap_offset + (off_t)mmap_len,
-	       "Trying to access file past its end");
-
-	void *mmap_base = mmap(0, mmap_len,
-			       op.value_valid ? PROT_WRITE : PROT_READ,
-			       MAP_SHARED, fd, mmap_offset);
-
-	ERR_ON_ERRNO(mmap_base == MAP_FAILED, "failed to mmap");
-
-	const void *vaddr = (uint8_t* )mmap_base + (file_base & pagemask);
+	MemMap mm(filename, file_base, op.range, read_only);
 
 	const uint64_t regfile_base = op.regblock_offset + op.reg_offset;
 	const uint64_t reg_base = op.reg_offset;
@@ -331,7 +312,7 @@ static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
 
 		unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
 
-		void* va = (uint8_t*)vaddr + offset;
+		void* va = (uint8_t*)mm.vaddr() + offset;
 
 		if (rwmem_opts.raw_output)
 			readprint_raw(va, access_size);
@@ -340,9 +321,6 @@ static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
 
 		offset += access_size;
 	}
-
-	if (munmap(mmap_base, pagesize) == -1)
-		ERR_ERRNO("failed to munmap");
 }
 
 int main(int argc, char **argv)
@@ -368,28 +346,9 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	bool read_only = true;
-
 	RwmemOp op = parse_op(rwmem_opts.arg, regfile.get());
 
-	if (op.value_valid)
-		read_only = false;
-
-	/* Open the file */
-
-	vprint("Opening target file '%s'\n", rwmem_opts.filename.c_str());
-
-	int fd = open(rwmem_opts.filename.c_str(),
-		      (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
-
-	ERR_ON_ERRNO(fd == -1, "Failed to open file '%s'", rwmem_opts.filename.c_str());
-
-	vprint("Op rb_offset=%#" PRIx64 " reg_offset=%#" PRIx64 " range=%#" PRIx64 " field=%d:%d value=%#" PRIx64 "\n",
-	       op.regblock_offset, op.reg_offset, op.range, op.low, op.high, op.value);
-
-	do_op(fd, op, regfile.get());
-
-	close(fd);
+	do_op(rwmem_opts.filename, op, regfile.get());
 
 	return 0;
 }
