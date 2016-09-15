@@ -17,18 +17,7 @@
  * MA  02110-1301, USA.
  */
 
-#include <ctype.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <termios.h>
 #include <unistd.h>
 
 #include "rwmem.h"
