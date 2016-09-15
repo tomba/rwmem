@@ -38,3 +38,5 @@ add_subdirectory(rwmem)
 if(RWMEM_ENABLE_PYTHON)
         add_subdirectory(py)
 endif()
+
+add_custom_target(readme SOURCES README)

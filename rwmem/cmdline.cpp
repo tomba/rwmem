@@ -17,7 +17,7 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-		"usage: rwmem [options] <address>[:field][=value] [<address>[:field][=value]...]\n"
+		"usage: rwmem [options] [base] <address>[:field][=value]\n"
 		"\n"
 		"	address		address to access:\n"
 		"			<address>	single address\n"
@@ -46,6 +46,8 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 {
 	size_t idx;
 
+	// extract value
+
 	idx = str.find('=');
 
 	if (idx != string::npos) {
@@ -55,6 +57,8 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		if (arg->value.empty())
 			usage();
 	}
+
+	// extract field
 
 	idx = str.find(':');
 
@@ -66,6 +70,8 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 			usage();
 	}
 
+	// extract len
+
 	idx = str.find('+');
 
 	if (idx != string::npos) {
@@ -76,6 +82,8 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		if (arg->range.empty())
 			usage();
 	} else {
+		// extract end
+
 		idx = str.find('-');
 
 		if (idx != string::npos) {
@@ -88,18 +96,7 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		}
 	}
 
-	idx = str.find('/');
-
-	if (idx != string::npos) {
-		arg->address = str.substr(idx + 1);
-		str.resize(idx);
-		arg->register_block = str;
-
-		if (arg->register_block.empty())
-			usage();
-	} else {
-		arg->address = str;
-	}
+	arg->address = str;
 
 	if (arg->address.empty())
 		usage();
@@ -191,11 +188,26 @@ void parse_cmdline(int argc, char **argv)
 
 	const vector<string> params = optionset.params();
 
-	if (params.empty() && !rwmem_opts.show_list)
-		usage();
+	switch (params.size()) {
+	case 0:
+		if (!rwmem_opts.show_list)
+			usage();
+		break;
 
-	if (params.size() > 1)
-		usage();
+	case 1:
+		parse_arg(params[0], &rwmem_opts.arg);
+		break;
 
-	parse_arg(params[0], &rwmem_opts.arg);
+	case 2:
+		if (params[0].empty())
+			usage();
+
+		rwmem_opts.arg.register_block = params[0];
+
+		parse_arg(params[1], &rwmem_opts.arg);
+		break;
+
+	default:
+		usage();
+	}
 }

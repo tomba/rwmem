@@ -1,6 +1,6 @@
 == rwmem - A small tool to read/write memory ==
 
-Copyright (C) 2015 Tomi Valkeinen
+Copyright (C) 2015,2016 Tomi Valkeinen
 
 == Intro ==
 
@@ -18,7 +18,7 @@ rwmem has support for using symbolic names for addresses and bitfields.
 
 == Usage ==
 
-usage: rwmem [options] <address>[:field][=value] [<address>[:field][=value]...]
+usage: rwmem [options] <address>[:field][=value]
 
 	address		address to access:
 			<address>	single address
