@@ -19,13 +19,13 @@ uint64_t readmem(void *addr, unsigned regsize)
 {
 	switch (regsize) {
 	case 1:
-		return *((uint8_t *)addr);
+		return *((volatile uint8_t *)addr);
 	case 2:
-		return *((uint16_t *)addr);
+		return *((volatile uint16_t *)addr);
 	case 4:
-		return *((uint32_t *)addr);
+		return *((volatile uint32_t *)addr);
 	case 8:
-		return *((uint64_t *)addr);
+		return *((volatile uint64_t *)addr);
 	default:
 		ERR("Illegal data regsize '%d'", regsize);
 	}
@@ -35,16 +35,16 @@ void writemem(void *addr, unsigned regsize, uint64_t value)
 {
 	switch (regsize) {
 	case 1:
-		*((uint8_t *)addr) = value;
+		*((volatile uint8_t *)addr) = value;
 		break;
 	case 2:
-		*((uint16_t *)addr) = value;
+		*((volatile uint16_t *)addr) = value;
 		break;
 	case 4:
-		*((uint32_t *)addr) = value;
+		*((volatile uint32_t *)addr) = value;
 		break;
 	case 8:
-		*((uint64_t *)addr) = value;
+		*((volatile uint64_t *)addr) = value;
 		break;
 	default:
 		ERR("Illegal data regsize '%d'", regsize);
