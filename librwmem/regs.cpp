@@ -27,37 +27,26 @@ Field Register::at(uint32_t idx) const
 	return Field(m_rfd, fd);
 }
 
-int Register::find_field(const string& name) const
+unique_ptr<Field> Register::get_field(const string& name) const
 {
-	for (unsigned i = 0; i < num_fields(); ++i) {
-		Field f = at(i);
+	const FieldData* fd = m_rd->find_field(m_rfd, name);
 
-		if (strcmp(f.name(), name.c_str()) == 0)
-			return i;
-	}
+	if (!fd)
+		return nullptr;
 
-	return -1;
+	return make_unique<Field>(m_rfd, fd);
 }
 
-Field Register::get_field(const string& name) const
-{
-	int i = find_field(name);
-
-	if (i < 0)
-		throw runtime_error("field not found");
-
-	return at(i);
-}
-
-Field Register::get_field(uint8_t high, uint8_t low) const
+unique_ptr<Field> Register::get_field(uint8_t high, uint8_t low) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
-		Field f = at(i);
-		if (low == f.low() && high == f.high())
-			return f;
+		const FieldData* fd = m_rd->at(m_rfd, i);
+
+		if (low == fd->low() && high == fd->high())
+			return make_unique<Field>(m_rfd, fd);
 	}
 
-	throw runtime_error("field not found");
+	return nullptr;
 }
 
 RegisterBlock Register::register_block() const
@@ -74,26 +63,14 @@ Register RegisterBlock::at(uint32_t idx) const
 	return Register(m_rfd, m_rbd, rd);
 }
 
-int RegisterBlock::find_register(const string& name) const
+unique_ptr<Register> RegisterBlock::get_register(const string& name) const
 {
-	for (unsigned i = 0; i < num_regs(); ++i) {
-		Register reg = this->at(i);
+	const RegisterData* rd = m_rbd->find_register(m_rfd, name);
 
-		if (strcmp(reg.name(), name.c_str()) == 0)
-			return i;
-	}
+	if (!rd)
+		return nullptr;
 
-	return -1;
-}
-
-Register RegisterBlock::get_register(const string& name) const
-{
-	int i = find_register(name);
-
-	if (i < 0)
-		throw runtime_error("register not found");
-
-	return at(i);
+	return make_unique<Register>(m_rfd, m_rbd, rd);
 }
 
 
@@ -126,52 +103,40 @@ RegisterBlock RegisterFile::at(uint32_t idx) const
 	return RegisterBlock(m_rfd, rbd);
 }
 
-RegisterBlock RegisterFile::get_register_block(const string& name) const
+unique_ptr<RegisterBlock> RegisterFile::find_register_block(const string& name) const
 {
 	const RegisterBlockData* rb = m_rfd->find_block(name);
 
 	if (rb)
-		return RegisterBlock(m_rfd, rb);
+		return make_unique<RegisterBlock>(m_rfd, rb);
 
-	throw runtime_error("register block not found");
+	return nullptr;
 }
 
-Register RegisterFile::get_register(const string& name) const
+unique_ptr<Register> RegisterFile::find_register(const string& name) const
 {
-	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const RegisterBlock rb = at(bidx);
+	const RegisterData* rd;
+	const RegisterBlockData* rbd;
 
-		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
-			Register reg = rb.at(ridx);
+	rd = m_rfd->find_register(name, &rbd);
 
-			if (strcmp(reg.name(), name.c_str()) == 0)
-				return reg;
-		}
-	}
+	if (!rd)
+		return nullptr;
 
-	throw runtime_error("register not found");
+	return make_unique<Register>(m_rfd, rbd, rd);
 }
 
-Register RegisterFile::get_register(uint64_t offset) const
+unique_ptr<Register> RegisterFile::find_register(uint64_t offset) const
 {
-	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		const RegisterBlock rb = at(bidx);
+	const RegisterData* rd;
+	const RegisterBlockData* rbd;
 
-		if (offset < rb.offset())
-			continue;
+	rd = m_rfd->find_register(offset, &rbd);
 
-		if (offset >= rb.offset() + rb.size())
-			continue;
+	if (!rd)
+		return nullptr;
 
-		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
-			Register reg = rb.at(ridx);
-
-			if (reg.offset() == offset - rb.offset())
-				return reg;
-		}
-	}
-
-	throw runtime_error("register not found");
+	return make_unique<Register>(m_rfd, rbd, rd);
 }
 
 static void print_regfile(const RegisterFile& rf)

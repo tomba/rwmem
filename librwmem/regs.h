@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "memmap.h"
 
 class RegisterBlock;
@@ -36,10 +38,9 @@ public:
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
 	Field at(uint32_t idx) const;
-	int find_field(const std::string& name) const;
 
-	Field get_field(const std::string& name) const;
-	Field get_field(uint8_t high, uint8_t low) const;
+	std::unique_ptr<Field> get_field(const std::string& name) const;
+	std::unique_ptr<Field> get_field(uint8_t high, uint8_t low) const;
 
 	RegisterBlock register_block() const;
 
@@ -63,9 +64,8 @@ public:
 	uint32_t num_regs() const { return m_rbd->num_regs(); }
 
 	Register at(uint32_t idx) const;
-	int find_register(const std::string& name) const;
 
-	Register get_register(const std::string& name) const;
+	std::unique_ptr<Register> get_register(const std::string& name) const;
 
 private:
 	const RegisterFileData* m_rfd;
@@ -84,9 +84,10 @@ public:
 	uint32_t num_fields() const { return m_rfd->num_fields(); }
 
 	RegisterBlock at(uint32_t idx) const;
-	RegisterBlock get_register_block(const std::string& name) const;
-	Register get_register(const std::string& name) const;
-	Register get_register(uint64_t offset) const;
+
+	std::unique_ptr<RegisterBlock> find_register_block(const std::string& name) const;
+	std::unique_ptr<Register> find_register(const std::string& name) const;
+	std::unique_ptr<Register> find_register(uint64_t offset) const;
 
 	void print(const std::string& pattern);
 

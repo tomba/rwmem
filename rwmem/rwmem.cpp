@@ -321,11 +321,7 @@ static void do_op(int fd, const RwmemOp& op, const RegisterFile* regfile)
 		unique_ptr<Register> reg = nullptr;
 
 		if (regfile) {
-			try {
-				reg = make_unique<Register>(regfile->get_register(regfile_base + offset));
-			} catch(...) {
-				reg = nullptr;
-			}
+			reg = regfile->find_register(regfile_base + offset);
 
 			if (rwmem_opts.print_known_regs && !reg) {
 				offset += rwmem_opts.regsize;
