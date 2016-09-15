@@ -27,7 +27,7 @@ Field Register::at(uint32_t idx) const
 	return Field(m_rfd, fd);
 }
 
-unique_ptr<Field> Register::get_field(const string& name) const
+unique_ptr<Field> Register::find_field(const string& name) const
 {
 	const FieldData* fd = m_rd->find_field(m_rfd, name);
 
@@ -37,7 +37,7 @@ unique_ptr<Field> Register::get_field(const string& name) const
 	return make_unique<Field>(m_rfd, fd);
 }
 
-unique_ptr<Field> Register::get_field(uint8_t high, uint8_t low) const
+unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
 		const FieldData* fd = m_rd->at(m_rfd, i);

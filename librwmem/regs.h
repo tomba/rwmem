@@ -39,8 +39,8 @@ public:
 
 	Field at(uint32_t idx) const;
 
-	std::unique_ptr<Field> get_field(const std::string& name) const;
-	std::unique_ptr<Field> get_field(uint8_t high, uint8_t low) const;
+	std::unique_ptr<Field> find_field(const std::string& name) const;
+	std::unique_ptr<Field> find_field(uint8_t high, uint8_t low) const;
 
 	RegisterBlock register_block() const;
 
