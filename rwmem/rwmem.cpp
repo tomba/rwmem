@@ -205,12 +205,19 @@ static void readwriteprint(const RwmemOp& op,
 		return;
 
 	if (reg) {
-		for (unsigned i = 0; i < reg->num_fields(); ++i) {
-			Field field = reg->at(i);
+		if (op.custom_field) {
+			unique_ptr<Field> field = reg->find_field(op.high, op.low);
 
-			if (field.high() >= op.low && field.low() <= op.high)
-				print_field(field.high(), field.low(), &field,
-					    newval, userval, oldval, op, formatting);
+			print_field(op.high, op.low, field.get(),
+				    newval, userval, oldval, op, formatting);
+		} else {
+			for (unsigned i = 0; i < reg->num_fields(); ++i) {
+				Field field = reg->at(i);
+
+				if (field.high() >= op.low && field.low() <= op.high)
+					print_field(field.high(), field.low(), &field,
+						    newval, userval, oldval, op, formatting);
+			}
 		}
 	} else {
 		print_field(op.high, op.low, nullptr, newval, userval, oldval,
@@ -321,9 +328,11 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 		ERR_ON(fl >= rwmem_opts.regsize * 8 || fh >= rwmem_opts.regsize * 8,
 		       "Field bits higher than register size");
 
+		op.custom_field = true;
 		op.low = fl;
 		op.high = fh;
 	} else {
+		op.custom_field = false;
 		op.low = 0;
 		op.high = rwmem_opts.regsize * 8 - 1;
 	}
