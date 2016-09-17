@@ -54,7 +54,8 @@ struct RwmemOpts {
 	std::string regfile;
 
 	bool show_list;
-	std::string show_list_pattern;
+	bool find;
+	std::string pattern;
 
 	RwmemOptsArg arg;
 

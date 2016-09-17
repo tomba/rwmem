@@ -31,7 +31,7 @@ const RegisterBlockData* RegisterFileData::find_block(const std::string& name) c
 	for (unsigned i = 0; i < num_blocks(); ++i) {
 		const RegisterBlockData* rbd = at(i);
 
-		if (strcmp(rbd->name(this), name.c_str()) == 0)
+		if (strcasecmp(rbd->name(this), name.c_str()) == 0)
 			return rbd;
 	}
 
@@ -45,7 +45,7 @@ const RegisterData* RegisterFileData::find_register(const std::string& name, con
 
 		const RegisterData* rd = (*rbd)->find_register(this, name);
 
-		if (strcmp(rd->name(this), name.c_str()) == 0)
+		if (strcasecmp(rd->name(this), name.c_str()) == 0)
 			return rd;
 	}
 
@@ -84,7 +84,7 @@ const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd
 	for (unsigned i = 0; i < num_regs(); ++i) {
 		const RegisterData* rd = &rfd->registers()[regs_offset() + i];
 
-		if (strcmp(rd->name(rfd), name.c_str()) == 0)
+		if (strcasecmp(rd->name(rfd), name.c_str()) == 0)
 			return rd;
 	}
 
@@ -101,7 +101,7 @@ const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const std
 	for (unsigned i = 0; i < num_fields(); ++i) {
 		const FieldData* fd = &rfd->fields()[fields_offset() + i];
 
-		if (strcmp(fd->name(rfd), name.c_str()) == 0)
+		if (strcasecmp(fd->name(rfd), name.c_str()) == 0)
 			return fd;
 	}
 

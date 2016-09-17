@@ -28,10 +28,92 @@ using namespace std;
 
 #define printq(format...) \
 	do { \
-		if (rwmem_opts.print_mode != PrintMode::Quiet) \
-			printf(format); \
+	if (rwmem_opts.print_mode != PrintMode::Quiet) \
+	printf(format); \
 	} while(0)
 
+
+static void print_regfile(const RegisterFile& rf)
+{
+	printf("%s: total %u/%u/%u\n", rf.name(), rf.num_blocks(), rf.num_regs(), rf.num_fields());
+}
+
+static void print_register_block(const RegisterBlock& rb)
+{
+	printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n", rb.name(), rb.offset(), rb.size(), rb.num_regs());
+}
+
+static void print_register(const Register& reg)
+{
+	printf("    %s: %#" PRIx64 " %#x, fields %u\n", reg.name(), reg.offset(), reg.size(), reg.num_fields());
+}
+
+static void print_field(const Field& field)
+{
+	printf("      %s: %u:%u\n", field.name(), field.high(), field.low());
+}
+
+static void print_regblock_all(const RegisterBlock& rb)
+{
+	print_register_block(rb);
+
+	for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
+		Register reg = rb.at(ridx);
+		print_register(reg);
+
+		for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
+			Field field = reg.at(fidx);
+			print_field(field);
+		}
+	}
+}
+
+static void print_regfile_all(const RegisterFile& rf)
+{
+	print_regfile(rf);
+
+	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
+		RegisterBlock rb = rf.at(bidx);
+
+		print_regblock_all(rb);
+	}
+}
+
+static void print_pattern(const RegisterFile& rf, const string& pattern)
+{
+	bool regfile_printed = false;
+
+	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
+		RegisterBlock rb = rf.at(bidx);
+
+		bool block_printed = false;
+
+		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
+			Register reg = rb.at(ridx);
+
+			if (strcasestr(reg.name(), pattern.c_str()) == NULL)
+				continue;
+
+			if (!regfile_printed) {
+				print_regfile(rf);
+				regfile_printed = true;
+			}
+
+			if (!block_printed) {
+				print_register_block(rb);
+				block_printed = true;
+			}
+
+			print_register(reg);
+
+			for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
+				Field field = reg.at(fidx);
+
+				print_field(field);
+			}
+		}
+	}
+}
 
 static void print_field(unsigned high, unsigned low,
 			Field* field,
@@ -331,7 +413,16 @@ int main(int argc, char **argv)
 
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
-		regfile->print(rwmem_opts.show_list_pattern);
+		print_regfile_all(*regfile.get());
+		//regfile->print(rwmem_opts.pattern);
+		return 0;
+	}
+
+	if (rwmem_opts.find) {
+		ERR_ON(!regfile, "No regfile given");
+		ERR_ON(rwmem_opts.pattern.empty(), "no search pattern");
+
+		print_pattern(*regfile.get(), rwmem_opts.pattern);
 		return 0;
 	}
 

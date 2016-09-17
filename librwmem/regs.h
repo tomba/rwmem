@@ -89,8 +89,6 @@ public:
 	std::unique_ptr<Register> find_register(const std::string& name) const;
 	std::unique_ptr<Register> find_register(uint64_t offset) const;
 
-	void print(const std::string& pattern);
-
 	const RegisterFileData* data() const { return m_rfd; }
 
 private:

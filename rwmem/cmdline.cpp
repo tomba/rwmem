@@ -19,6 +19,8 @@ static void usage()
 	fprintf(stderr,
 		"usage: rwmem [options] [base] <address>[:field][=value]\n"
 		"\n"
+		"	base		base address or register block\n"
+		"\n"
 		"	address		address to access:\n"
 		"			<address>	single address\n"
 		"			<start-end>	range with end address\n"
@@ -96,7 +98,18 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		}
 	}
 
-	arg->address = str;
+	idx = str.find('.');
+
+	if (idx != string::npos) {
+		arg->address = str.substr(idx + 1);
+		str.resize(idx);
+		arg->register_block = str;
+
+		if (arg->register_block.empty())
+			usage();
+	} else {
+		arg->address = str;
+	}
 
 	if (arg->address.empty())
 		usage();
@@ -120,35 +133,35 @@ void parse_cmdline(int argc, char **argv)
 			int rs = stoi(s);
 
 			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-				ERR("Invalid size '%s'", s.c_str());
+			ERR("Invalid size '%s'", s.c_str());
 
 			rwmem_opts.regsize = rs / 8;
 		}),
 		Option("w=", [](string s)
 		{
 			if (s == "w")
-				rwmem_opts.write_mode = WriteMode::Write;
+			rwmem_opts.write_mode = WriteMode::Write;
 			else if (s == "rw")
-				rwmem_opts.write_mode = WriteMode::ReadWrite;
+			rwmem_opts.write_mode = WriteMode::ReadWrite;
 			else if (s == "rwr")
-				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
+			rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
-				ERR("illegal write mode '%s'", s.c_str());
+			ERR("illegal write mode '%s'", s.c_str());
 		}),
-		Option("R", []()
+		Option("R|raw", []()
 		{
 			rwmem_opts.raw_output = true;
 		}),
 		Option("p=", [](string s)
 		{
 			if (s == "q")
-				rwmem_opts.print_mode = PrintMode::Quiet;
+			rwmem_opts.print_mode = PrintMode::Quiet;
 			else if (s == "r")
-				rwmem_opts.print_mode = PrintMode::Reg;
+			rwmem_opts.print_mode = PrintMode::Reg;
 			else if (s == "rf")
-				rwmem_opts.print_mode = PrintMode::RegFields;
+			rwmem_opts.print_mode = PrintMode::RegFields;
 			else
-				ERR("illegal print mode '%s'", s.c_str());
+			ERR("illegal print mode '%s'", s.c_str());
 		}),
 		Option("|file=", [](string s)
 		{
@@ -161,7 +174,12 @@ void parse_cmdline(int argc, char **argv)
 		Option("|list?", [](string s)
 		{
 			rwmem_opts.show_list = true;
-			rwmem_opts.show_list_pattern = s;
+			rwmem_opts.pattern = s;
+		}),
+		Option("|find=", [](string s)
+		{
+			rwmem_opts.find = true;
+			rwmem_opts.pattern = s;
 		}),
 		Option("|ignore-base", []()
 		{

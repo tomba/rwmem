@@ -41,7 +41,7 @@ usage: rwmem [options] <address>[:field][=value]
 	--conf <file>	config file (default: ~/.rwmem/rwmemrc)
 	--regs <file>	register set file
 
-== Examples ==
+== Examples without register file ==
 
 Show what's in memory location 0x12345678
 
@@ -63,29 +63,49 @@ Modify memory location 0x12345678's bits 7-4 to 0xf
 
 	$ rwmem 0x12345678:7:4=0xf
 
-Show the byte at location 0x10 in file edid.raw
+Show the byte at location 0x10 in file edid.bin
 
-	$ rwmem --file edid.bin -s 8 0x10
-
-Show SYSCONFIG register in DISPC
-
-	$ rwmem -b dispc SYSCONFIG
-
-Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
-
-	$ rwmem -b dispc SYSCONFIG:MIDLEMODE=0x1
-
-Read binary dump of DISPC to dispc.bin file
-
-	$ rwmem -b dispc -R 0x0..0x1000 > dispc.bin
-
-Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
-
-	$ rwmem --file dispc.bin --regs dispc.regs SYSCONFIG
+        $ rwmem --file edid.bin -s 8 0x10
 
 Set /dev/fb0 to red
 
-	$ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xff0000
+        $ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xff0000
+
+== Examples with register file ==
+
+Show SYSCONFIG register in DISPC
+
+        $ rwmem DISPC.SYSCONFIG
+
+Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
+
+        $ rwmem DISPC.SYSCONFIG:MIDLEMODE=0x1
+
+List all registers the register file
+
+        $ rwmem --list
+
+List registers in DISPC
+
+        $ rwmem --list DISPC
+
+List fields in DISPC SYSCONFIG
+
+        $ rwmem --list DISPC.SYSCONFIG
+
+Find registers with VID1 in their name
+
+        $ rwmem --find VID1
+
+Read binary dump of DISPC to dispc.bin file
+
+        $ rwmem --raw DISPC 0x0..0x1000 > dispc.bin
+
+Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
+
+        $ rwmem --file dispc.bin --regs dispc.regs --ignore-base SYSCONFIG
+
+
 
 == Write mode ==
 
@@ -117,45 +137,12 @@ formatting. This can be used to get binary dumps of memory areas.
 
 == Register set files ==
 
-Register set files are used to define symbolic addresses and fields, so that
-you can use register and names instead of numerical addresses or bit numbers.
-
-As an example, the following entry in a register file:
-
-TIMING_H1,0x64,32
-HBP,31,20
-HFP,19,8
-HSW,7,0
-
-defines a 32bit register TIMING_H1, which is found at offset 0x64. It contains
-three fields, HBP, HFP and HSW, and their bit locations.
-
-Thus, instead of using address '0x64:19:8' you can use 'TIMING_H1:HFP'.
-
-You can specify the register set file to use with --regs option. You would normally
-combine that with option -b to specify the base address of the IP block. For
-example:
-
-$ rwmem --regs dispc.regs -b 0x58001000 TIMING_H1:HFP
-
-However, to simplify things, you can define symbolic base addresses in
-rwmem.cfg file. Adding the following line to rwmem.cfg:
-
-dispc  0x58001000       dispc.regs
-
-means that base 'dispc' means base address of 0x58001000 and register set file
-dispc.regs. Thus, you can write the previous example as:
-
-$ rwmem -b dispc TIMING_H1:HFP
+TODO
 
 == Register set file format ==
 
-<regname>,<offset>,<size>
-<fieldname>,<high>,<low>
-... more fields ...
-empty line
+TODO
 
 == rwmem.cfg file format ==
 
-<base-name>	<address>	<regfile>
-
+TODO
