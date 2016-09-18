@@ -1,0 +1,16 @@
+_rwmem()
+{
+	local cur
+
+	# WA to get : working
+	_get_comp_words_by_ref -n : cur
+
+	# TODO look for --regs from the cmdline and use that
+	# TODO append . or : depending on what we're completing
+
+	COMPREPLY=( $(rwmem --regs=/home/tomba/work-lappy/rwmem-db/omap5.regs --list="$cur"*) )
+
+	# WA to get : working
+	__ltrim_colon_completions "$cur"
+}
+complete -o nospace -F _rwmem rwmem
