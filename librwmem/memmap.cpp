@@ -44,7 +44,8 @@ MemMap::MemMap(const string& filename, uint64_t offset, uint64_t length, bool re
 
 	ERR_ON_ERRNO(m_map_base == MAP_FAILED, "failed to mmap");
 
-	m_vaddr = (uint8_t* )m_map_base + (offset & pagemask);
+	m_map_offset = mmap_offset;
+	m_map_len = mmap_len;
 }
 
 MemMap::~MemMap()
@@ -55,17 +56,106 @@ MemMap::~MemMap()
 	close(m_fd);
 }
 
-static volatile uint32_t* addr32(void* base, uint64_t offset)
+uint64_t MemMap::read(uint64_t addr, unsigned numbytes) const
 {
-	return (volatile uint32_t*)((uint8_t*)base + offset);
+	switch (numbytes) {
+	case 1:
+		return read8(addr);
+	case 2:
+		return read16(addr);
+	case 4:
+		return read32(addr);
+	case 8:
+		return read64(addr);
+	default:
+		FAIL("Illegal data regsize '%d'", numbytes);
+	}
+}
+
+void MemMap::write(uint64_t addr, unsigned numbytes, uint64_t value)
+{
+	switch (numbytes) {
+	case 1:
+		write8(addr, value);
+		break;
+	case 2:
+		write16(addr, value);
+		break;
+	case 4:
+		write32(addr, value);
+		break;
+	case 8:
+		write64(addr, value);
+		break;
+	default:
+		FAIL("Illegal data regsize '%d'", numbytes);
+	}
+}
+
+uint8_t MemMap::read8(uint64_t addr) const
+{
+	return *addr8(addr);
+}
+
+void MemMap::write8(uint64_t addr, uint8_t value)
+{
+	*addr8(addr) = value;
+}
+
+uint16_t MemMap::read16(uint64_t addr) const
+{
+	return *addr16(addr);
+}
+
+void MemMap::write16(uint64_t addr, uint16_t value)
+{
+	*addr16(addr) = value;
 }
 
 uint32_t MemMap::read32(uint64_t addr) const
 {
-	return *addr32(m_vaddr, addr);
+	return *addr32(addr);
 }
 
 void MemMap::write32(uint64_t addr, uint32_t value)
 {
-	*addr32(m_vaddr, addr) = value;
+	*addr32(addr) = value;
+}
+
+uint64_t MemMap::read64(uint64_t addr) const
+{
+	return *addr64(addr);
+}
+
+void MemMap::write64(uint64_t addr, uint64_t value)
+{
+	*addr64(addr) = value;
+}
+
+void* MemMap::maddr(uint64_t addr) const
+{
+	FAIL_IF(addr < m_map_offset, "address below map range");
+	FAIL_IF(addr >= m_map_offset + m_map_len, "address above map range");
+
+	return (uint8_t*)m_map_base + (addr - m_map_offset);
+}
+
+volatile uint8_t* MemMap::addr8(uint64_t addr) const
+{
+	return (volatile uint8_t*)maddr(addr);
+}
+
+volatile uint16_t* MemMap::addr16(uint64_t addr) const
+{
+	return (volatile uint16_t*)maddr(addr);
+}
+
+volatile uint32_t* MemMap::addr32(uint64_t addr) const
+{
+	return (volatile uint32_t*)maddr(addr);
+}
+
+volatile uint64_t* MemMap::addr64(uint64_t addr) const
+{
+	return (volatile uint64_t*)maddr(addr);
 }

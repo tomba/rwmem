@@ -184,6 +184,24 @@ void parse_cmdline(int argc, char **argv)
 		{
 			rwmem_opts.verbose = true;
 		}),
+		Option("|i2c=", [](string s)
+		{
+			vector<string> strs = split(s, ':');
+			ERR_ON(strs.size() != 2, "bad i2c parameter");
+
+			int r;
+			uint64_t v;
+
+			r = parse_u64(strs[0], &v);
+			ERR_ON(r, "failed to parse i2c bus");
+			rwmem_opts.i2c_bus = v;
+
+			r = parse_u64(strs[1], &v);
+			ERR_ON(r, "failed to parse i2c address");
+			rwmem_opts.i2c_addr = v;
+
+			rwmem_opts.i2c_mode = true;
+		}),
 		Option("h|help", []()
 		{
 			usage();

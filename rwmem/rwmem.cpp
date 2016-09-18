@@ -23,6 +23,7 @@
 #include "rwmem.h"
 #include "helpers.h"
 #include "regs.h"
+#include "i2cmap.h"
 
 #include <fnmatch.h>
 
@@ -170,8 +171,9 @@ static void print_field(unsigned high, unsigned low,
 }
 
 static void readwriteprint(const RwmemOp& op,
-			   uint64_t paddr, void *vaddr,
-			   uint64_t offset,
+			   IMap* mm,
+			   uint64_t op_addr,
+			   uint64_t paddr,
 			   unsigned width,
 			   Register* reg,
 			   const RwmemFormatting& formatting)
@@ -181,15 +183,15 @@ static void readwriteprint(const RwmemOp& op,
 
 	printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
 
-	if (offset != paddr)
-		printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, offset);
+	if (op_addr != paddr)
+		printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, op_addr);
 
 	uint64_t oldval, userval, newval;
 
 	oldval = userval = newval = 0;
 
 	if (rwmem_opts.write_mode != WriteMode::Write) {
-		oldval = readmem(vaddr, width);
+		oldval = mm->read(op_addr, width);
 
 		printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
 
@@ -207,13 +209,13 @@ static void readwriteprint(const RwmemOp& op,
 
 		fflush(stdout);
 
-		writemem(vaddr, width, v);
+		mm->write(op_addr, width, v);
 
 		newval = v;
 		userval = v;
 
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
-			newval = readmem(vaddr, width);
+			newval = mm->read(op_addr, width);
 
 			printq("-> 0x%0*" PRIx64 " ", formatting.value_chars, newval);
 		}
@@ -240,14 +242,16 @@ static void readwriteprint(const RwmemOp& op,
 			}
 		}
 	} else {
-		print_field(op.high, op.low, nullptr, newval, userval, oldval,
-			    op, formatting);
+		if (op.custom_field) {
+			print_field(op.high, op.low, nullptr, newval, userval, oldval,
+				    op, formatting);
+		}
 	}
 }
 
-static int readprint_raw(void *vaddr, unsigned size)
+static int readprint_raw(IMap* mm, uint64_t offset, unsigned size)
 {
-	uint64_t v = readmem(vaddr, size);
+	uint64_t v = mm->read(offset, size);
 
 	return write(STDOUT_FILENO, &v, size);
 }
@@ -380,46 +384,52 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 
 static void do_op(const string& filename, const RwmemOp& op, const RegisterFile* regfile)
 {
+	vprint("do_op(%lx.%lx+%lx)\n", op.regblock_offset, op.reg_offset, op.range);
+
 	bool read_only = !op.value_valid;
 
-	const uint64_t file_base = (rwmem_opts.ignore_base ? 0 : op.regblock_offset) + op.reg_offset;
+	// address to access
+	const uint64_t op_base = (rwmem_opts.ignore_base ? 0 : op.regblock_offset) + op.reg_offset;
 
-	MemMap mm(filename, file_base, op.range, read_only);
-
+	// address in the register file
 	const uint64_t regfile_base = op.regblock_offset + op.reg_offset;
-	const uint64_t reg_base = op.reg_offset;
+
+	unique_ptr<IMap> mm;
+
+	if (rwmem_opts.i2c_mode)
+		mm = make_unique<I2CMap>(rwmem_opts.i2c_bus, rwmem_opts.i2c_addr);
+	else
+		mm = make_unique<MemMap>(filename, op_base, op.range, read_only);
 
 	RwmemFormatting formatting;
 
 	formatting.name_chars = 30;
-	formatting.address_chars = file_base > 0xffffffff ? 16 : 8;
+	formatting.address_chars = op_base > 0xffffffff ? 16 : 8;
 	formatting.offset_chars = DIV_ROUND_UP(fls(op.range), 4);
 	formatting.value_chars = rwmem_opts.regsize * 2;
 
-	uint64_t offset = 0;
+	uint64_t op_offset = 0;
 
-	while (offset < op.range) {
+	while (op_offset < op.range) {
 		unique_ptr<Register> reg = nullptr;
 
 		if (regfile) {
-			reg = regfile->find_register(regfile_base + offset);
+			reg = regfile->find_register(regfile_base + op_offset);
 
 			if (rwmem_opts.print_known_regs && !reg) {
-				offset += rwmem_opts.regsize;
+				op_offset += rwmem_opts.regsize;
 				continue;
 			}
 		}
 
 		unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
 
-		void* va = (uint8_t*)mm.vaddr() + offset;
-
 		if (rwmem_opts.raw_output)
-			readprint_raw(va, access_size);
+			readprint_raw(mm.get(), op_base + op_offset, access_size);
 		else
-			readwriteprint(op, file_base + offset, va, reg_base + offset, access_size, reg.get(), formatting);
+			readwriteprint(op, mm.get(), op_base + op_offset, regfile_base + op_offset, access_size, reg.get(), formatting);
 
-		offset += access_size;
+		op_offset += access_size;
 	}
 }
 

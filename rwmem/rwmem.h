@@ -64,6 +64,10 @@ struct RwmemOpts {
 
 	std::string platform;
 
+	bool i2c_mode;
+	unsigned i2c_bus;
+	unsigned i2c_addr;
+
 	bool print_known_regs = true; // XXX get from cmdline
 };
 

@@ -15,42 +15,6 @@
 
 using namespace std;
 
-uint64_t readmem(void *addr, unsigned regsize)
-{
-	switch (regsize) {
-	case 1:
-		return *((volatile uint8_t *)addr);
-	case 2:
-		return *((volatile uint16_t *)addr);
-	case 4:
-		return *((volatile uint32_t *)addr);
-	case 8:
-		return *((volatile uint64_t *)addr);
-	default:
-		ERR("Illegal data regsize '%d'", regsize);
-	}
-}
-
-void writemem(void *addr, unsigned regsize, uint64_t value)
-{
-	switch (regsize) {
-	case 1:
-		*((volatile uint8_t *)addr) = value;
-		break;
-	case 2:
-		*((volatile uint16_t *)addr) = value;
-		break;
-	case 4:
-		*((volatile uint32_t *)addr) = value;
-		break;
-	case 8:
-		*((volatile uint64_t *)addr) = value;
-		break;
-	default:
-		ERR("Illegal data regsize '%d'", regsize);
-	}
-}
-
 void split(const string &s, char delim, vector<string> &elems)
 {
 	stringstream ss(s);

@@ -3,8 +3,7 @@
 #include <vector>
 #include <string.h>
 
-uint64_t readmem(void *addr, unsigned regsize);
-void writemem(void *addr, unsigned regsize, uint64_t value);
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 #define ERR(fmt, ...)						\
 	do {							\
@@ -29,6 +28,18 @@ void writemem(void *addr, unsigned regsize, uint64_t value);
 		if (condition)				\
 			ERR_ERRNO(fmt, ##__VA_ARGS__);	\
 	} while (0)
+
+#define FAIL(fmt, ...)		\
+	do {			\
+		fprintf(stderr, "%s:%d: %s:\n" fmt "\n", __FILE__, __LINE__, __PRETTY_FUNCTION__, ##__VA_ARGS__); \
+		abort();	\
+	} while(0)
+
+#define FAIL_IF(x, fmt, ...)				\
+	do {						\
+		if (unlikely(x))			\
+			FAIL(fmt, ##__VA_ARGS__);	\
+	} while(0)
 
 #define GENMASK(h, l) (((~0ULL) << (l)) & (~0ULL >> (64 - 1 - (h))))
 
