@@ -65,11 +65,15 @@ Modify memory location 0x12345678's bits 7-4 to 0xf
 
 Show the byte at location 0x10 in file edid.bin
 
-        $ rwmem --file edid.bin -s 8 0x10
+        $ rwmem --file edid.bin -s8 0x10
 
 Set /dev/fb0 to red
 
         $ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xff0000
+
+Read a byte from i2c device 0x50 on bus 4, address 0x20
+
+        $ rwmem -s8 --i2c=4:0x50 0x20
 
 == Examples with register file ==
 
@@ -99,8 +103,7 @@ Read binary dump of DISPC to dispc.bin file
 
 Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
-        $ rwmem --file dispc.bin --regs dispc.regs --ignore-base SYSCONFIG
-
+        $ rwmem --file dispc.bin --regs dispc.regs --ignore-base DISPC.SYSCONFIG
 
 
 == Write mode ==
