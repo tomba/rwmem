@@ -97,6 +97,10 @@ Find registers with VID1 in their name
 
         $ rwmem --find VID1
 
+Find registers with VID1 in their name
+
+        $ rwmem --find DISPC.*VID1*
+
 Read binary dump of DISPC to dispc.bin file
 
         $ rwmem --raw DISPC 0x0..0x1000 > dispc.bin

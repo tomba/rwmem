@@ -24,6 +24,8 @@
 #include "helpers.h"
 #include "regs.h"
 
+#include <fnmatch.h>
+
 using namespace std;
 
 #define printq(format...) \
@@ -31,6 +33,80 @@ using namespace std;
 	if (rwmem_opts.print_mode != PrintMode::Quiet) \
 	printf(format); \
 	} while(0)
+
+struct RegMatch
+{
+	const RegisterBlockData* rbd;
+	const RegisterData* rd;
+	const FieldData* fd;
+};
+
+static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pattern)
+{
+	string rb_pat;
+	string r_pat;
+	string f_pat;
+
+	vector<string> strs = split(pattern, '.');
+
+	rb_pat = strs[0];
+
+	if (strs.size() > 1) {
+		strs = split(strs[1], ':');
+
+		r_pat = strs[0];
+
+		if (strs.size() > 1) {
+			f_pat = strs[1];
+		}
+	}
+
+	vector<RegMatch> matches;
+
+	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
+		const RegisterBlockData* rbd = rfd->at(bidx);
+
+		if (fnmatch(rb_pat.c_str(), rbd->name(rfd), FNM_CASEFOLD) != 0)
+			continue;
+
+		if (r_pat.empty()) {
+			RegMatch m { };
+			m.rbd = rbd;
+			matches.push_back(m);
+			continue;
+		}
+
+		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
+			const RegisterData* rd = rbd->at(rfd, ridx);
+
+			if (fnmatch(r_pat.c_str(), rd->name(rfd), FNM_CASEFOLD) != 0)
+				continue;
+
+			if (f_pat.empty()) {
+				RegMatch m { };
+				m.rbd = rbd;
+				m.rd = rd;
+				matches.push_back(m);
+				continue;
+			}
+
+			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
+				const FieldData* fd = rd->at(rfd, fidx);
+
+				if (fnmatch(f_pat.c_str(), fd->name(rfd), FNM_CASEFOLD) != 0)
+					continue;
+
+				RegMatch m { };
+				m.rbd = rbd;
+				m.rd = rd;
+				m.fd = fd;
+				matches.push_back(m);
+			}
+		}
+	}
+
+	return matches;
+}
 
 
 static void print_regfile(const RegisterFile& rf)
@@ -91,7 +167,9 @@ static void print_pattern(const RegisterFile& rf, const string& pattern)
 		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
 			Register reg = rb.at(ridx);
 
-			if (strcasestr(reg.name(), pattern.c_str()) == NULL)
+			const char* name = reg.name();
+
+			if (fnmatch(pattern.c_str(), name, FNM_CASEFOLD) != 0)
 				continue;
 
 			if (!regfile_printed) {
@@ -106,10 +184,12 @@ static void print_pattern(const RegisterFile& rf, const string& pattern)
 
 			print_register(reg);
 
-			for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
-				Field field = reg.at(fidx);
+			if (rwmem_opts.print_mode == PrintMode::RegFields) {
+				for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
+					Field field = reg.at(fidx);
 
-				print_field(field);
+					print_field(field);
+				}
 			}
 		}
 	}
@@ -422,8 +502,13 @@ int main(int argc, char **argv)
 
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
-		print_regfile_all(*regfile.get());
-		//regfile->print(rwmem_opts.pattern);
+
+		if (rwmem_opts.pattern.empty())
+			print_regfile_all(*regfile.get());
+		else
+			match_reg(regfile->data(), rwmem_opts.pattern);
+			//print_pattern(*regfile.get(), rwmem_opts.pattern);
+
 		return 0;
 	}
 

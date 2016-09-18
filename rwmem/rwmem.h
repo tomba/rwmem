@@ -16,7 +16,7 @@ enum class WriteMode {
 	ReadWriteRead,
 };
 
-enum class PrintMode{
+enum class PrintMode {
 	Quiet,
 	Reg,
 	RegFields,
