@@ -176,11 +176,6 @@ void parse_cmdline(int argc, char **argv)
 			rwmem_opts.show_list = true;
 			rwmem_opts.pattern = s;
 		}),
-		Option("|find=", [](string s)
-		{
-			rwmem_opts.find = true;
-			rwmem_opts.pattern = s;
-		}),
 		Option("|ignore-base", []()
 		{
 			rwmem_opts.ignore_base = true;

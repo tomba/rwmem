@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Tomi Valkeinen
+ * Copyright 2013-2016 Tomi Valkeinen
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -108,88 +108,28 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 	return matches;
 }
 
-
-static void print_regfile(const RegisterFile& rf)
+static void print_regfile_all(const RegisterFileData* rfd)
 {
-	printf("%s: total %u/%u/%u\n", rf.name(), rf.num_blocks(), rf.num_regs(), rf.num_fields());
-}
+	printf("%s: total %u/%u/%u\n",
+	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
-static void print_register_block(const RegisterBlock& rb)
-{
-	printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n", rb.name(), rb.offset(), rb.size(), rb.num_regs());
-}
+	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
+		const RegisterBlockData* rbd = rfd->at(bidx);
 
-static void print_register(const Register& reg)
-{
-	printf("    %s: %#" PRIx64 " %#x, fields %u\n", reg.name(), reg.offset(), reg.size(), reg.num_fields());
-}
+		printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n",
+		       rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs());
 
-static void print_field(const Field& field)
-{
-	printf("      %s: %u:%u\n", field.name(), field.high(), field.low());
-}
+		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
+			const RegisterData* rd = rbd->at(rfd, ridx);
 
-static void print_regblock_all(const RegisterBlock& rb)
-{
-	print_register_block(rb);
+			printf("    %s: %#" PRIx64 " %#x, fields %u\n",
+			       rd->name(rfd), rd->offset(), rd->size(), rd->num_fields());
 
-	for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
-		Register reg = rb.at(ridx);
-		print_register(reg);
+			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
+				const FieldData* fd = rd->at(rfd, fidx);
 
-		for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
-			Field field = reg.at(fidx);
-			print_field(field);
-		}
-	}
-}
-
-static void print_regfile_all(const RegisterFile& rf)
-{
-	print_regfile(rf);
-
-	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
-		RegisterBlock rb = rf.at(bidx);
-
-		print_regblock_all(rb);
-	}
-}
-
-static void print_pattern(const RegisterFile& rf, const string& pattern)
-{
-	bool regfile_printed = false;
-
-	for (unsigned bidx = 0; bidx < rf.num_blocks(); ++bidx) {
-		RegisterBlock rb = rf.at(bidx);
-
-		bool block_printed = false;
-
-		for (unsigned ridx = 0; ridx < rb.num_regs(); ++ridx) {
-			Register reg = rb.at(ridx);
-
-			const char* name = reg.name();
-
-			if (fnmatch(pattern.c_str(), name, FNM_CASEFOLD) != 0)
-				continue;
-
-			if (!regfile_printed) {
-				print_regfile(rf);
-				regfile_printed = true;
-			}
-
-			if (!block_printed) {
-				print_register_block(rb);
-				block_printed = true;
-			}
-
-			print_register(reg);
-
-			if (rwmem_opts.print_mode == PrintMode::RegFields) {
-				for (unsigned fidx = 0; fidx < reg.num_fields(); ++fidx) {
-					Field field = reg.at(fidx);
-
-					print_field(field);
-				}
+				printf("      %s: %u:%u\n",
+				       fd->name(rfd), fd->high(), fd->low());
 			}
 		}
 	}
@@ -483,6 +423,18 @@ static void do_op(const string& filename, const RwmemOp& op, const RegisterFile*
 	}
 }
 
+static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch>& matches)
+{
+	for (const RegMatch& m : matches) {
+		if (m.rd && m.fd)
+			printf("%s.%s:%s\n", m.rbd->name(rfd), m.rd->name(rfd), m.fd->name(rfd));
+		else if (m.rd)
+			printf("%s.%s\n", m.rbd->name(rfd), m.rd->name(rfd));
+		else
+			printf("%s\n", m.rbd->name(rfd));
+	}
+}
+
 int main(int argc, char **argv)
 {
 	try {
@@ -503,20 +455,14 @@ int main(int argc, char **argv)
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
 
-		if (rwmem_opts.pattern.empty())
-			print_regfile_all(*regfile.get());
-		else
-			match_reg(regfile->data(), rwmem_opts.pattern);
-			//print_pattern(*regfile.get(), rwmem_opts.pattern);
+		if (rwmem_opts.pattern.empty()) {
+			print_regfile_all(regfile->data());
+		} else {
+			vector<RegMatch> m = match_reg(regfile->data(), rwmem_opts.pattern);
 
-		return 0;
-	}
+			print_reg_matches(regfile->data(), m);
+		}
 
-	if (rwmem_opts.find) {
-		ERR_ON(!regfile, "No regfile given");
-		ERR_ON(rwmem_opts.pattern.empty(), "no search pattern");
-
-		print_pattern(*regfile.get(), rwmem_opts.pattern);
 		return 0;
 	}
 

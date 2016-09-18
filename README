@@ -1,6 +1,6 @@
 == rwmem - A small tool to read/write memory ==
 
-Copyright (C) 2015,2016 Tomi Valkeinen
+Copyright 2013-2016 Tomi Valkeinen
 
 == Intro ==
 
@@ -87,19 +87,11 @@ List all registers the register file
 
 List registers in DISPC
 
-        $ rwmem --list DISPC
+        $ rwmem --list DISPC.*
 
 List fields in DISPC SYSCONFIG
 
-        $ rwmem --list DISPC.SYSCONFIG
-
-Find registers with VID1 in their name
-
-        $ rwmem --find VID1
-
-Find registers with VID1 in their name
-
-        $ rwmem --find DISPC.*VID1*
+        $ rwmem --list DISPC.SYSCONFIG:*
 
 Read binary dump of DISPC to dispc.bin file
 
