@@ -163,9 +163,15 @@ void parse_cmdline(int argc, char **argv)
 			else
 			ERR("illegal print mode '%s'", s.c_str());
 		}),
-		Option("|file=", [](string s)
+		Option("|mmap=", [](string s)
 		{
-			rwmem_opts.filename = s;
+			rwmem_opts.mmap_target = s;
+			rwmem_opts.target_type = TargetType::MMap;
+		}),
+		Option("|i2c=", [](string s)
+		{
+			rwmem_opts.i2c_target = s;
+			rwmem_opts.target_type = TargetType::I2C;
 		}),
 		Option("|regs=", [](string s)
 		{
@@ -183,24 +189,6 @@ void parse_cmdline(int argc, char **argv)
 		Option("v|verbose", []()
 		{
 			rwmem_opts.verbose = true;
-		}),
-		Option("|i2c=", [](string s)
-		{
-			vector<string> strs = split(s, ':');
-			ERR_ON(strs.size() != 2, "bad i2c parameter");
-
-			int r;
-			uint64_t v;
-
-			r = parse_u64(strs[0], &v);
-			ERR_ON(r, "failed to parse i2c bus");
-			rwmem_opts.i2c_bus = v;
-
-			r = parse_u64(strs[1], &v);
-			ERR_ON(r, "failed to parse i2c address");
-			rwmem_opts.i2c_addr = v;
-
-			rwmem_opts.i2c_mode = true;
 		}),
 		Option("h|help", []()
 		{

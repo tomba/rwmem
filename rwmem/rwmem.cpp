@@ -382,11 +382,9 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	return op;
 }
 
-static void do_op(const string& filename, const RwmemOp& op, const RegisterFile* regfile)
+static void do_op(const RwmemOp& op, const RegisterFile* regfile)
 {
 	vprint("do_op(%lx.%lx+%lx)\n", op.regblock_offset, op.reg_offset, op.range);
-
-	bool read_only = !op.value_valid;
 
 	// address to access
 	const uint64_t op_base = (rwmem_opts.ignore_base ? 0 : op.regblock_offset) + op.reg_offset;
@@ -396,10 +394,38 @@ static void do_op(const string& filename, const RwmemOp& op, const RegisterFile*
 
 	unique_ptr<IMap> mm;
 
-	if (rwmem_opts.i2c_mode)
-		mm = make_unique<I2CMap>(rwmem_opts.i2c_bus, rwmem_opts.i2c_addr);
-	else
-		mm = make_unique<MemMap>(filename, op_base, op.range, read_only);
+	switch (rwmem_opts.target_type) {
+	case TargetType::MMap: {
+		string file = rwmem_opts.mmap_target;
+		if (file.empty())
+			file = "/dev/mem";
+
+		bool read_only = !op.value_valid;
+
+		mm = make_unique<MemMap>(file, op_base, op.range, read_only);
+		break;
+	}
+
+	case TargetType::I2C: {
+		vector<string> strs = split(rwmem_opts.i2c_target, ':');
+		ERR_ON(strs.size() != 2, "bad i2c parameter");
+
+		int r;
+		uint64_t bus, addr;
+
+		r = parse_u64(strs[0], &bus);
+		ERR_ON(r, "failed to parse i2c bus");
+
+		r = parse_u64(strs[1], &addr);
+		ERR_ON(r, "failed to parse i2c address");
+
+		mm = make_unique<I2CMap>(bus, addr);
+		break;
+	}
+
+	default:
+		FAIL("bad target type");
+	}
 
 	RwmemFormatting formatting;
 
@@ -449,11 +475,19 @@ int main(int argc, char **argv)
 {
 	try {
 		rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
-		load_opts_from_ini();
 	} catch(...) {
 	}
 
+	load_opts_from_ini_pre();
+
 	parse_cmdline(argc, argv);
+
+	if (rwmem_opts.target_type == TargetType::None) {
+		rwmem_opts.target_type = TargetType::MMap;
+		rwmem_opts.mmap_target = "/dev/mem";
+
+		detect_platform();
+	}
 
 	unique_ptr<RegisterFile> regfile = nullptr;
 
@@ -478,7 +512,7 @@ int main(int argc, char **argv)
 
 	RwmemOp op = parse_op(rwmem_opts.arg, regfile.get());
 
-	do_op(rwmem_opts.filename, op, regfile.get());
+	do_op(op, regfile.get());
 
 	return 0;
 }

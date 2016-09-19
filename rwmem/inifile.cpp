@@ -11,7 +11,7 @@ using namespace std;
 
 INIReader rwmem_ini;
 
-static string detect_platform()
+static string get_platform_name()
 {
 	string result;
 
@@ -36,7 +36,7 @@ static string detect_platform()
 	return result;
 }
 
-void load_opts_from_ini()
+void load_opts_from_ini_pre()
 {
 	vprint("Reading settings from rwmem.ini\n");
 
@@ -46,9 +46,11 @@ void load_opts_from_ini()
 		ERR("Invalid size '%d'", rs);
 
 	rwmem_opts.regsize = rs / 8;
+}
 
-	rwmem_opts.platform = detect_platform();
-
-	string plat_key = string("platform \"") + rwmem_opts.platform + "\"";
+void detect_platform()
+{
+	string platform = get_platform_name();
+	string plat_key = string("platform \"") + platform + "\"";
 	rwmem_opts.regfile = rwmem_ini.get(plat_key, "regfile", "");
 }

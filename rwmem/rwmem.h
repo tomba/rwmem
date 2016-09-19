@@ -22,6 +22,12 @@ enum class PrintMode {
 	RegFields,
 };
 
+enum class TargetType {
+	None,
+	MMap,
+	I2C,
+};
+
 struct RwmemOp {
 	uint64_t regblock_offset;
 	uint64_t reg_offset;
@@ -46,7 +52,11 @@ struct RwmemOptsArg {
 };
 
 struct RwmemOpts {
-	std::string filename = "/dev/mem";
+	TargetType target_type;
+
+	std::string mmap_target;
+	std::string i2c_target;
+
 	unsigned regsize = 4;
 	WriteMode write_mode = WriteMode::ReadWriteRead;
 	PrintMode print_mode = PrintMode::RegFields;
@@ -61,12 +71,6 @@ struct RwmemOpts {
 
 	bool verbose;
 	bool ignore_base;
-
-	std::string platform;
-
-	bool i2c_mode;
-	unsigned i2c_bus;
-	unsigned i2c_addr;
 
 	bool print_known_regs = true; // XXX get from cmdline
 };
@@ -84,7 +88,8 @@ void parse_cmdline(int argc, char **argv);
 
 extern INIReader rwmem_ini;
 
-void load_opts_from_ini();
+void load_opts_from_ini_pre();
+void detect_platform();
 
 #define vprint(format...) \
 	do { \
