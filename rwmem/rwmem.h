@@ -74,7 +74,7 @@ struct RwmemOpts {
 	bool show_list;
 	std::string pattern;
 
-	RwmemOptsArg arg;
+	std::vector<RwmemOptsArg> args;
 
 	bool verbose;
 	bool ignore_base;

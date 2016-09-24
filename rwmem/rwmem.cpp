@@ -186,11 +186,14 @@ static void readwriteprint(const RwmemOp& op,
 			   uint64_t paddr,
 			   unsigned width,
 			   const RegisterFileData* rfd,
+			   const RegisterBlockData* rbd,
 			   const RegisterData* rd,
 			   const RwmemFormatting& formatting)
 {
-	if (rd)
-		printq("%-*s ", formatting.name_chars, rd->name(rfd));
+	if (rd) {
+		string name = sformat("%s.%s", rbd->name(rfd), rd->name(rfd));
+		printq("%-*s ", formatting.name_chars, name.c_str());
+	}
 
 	printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
 
@@ -405,7 +408,7 @@ static void do_op_numeric(const RwmemOp& op, IMap* mm)
 		if (rwmem_opts.raw_output)
 			readprint_raw(mm, op_base + op_offset, access_size);
 		else
-			readwriteprint(op, mm, op_base + op_offset, op_base + op_offset, access_size, nullptr, nullptr, formatting);
+			readwriteprint(op, mm, op_base + op_offset, op_base + op_offset, access_size, nullptr, nullptr, nullptr, formatting);
 
 		op_offset += access_size;
 	}
@@ -415,11 +418,13 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 {
 	vprint("do_op(%lx+%lx)\n", op.reg_offset, op.range);
 
-	const uint64_t rb_base = op.rbd->offset();
-	const uint64_t rb_access_base = rwmem_opts.ignore_base ? 0 : op.rbd->offset();
-	const uint64_t range = op.rbd->size();
+	const RegisterBlockData* rbd = op.rbd;
 
-	mm->map(rb_access_base, op.rbd->size());
+	const uint64_t rb_base = rbd->offset();
+	const uint64_t rb_access_base = rwmem_opts.ignore_base ? 0 : rbd->offset();
+	const uint64_t range = rbd->size();
+
+	mm->map(rb_access_base, rbd->size());
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;
@@ -433,14 +438,14 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 		uint64_t op_offset = 0;
 
 		while (op_offset < range) {
-			const RegisterData* rd = op.rbd->find_register(rfd, op_offset);
+			const RegisterData* rd = rbd->find_register(rfd, op_offset);
 
 			unsigned access_size = rd ? rd->size() : rwmem_opts.regsize;
 
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
 			else
-				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rd, formatting);
+				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
 
 			op_offset += access_size;
 		}
@@ -453,7 +458,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
 			else
-				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rd, formatting);
+				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
 		}
 	}
 }
@@ -517,7 +522,12 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	RwmemOp op = parse_op(rwmem_opts.arg, regfile.get());
+	vector<RwmemOp> ops;
+
+	for (const RwmemOptsArg& arg : rwmem_opts.args) {
+		RwmemOp op = parse_op(arg, regfile.get());
+		ops.push_back(op);
+	}
 
 	unique_ptr<IMap> mm;
 
@@ -552,7 +562,8 @@ int main(int argc, char **argv)
 		FAIL("bad target type");
 	}
 
-	do_op(op, regfile.get(), mm.get());
+	for (const RwmemOp& op : ops)
+		do_op(op, regfile.get(), mm.get());
 
 	return 0;
 }

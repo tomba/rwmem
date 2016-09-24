@@ -50,3 +50,6 @@ int parse_u64(const std::string& str, uint64_t *value);
 
 int fls(uint64_t num);
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
+// Not thread safe
+std::string sformat(const char *fmt, ...);

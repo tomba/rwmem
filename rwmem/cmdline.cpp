@@ -186,18 +186,12 @@ void parse_cmdline(int argc, char **argv)
 
 	const vector<string> params = optionset.params();
 
-	// XXX cleanup
-	switch (params.size()) {
-	case 0:
-		if (!rwmem_opts.show_list)
-			usage();
-		break;
-
-	case 1:
-		parse_arg(params[0], &rwmem_opts.arg);
-		break;
-
-	default:
+	if (params.empty())
 		usage();
+
+	for (string p : params) {
+		RwmemOptsArg arg;
+		parse_arg(p, &arg);
+		rwmem_opts.args.push_back(arg);
 	}
 }
