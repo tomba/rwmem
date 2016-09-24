@@ -46,6 +46,7 @@ struct __attribute__(( packed )) RegisterBlockData
 	const char* name(const RegisterFileData* rfd) const { return rfd->strings() + name_offset(); }
 	const RegisterData* at(const RegisterFileData* rfd, uint32_t idx) const;
 	const RegisterData* find_register(const RegisterFileData* rfd, const std::string& name) const;
+	const RegisterData* find_register(const RegisterFileData* rfd, uint64_t offset) const;
 
 private:
 	uint32_t m_name_offset;
@@ -67,6 +68,7 @@ struct __attribute__(( packed )) RegisterData
 	const char* name(const RegisterFileData* rfd) const { return rfd->strings() + name_offset(); }
 	const FieldData* at(const RegisterFileData* rfd, uint32_t idx) const;
 	const FieldData* find_field(const RegisterFileData* rfd, const std::string& name) const;
+	const FieldData* find_field(const RegisterFileData* rfd, uint8_t high, uint8_t low) const;
 
 private:
 	uint32_t m_name_offset;

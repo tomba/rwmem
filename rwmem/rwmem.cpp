@@ -35,15 +35,42 @@ using namespace std;
 	printf(format); \
 	} while(0)
 
-struct RegMatch
+static vector<const RegisterData*> match_registers(const RegisterFileData* rfd, const RegisterBlockData* rbd, const string& pattern)
 {
-	const RegisterBlockData* rbd;
-	const RegisterData* rd;
-	const FieldData* fd;
-};
+	vector<const RegisterData*> matches;
 
-static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& rb_pat, const string& r_pat, const string& f_pat)
+	for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
+		const RegisterData* rd = rbd->at(rfd, ridx);
+
+		if (fnmatch(pattern.c_str(), rd->name(rfd), FNM_CASEFOLD) != 0)
+			continue;
+
+		matches.push_back(rd);
+	}
+
+	return matches;
+}
+
+static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pattern)
 {
+	string rb_pat;
+	string r_pat;
+	string f_pat;
+
+	vector<string> strs = split(pattern, '.');
+
+	rb_pat = strs[0];
+
+	if (strs.size() > 1) {
+		strs = split(strs[1], ':');
+
+		r_pat = strs[0];
+
+		if (strs.size() > 1) {
+			f_pat = strs[1];
+		}
+	}
+
 	vector<RegMatch> matches;
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
@@ -52,9 +79,10 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& rb_
 		if (fnmatch(rb_pat.c_str(), rbd->name(rfd), FNM_CASEFOLD) != 0)
 			continue;
 
+		RegMatch m { };
+		m.rbd = rbd;
+
 		if (r_pat.empty()) {
-			RegMatch m { };
-			m.rbd = rbd;
 			matches.push_back(m);
 			continue;
 		}
@@ -65,10 +93,9 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& rb_
 			if (fnmatch(r_pat.c_str(), rd->name(rfd), FNM_CASEFOLD) != 0)
 				continue;
 
+			m.rd = rd;
+
 			if (f_pat.empty()) {
-				RegMatch m { };
-				m.rbd = rbd;
-				m.rd = rd;
 				matches.push_back(m);
 				continue;
 			}
@@ -79,9 +106,6 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& rb_
 				if (fnmatch(f_pat.c_str(), fd->name(rfd), FNM_CASEFOLD) != 0)
 					continue;
 
-				RegMatch m { };
-				m.rbd = rbd;
-				m.rd = rd;
 				m.fd = fd;
 				matches.push_back(m);
 			}
@@ -122,7 +146,8 @@ static void print_regfile_all(const RegisterFileData* rfd)
 }
 
 static void print_field(unsigned high, unsigned low,
-			Field* field,
+			const RegisterFileData* rfd,
+			const FieldData* fd,
 			uint64_t newval, uint64_t userval, uint64_t oldval,
 			const RwmemOp& op,
 			const RwmemFormatting& formatting)
@@ -135,8 +160,8 @@ static void print_field(unsigned high, unsigned low,
 
 	printq("  ");
 
-	if (field)
-		printq("%-*s ", formatting.name_chars, field->name());
+	if (fd)
+		printq("%-*s ", formatting.name_chars, fd->name(rfd));
 
 	if (high == low)
 		printq("   %-2d = ", low);
@@ -160,11 +185,12 @@ static void readwriteprint(const RwmemOp& op,
 			   uint64_t op_addr,
 			   uint64_t paddr,
 			   unsigned width,
-			   Register* reg,
+			   const RegisterFileData* rfd,
+			   const RegisterData* rd,
 			   const RwmemFormatting& formatting)
 {
-	if (reg)
-		printq("%-*s ", formatting.name_chars, reg->name());
+	if (rd)
+		printq("%-*s ", formatting.name_chars, rd->name(rfd));
 
 	printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
 
@@ -211,24 +237,24 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.print_mode != PrintMode::RegFields)
 		return;
 
-	if (reg) {
+	if (rd) {
 		if (op.custom_field) {
-			unique_ptr<Field> field = reg->find_field(op.high, op.low);
+			const FieldData* fd = rd->find_field(rfd, op.high, op.low);
 
-			print_field(op.high, op.low, field.get(),
+			print_field(op.high, op.low, rfd, fd,
 				    newval, userval, oldval, op, formatting);
 		} else {
-			for (unsigned i = 0; i < reg->num_fields(); ++i) {
-				Field field = reg->at(i);
+			for (unsigned i = 0; i < rd->num_fields(); ++i) {
+				const FieldData *fd = rd->at(rfd, i);
 
-				if (field.high() >= op.low && field.low() <= op.high)
-					print_field(field.high(), field.low(), &field,
+				if (fd->high() >= op.low && fd->low() <= op.high)
+					print_field(fd->high(), fd->low(), rfd, fd,
 						    newval, userval, oldval, op, formatting);
 			}
 		}
 	} else {
 		if (op.custom_field) {
-			print_field(op.high, op.low, nullptr, newval, userval, oldval,
+			print_field(op.high, op.low, nullptr, nullptr, newval, userval, oldval,
 				    op, formatting);
 		}
 	}
@@ -249,55 +275,44 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	if (regfile)
 		rfd = regfile->data();
 
-	/* Parse register block */
-
-	const RegisterBlockData* rbd = nullptr;
-
-	if (arg.register_block.size()) {
-		ERR_ON(!rfd, "Invalid register block '%s'", arg.register_block.c_str());
-
-		rbd = rfd->find_block(arg.register_block);
-		ERR_ON(!rbd, "Invalid register block '%s'", arg.register_block.c_str());
-
-		op.regblock_offset = rbd->offset();
-	}
-
 	/* Parse address */
 
+	// first register from the match
 	const RegisterData* rd = nullptr;
 
 	if (parse_u64(arg.address, &op.reg_offset) != 0) {
 		ERR_ON(!rfd, "Invalid address '%s'", arg.address.c_str());
 
-		if (rbd && arg.address == "*") {
-			op.reg_offset = 0;
+		vector<string> strs = split(arg.address, '.');
+
+		ERR_ON(strs.size() > 2, "Invalid address '%s'", arg.address.c_str());
+
+		const RegisterBlockData* rbd = rfd->find_block(strs[0]);
+
+		ERR_ON(!rbd, "Failed to find register block");
+
+		op.rbd = rbd;
+
+		if (strs.size() > 1) {
+			op.rds = match_registers(rfd, rbd, strs[1]);
+			ERR_ON(op.rds.empty(), "Failed to find register");
+			rd = op.rds[0];
 		} else {
-			if (rbd)
-				rd = rbd->find_register(rfd, arg.address);
-			else
-				rd = rfd->find_register(arg.address, &rbd);
-
-			ERR_ON(!rd, "Register not found '%s'", arg.address.c_str());
-
-			op.reg_offset = rd->offset();
-			op.regblock_offset = rbd->offset();
+			rd = rbd->at(rfd, 0);
+			ERR_ON(!rd, "Failed to figure out first register");
 		}
 	}
 
 	/* Parse range */
 
 	if (arg.range.size()) {
-		if (rbd && arg.range == "*") {
-			op.range = rbd->size();
-		} else {
-			int r = parse_u64(arg.range, &op.range);
-			ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
+		int r = parse_u64(arg.range, &op.range);
+		ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
 
-			if (!arg.range_is_offset) {
-				ERR_ON(op.range <= op.reg_offset, "range '%s' is <= 0", arg.range.c_str());
+		if (!arg.range_is_offset) {
+			ERR_ON(op.range <= op.reg_offset, "range '%s' is <= 0", arg.range.c_str());
 
-				op.range = op.range - op.reg_offset;
-			}
+			op.range = op.range - op.reg_offset;
 		}
 	} else {
 		if (rd)
@@ -367,81 +382,88 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	return op;
 }
 
-static void do_op(const RwmemOp& op, const RegisterFile* regfile)
+static void do_op_numeric(const RwmemOp& op, IMap* mm)
 {
-	vprint("do_op(%lx.%lx+%lx)\n", op.regblock_offset, op.reg_offset, op.range);
+	vprint("do_op(%lx+%lx)\n", op.reg_offset, op.range);
 
-	// address to access
-	const uint64_t op_base = (rwmem_opts.ignore_base ? 0 : op.regblock_offset) + op.reg_offset;
+	const uint64_t op_base = op.reg_offset;
+	const uint64_t range = op.range;
 
-	// address in the register file
-	const uint64_t regfile_base = op.regblock_offset + op.reg_offset;
-
-	unique_ptr<IMap> mm;
-
-	switch (rwmem_opts.target_type) {
-	case TargetType::MMap: {
-		string file = rwmem_opts.mmap_target;
-		if (file.empty())
-			file = "/dev/mem";
-
-		bool read_only = !op.value_valid;
-
-		mm = make_unique<MemMap>(file, op_base, op.range, read_only);
-		break;
-	}
-
-	case TargetType::I2C: {
-		vector<string> strs = split(rwmem_opts.i2c_target, ':');
-		ERR_ON(strs.size() != 2, "bad i2c parameter");
-
-		int r;
-		uint64_t bus, addr;
-
-		r = parse_u64(strs[0], &bus);
-		ERR_ON(r, "failed to parse i2c bus");
-
-		r = parse_u64(strs[1], &addr);
-		ERR_ON(r, "failed to parse i2c address");
-
-		mm = make_unique<I2CMap>(bus, addr);
-		break;
-	}
-
-	default:
-		FAIL("bad target type");
-	}
+	mm->map(op_base, range);
 
 	RwmemFormatting formatting;
-
 	formatting.name_chars = 30;
 	formatting.address_chars = op_base > 0xffffffff ? 16 : 8;
-	formatting.offset_chars = DIV_ROUND_UP(fls(op.range), 4);
+	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
 	formatting.value_chars = rwmem_opts.regsize * 2;
 
 	uint64_t op_offset = 0;
 
-	while (op_offset < op.range) {
-		unique_ptr<Register> reg = nullptr;
-
-		if (regfile) {
-			reg = regfile->find_register(regfile_base + op_offset);
-
-			if (rwmem_opts.print_known_regs && !reg) {
-				op_offset += rwmem_opts.regsize;
-				continue;
-			}
-		}
-
-		unsigned access_size = reg ? reg->size() : rwmem_opts.regsize;
+	while (op_offset < range) {
+		unsigned access_size = rwmem_opts.regsize;
 
 		if (rwmem_opts.raw_output)
-			readprint_raw(mm.get(), op_base + op_offset, access_size);
+			readprint_raw(mm, op_base + op_offset, access_size);
 		else
-			readwriteprint(op, mm.get(), op_base + op_offset, regfile_base + op_offset, access_size, reg.get(), formatting);
+			readwriteprint(op, mm, op_base + op_offset, op_base + op_offset, access_size, nullptr, nullptr, formatting);
 
 		op_offset += access_size;
 	}
+}
+
+static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap* mm)
+{
+	vprint("do_op(%lx+%lx)\n", op.reg_offset, op.range);
+
+	const uint64_t rb_base = op.rbd->offset();
+	const uint64_t rb_access_base = rwmem_opts.ignore_base ? 0 : op.rbd->offset();
+	const uint64_t range = op.rbd->size();
+
+	mm->map(rb_access_base, op.rbd->size());
+
+	RwmemFormatting formatting;
+	formatting.name_chars = 30;
+	formatting.address_chars = rb_access_base > 0xffffffff ? 16 : 8;
+	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
+	formatting.value_chars = rwmem_opts.regsize * 2;
+
+	const RegisterFileData* rfd = regfile->data();
+
+	if (op.rds.empty()) {
+		uint64_t op_offset = 0;
+
+		while (op_offset < range) {
+			const RegisterData* rd = op.rbd->find_register(rfd, op_offset);
+
+			unsigned access_size = rd ? rd->size() : rwmem_opts.regsize;
+
+			if (rwmem_opts.raw_output)
+				readprint_raw(mm, rb_access_base + op_offset, access_size);
+			else
+				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rd, formatting);
+
+			op_offset += access_size;
+		}
+	} else {
+		for (const RegisterData* rd : op.rds) {
+			uint64_t op_offset = rd->offset();
+
+			unsigned access_size = rd->size();
+
+			if (rwmem_opts.raw_output)
+				readprint_raw(mm, rb_access_base + op_offset, access_size);
+			else
+				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rd, formatting);
+		}
+	}
+}
+
+static void do_op(const RwmemOp& op, const RegisterFile* regfile, IMap* mm)
+{
+	if (op.rbd)
+		do_op_symbolic(op, regfile, mm);
+	else
+		do_op_numeric(op, mm);
 }
 
 static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch>& matches)
@@ -487,24 +509,7 @@ int main(int argc, char **argv)
 		if (rwmem_opts.pattern.empty()) {
 			print_regfile_all(regfile->data());
 		} else {
-			string rb_pat;
-			string r_pat;
-			string f_pat;
-
-			vector<string> strs = split(rwmem_opts.pattern, '.');
-
-			rb_pat = strs[0];
-
-			if (strs.size() > 1) {
-				strs = split(strs[1], ':');
-
-				r_pat = strs[0];
-
-				if (strs.size() > 1)
-					f_pat = strs[1];
-			}
-
-			vector<RegMatch> m = match_reg(regfile->data(), rb_pat, r_pat, f_pat);
+			vector<RegMatch> m = match_reg(regfile->data(), rwmem_opts.pattern);
 
 			print_reg_matches(regfile->data(), m);
 		}
@@ -514,7 +519,40 @@ int main(int argc, char **argv)
 
 	RwmemOp op = parse_op(rwmem_opts.arg, regfile.get());
 
-	do_op(op, regfile.get());
+	unique_ptr<IMap> mm;
+
+	switch (rwmem_opts.target_type) {
+	case TargetType::MMap: {
+		string file = rwmem_opts.mmap_target;
+		if (file.empty())
+			file = "/dev/mem";
+
+		mm = make_unique<MemMap>(file);
+		break;
+	}
+
+	case TargetType::I2C: {
+		vector<string> strs = split(rwmem_opts.i2c_target, ':');
+		ERR_ON(strs.size() != 2, "bad i2c parameter");
+
+		int r;
+		uint64_t bus, addr;
+
+		r = parse_u64(strs[0], &bus);
+		ERR_ON(r, "failed to parse i2c bus");
+
+		r = parse_u64(strs[1], &addr);
+		ERR_ON(r, "failed to parse i2c address");
+
+		mm = make_unique<I2CMap>(bus, addr);
+		break;
+	}
+
+	default:
+		FAIL("bad target type");
+	}
+
+	do_op(op, regfile.get(), mm.get());
 
 	return 0;
 }

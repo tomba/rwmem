@@ -98,31 +98,10 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		}
 	}
 
-	idx = str.find('.');
-
-	if (idx != string::npos) {
-		arg->address = str.substr(idx + 1);
-		str.resize(idx);
-		arg->register_block = str;
-
-		if (arg->register_block.empty())
-			usage();
-	} else {
-		arg->address = str;
-	}
+	arg->address = str;
 
 	if (arg->address.empty())
 		usage();
-
-	if (arg->address == "*") {
-		if (arg->register_block.empty())
-			usage();
-		if (!arg->range.empty())
-			usage();
-
-		arg->range = "*";
-		arg->range_is_offset = false;
-	}
 }
 
 void parse_cmdline(int argc, char **argv)
@@ -207,6 +186,7 @@ void parse_cmdline(int argc, char **argv)
 
 	const vector<string> params = optionset.params();
 
+	// XXX cleanup
 	switch (params.size()) {
 	case 0:
 		if (!rwmem_opts.show_list)
@@ -215,15 +195,6 @@ void parse_cmdline(int argc, char **argv)
 
 	case 1:
 		parse_arg(params[0], &rwmem_opts.arg);
-		break;
-
-	case 2:
-		if (params[0].empty())
-			usage();
-
-		rwmem_opts.arg.register_block = params[0];
-
-		parse_arg(params[1], &rwmem_opts.arg);
 		break;
 
 	default:

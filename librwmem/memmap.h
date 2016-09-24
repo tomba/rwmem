@@ -6,8 +6,12 @@
 class MemMap : public IMap
 {
 public:
-	MemMap(const std::string& filename, uint64_t offset, uint64_t length, bool read_only);
+	MemMap(const std::string& filename);
+	MemMap(const std::string& filename, uint64_t offset, uint64_t length);
 	~MemMap();
+
+	void map(uint64_t offset, uint64_t length);
+	void unmap();
 
 	uint64_t read(uint64_t addr, unsigned numbytes) const;
 	void write(uint64_t addr, unsigned numbytes, uint64_t value);

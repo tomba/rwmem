@@ -28,8 +28,17 @@ enum class TargetType {
 	I2C,
 };
 
+struct RegMatch
+{
+	const RegisterBlockData* rbd;
+	const RegisterData* rd;
+	const FieldData* fd;
+};
+
 struct RwmemOp {
-	uint64_t regblock_offset;
+	const RegisterBlockData* rbd;
+	std::vector<const RegisterData*> rds;
+
 	uint64_t reg_offset;
 
 	uint64_t range;
@@ -42,13 +51,11 @@ struct RwmemOp {
 };
 
 struct RwmemOptsArg {
-	std::string register_block;
 	std::string address;
+	bool range_is_offset;
 	std::string range;
 	std::string field;
 	std::string value;
-
-	bool range_is_offset;
 };
 
 struct RwmemOpts {
@@ -71,8 +78,6 @@ struct RwmemOpts {
 
 	bool verbose;
 	bool ignore_base;
-
-	bool print_known_regs = true; // XXX get from cmdline
 };
 
 struct RwmemFormatting {

@@ -9,7 +9,7 @@ MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, const string& re
 
 	m_rbd = m_rf->data()->find_block(blockname);
 
-	m_map = make_unique<MemMap>(mapfile, m_rbd->offset(), m_rbd->size(), false);
+	m_map = make_unique<MemMap>(mapfile, m_rbd->offset(), m_rbd->size());
 }
 
 MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset, const string& regfile, const string& blockname)
@@ -18,13 +18,13 @@ MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset,
 
 	m_rbd = m_rf->data()->find_block(blockname);
 
-	m_map = make_unique<MemMap>(mapfile, offset, m_rbd->size(), false);
+	m_map = make_unique<MemMap>(mapfile, offset, m_rbd->size());
 }
 
 MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset, uint64_t length)
 	: m_rf(nullptr), m_rbd(nullptr)
 {
-	m_map = make_unique<MemMap>(mapfile, offset, length, false);
+	m_map = make_unique<MemMap>(mapfile, offset, length);
 }
 
 uint32_t MappedRegisterBlock::read32(const string& regname) const

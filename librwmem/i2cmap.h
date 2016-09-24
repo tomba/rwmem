@@ -12,6 +12,9 @@ public:
 	uint64_t read(uint64_t addr, unsigned numbytes) const;
 	void write(uint64_t addr, unsigned numbytes, uint64_t value);
 
+	void map(uint64_t offset, uint64_t length) { }
+	void unmap() { }
+
 private:
 	int m_fd;
 	uint16_t m_i2c_addr;

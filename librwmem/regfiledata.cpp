@@ -1,6 +1,8 @@
 #include "regfiledata.h"
 #include <string.h>
 
+using namespace std;
+
 const RegisterBlockData* RegisterFileData::blocks() const
 {
 	return (RegisterBlockData*)((uint8_t*)this + sizeof(RegisterFileData));
@@ -26,7 +28,7 @@ const RegisterBlockData* RegisterFileData::at(uint32_t idx) const
 	return &blocks()[idx];
 }
 
-const RegisterBlockData* RegisterFileData::find_block(const std::string& name) const
+const RegisterBlockData* RegisterFileData::find_block(const string& name) const
 {
 	for (unsigned i = 0; i < num_blocks(); ++i) {
 		const RegisterBlockData* rbd = at(i);
@@ -38,7 +40,7 @@ const RegisterBlockData* RegisterFileData::find_block(const std::string& name) c
 	return nullptr;
 }
 
-const RegisterData* RegisterFileData::find_register(const std::string& name, const RegisterBlockData** rbd) const
+const RegisterData* RegisterFileData::find_register(const string& name, const RegisterBlockData** rbd) const
 {
 	for (unsigned i = 0; i < num_blocks(); ++i) {
 		*rbd = at(i);
@@ -79,7 +81,7 @@ const RegisterData* RegisterBlockData::at(const RegisterFileData* rfd, uint32_t 
 	return &rfd->registers()[regs_offset() + idx];
 }
 
-const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, const std::string& name) const
+const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, const string& name) const
 {
 	for (unsigned i = 0; i < num_regs(); ++i) {
 		const RegisterData* rd = &rfd->registers()[regs_offset() + i];
@@ -91,17 +93,41 @@ const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd
 	return nullptr;
 }
 
+const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, uint64_t offset) const
+{
+	for (unsigned i = 0; i < num_regs(); ++i) {
+		const RegisterData* rd = &rfd->registers()[regs_offset() + i];
+
+		if (rd->offset() == offset)
+			return rd;
+	}
+
+	return nullptr;
+}
+
 const FieldData* RegisterData::at(const RegisterFileData* rfd, uint32_t idx) const
 {
 	return &rfd->fields()[fields_offset() + idx];
 }
 
-const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const std::__cxx11::string& name) const
+const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const string& name) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
 		const FieldData* fd = &rfd->fields()[fields_offset() + i];
 
 		if (strcasecmp(fd->name(rfd), name.c_str()) == 0)
+			return fd;
+	}
+
+	return nullptr;
+}
+
+const FieldData* RegisterData::find_field(const RegisterFileData* rfd, uint8_t high, uint8_t low) const
+{
+	for (unsigned i = 0; i < num_fields(); ++i) {
+		const FieldData* fd = &rfd->fields()[fields_offset() + i];
+
+		if (fd->high() == high && fd->low() == low)
 			return fd;
 	}
 

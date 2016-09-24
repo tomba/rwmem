@@ -52,7 +52,7 @@ PYBIND11_PLUGIN(pyrwmem) {
 
 
 	py::class_<MemMap>(m, "MemMap")
-			.def(py::init<const string&, uint64_t, uint64_t, bool>())
+			.def(py::init<const string&, uint64_t, uint64_t>())
 			.def("read32", &MemMap::read32)
 			.def("write32", &MemMap::write32)
 			;

@@ -47,11 +47,11 @@ Show what's in memory location 0x58001000
 
         $ rwmem 0x58001000
 
-Show what's in memory locations between 0x58001000 to 0x58001040 (XXX inclusive?)
+Show what's in memory locations between 0x58001000 to 0x58001040
 
         $ rwmem 0x58001000-0x58001040
 
-Show what's in memory locations between 0x58001000 to 0x58001040 (XXX inclusive?)
+Show what's in memory locations between 0x58001000 to 0x58001040
 
         $ rwmem 0x58001000+0x40
 

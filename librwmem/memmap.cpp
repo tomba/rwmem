@@ -14,11 +14,29 @@ using namespace std;
 static const unsigned pagesize = sysconf(_SC_PAGESIZE);
 static const unsigned pagemask = pagesize - 1;
 
-MemMap::MemMap(const string& filename, uint64_t offset, uint64_t length, bool read_only)
+MemMap::MemMap(const string& filename)
+	: m_map_base(MAP_FAILED)
 {
-	m_fd = open(filename.c_str(), (read_only ? O_RDONLY : O_RDWR) | O_SYNC);
+	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '%s'", filename.c_str());
+}
+
+MemMap::MemMap(const string &filename, uint64_t offset, uint64_t length)
+	:MemMap(filename)
+{
+	map(offset, length);
+}
+
+MemMap::~MemMap()
+{
+	unmap();
+	close(m_fd);
+}
+
+void MemMap::map(uint64_t offset, uint64_t length)
+{
+	unmap();
 
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length + pagesize - 1) & ~pagemask;
@@ -39,7 +57,7 @@ MemMap::MemMap(const string& filename, uint64_t offset, uint64_t length, bool re
 	}
 
 	m_map_base = mmap(0, mmap_len,
-			  PROT_READ | (read_only ? 0 : PROT_WRITE),
+			  PROT_READ | PROT_WRITE,
 			  MAP_SHARED, m_fd, mmap_offset);
 
 	ERR_ON_ERRNO(m_map_base == MAP_FAILED, "failed to mmap");
@@ -48,12 +66,15 @@ MemMap::MemMap(const string& filename, uint64_t offset, uint64_t length, bool re
 	m_map_len = mmap_len;
 }
 
-MemMap::~MemMap()
+void MemMap::unmap()
 {
+	if (m_map_base == MAP_FAILED)
+		return;
+
 	if (munmap(m_map_base, pagesize) == -1)
 		ERR_ERRNO("failed to munmap");
 
-	close(m_fd);
+	m_map_base = MAP_FAILED;
 }
 
 uint64_t MemMap::read(uint64_t addr, unsigned numbytes) const
