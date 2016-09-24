@@ -42,26 +42,8 @@ struct RegMatch
 	const FieldData* fd;
 };
 
-static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pattern)
+static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& rb_pat, const string& r_pat, const string& f_pat)
 {
-	string rb_pat;
-	string r_pat;
-	string f_pat;
-
-	vector<string> strs = split(pattern, '.');
-
-	rb_pat = strs[0];
-
-	if (strs.size() > 1) {
-		strs = split(strs[1], ':');
-
-		r_pat = strs[0];
-
-		if (strs.size() > 1) {
-			f_pat = strs[1];
-		}
-	}
-
 	vector<RegMatch> matches;
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
@@ -125,6 +107,9 @@ static void print_regfile_all(const RegisterFileData* rfd)
 
 			printf("    %s: %#" PRIx64 " %#x, fields %u\n",
 			       rd->name(rfd), rd->offset(), rd->size(), rd->num_fields());
+
+			if (rwmem_opts.print_mode != PrintMode::RegFields)
+				continue;
 
 			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
 				const FieldData* fd = rd->at(rfd, fidx);
@@ -502,7 +487,24 @@ int main(int argc, char **argv)
 		if (rwmem_opts.pattern.empty()) {
 			print_regfile_all(regfile->data());
 		} else {
-			vector<RegMatch> m = match_reg(regfile->data(), rwmem_opts.pattern);
+			string rb_pat;
+			string r_pat;
+			string f_pat;
+
+			vector<string> strs = split(rwmem_opts.pattern, '.');
+
+			rb_pat = strs[0];
+
+			if (strs.size() > 1) {
+				strs = split(strs[1], ':');
+
+				r_pat = strs[0];
+
+				if (strs.size() > 1)
+					f_pat = strs[1];
+			}
+
+			vector<RegMatch> m = match_reg(regfile->data(), rb_pat, r_pat, f_pat);
 
 			print_reg_matches(regfile->data(), m);
 		}

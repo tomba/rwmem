@@ -22,7 +22,7 @@ usage: rwmem [options] <address>[:field][=value]
 
 	address		address to access:
 			<address>	single address
-			<start..end>	range with end address
+			<start-end>	range with end address
 			<start+len>	range with length
 
 	field		bitfield (inclusive, start from 0):
@@ -43,39 +43,55 @@ usage: rwmem [options] <address>[:field][=value]
 
 == Examples without register file ==
 
-Show what's in memory location 0x12345678
+Show what's in memory location 0x58001000
 
-	$ rwmem 0x12345678
+        $ rwmem 0x58001000
 
-Show what's in memory location 0x12345678's bit 7 (i.e. 8th bit)
+Show what's in memory locations between 0x58001000 to 0x58001040 (XXX inclusive?)
 
-	$ rwmem 0x12345678:7
+        $ rwmem 0x58001000-0x58001040
 
-Show what's in memory location 0x12345678's bits 7-4 (i.e. bits 4, 5, 6, 7)
+Show what's in memory locations between 0x58001000 to 0x58001040 (XXX inclusive?)
 
-	$ rwmem 0x12345678:7:4
+        $ rwmem 0x58001000+0x40
 
-Write 0xbaadf00d to memory location 0x12345678
+Show what's in memory location 0x58001000's bit 7 (i.e. 8th bit)
 
-	$ rwmem 0x12345678=0xbaadf00d
+        $ rwmem 0x58001000:7
 
-Modify memory location 0x12345678's bits 7-4 to 0xf
+Show what's in memory location 0x58001000's bits 7-4 (i.e. bits 4, 5, 6, 7)
 
-	$ rwmem 0x12345678:7:4=0xf
+        $ rwmem 0x58001000:7:4
+
+Write 0x12345678 to memory location 0x58001000
+
+        $ rwmem 0x58001000=0x12345678
+
+Modify memory location 0x58001000's bits 7-4 to 0xf
+
+        $ rwmem 0x58001000:7:4=0xf
 
 Show the byte at location 0x10 in file edid.bin
 
-        $ rwmem --file edid.bin -s8 0x10
+        $ rwmem --mmap edid.bin -s 8 0x10
 
 Set /dev/fb0 to red
 
-        $ rwmem -p q --file /dev/fb0 0x0..$((800*4*480))=0xff0000
+        $ rwmem -p q --mmap /dev/fb0 0x0..$((800*4*480))=0xff0000
 
 Read a byte from i2c device 0x50 on bus 4, address 0x20
 
-        $ rwmem -s8 --i2c=4:0x50 0x20
+        $ rwmem -s 8 --i2c=4:0x50 0x20
 
 == Examples with register file ==
+
+Show the whole DISPC address space
+
+        $ rwmem DISPC
+
+Show the known registers in DISPC address space
+
+        $ rwmem DISPC.*
 
 Show SYSCONFIG register in DISPC
 
@@ -85,9 +101,13 @@ Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
 
         $ rwmem DISPC.SYSCONFIG:MIDLEMODE=0x1
 
-List all registers the register file
+List all registers in the register file
 
         $ rwmem --list
+
+List registers in DISPC
+
+        $ rwmem --list DISPC
 
 List registers in DISPC
 
