@@ -231,7 +231,7 @@ static void readwriteprint(const RwmemOp& op,
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			newval = mm->read(op_addr, width);
 
-			printq("-> 0x%0*" PRIx64 " ", formatting.value_chars, newval);
+			printq("-> 0x%0*" PRIx64, formatting.value_chars, newval);
 		}
 	}
 
