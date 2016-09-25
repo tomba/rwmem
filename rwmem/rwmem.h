@@ -9,6 +9,7 @@
 
 #include "regs.h"
 #include "inireader.h"
+#include "helpers.h"
 
 enum class WriteMode {
 	Write,
@@ -64,7 +65,13 @@ struct RwmemOpts {
 	std::string mmap_target;
 	std::string i2c_target;
 
-	unsigned regsize = 4;
+	// for i2c
+	unsigned address_size = 1;	// bytes
+	Endianness address_endianness;
+
+	unsigned data_size = 4;		// bytes
+	Endianness data_endianness;
+
 	WriteMode write_mode = WriteMode::ReadWriteRead;
 	PrintMode print_mode = PrintMode::RegFields;
 	bool raw_output;

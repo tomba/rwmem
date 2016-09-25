@@ -321,7 +321,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 		if (rd)
 			op.range = rd->size();
 		else
-			op.range = rwmem_opts.regsize;
+			op.range = rwmem_opts.data_size;
 	}
 
 	/* Parse field */
@@ -352,7 +352,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 
 		ERR_ON(!ok, "Field not found '%s'", arg.field.c_str());
 
-		ERR_ON(fl >= rwmem_opts.regsize * 8 || fh >= rwmem_opts.regsize * 8,
+		ERR_ON(fl >= rwmem_opts.data_size * 8 || fh >= rwmem_opts.data_size * 8,
 		       "Field bits higher than register size");
 
 		op.custom_field = true;
@@ -361,7 +361,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	} else {
 		op.custom_field = false;
 		op.low = 0;
-		op.high = rwmem_opts.regsize * 8 - 1;
+		op.high = rwmem_opts.data_size * 8 - 1;
 	}
 
 	/* Parse value */
@@ -371,7 +371,7 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 		int r = parse_u64(arg.value, &value);
 		ERR_ON(r, "Invalid value '%s'", arg.value.c_str());
 
-		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.regsize * 8);
+		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.data_size * 8);
 
 		ERR_ON(value & ~regmask, "Value does not fit into the register size");
 
@@ -398,12 +398,12 @@ static void do_op_numeric(const RwmemOp& op, IMap* mm)
 	formatting.name_chars = 30;
 	formatting.address_chars = op_base > 0xffffffff ? 16 : 8;
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = rwmem_opts.regsize * 2;
+	formatting.value_chars = rwmem_opts.data_size * 2;
 
 	uint64_t op_offset = 0;
 
 	while (op_offset < range) {
-		unsigned access_size = rwmem_opts.regsize;
+		unsigned access_size = rwmem_opts.data_size;
 
 		if (rwmem_opts.raw_output)
 			readprint_raw(mm, op_base + op_offset, access_size);
@@ -430,7 +430,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 	formatting.name_chars = 30;
 	formatting.address_chars = rb_access_base > 0xffffffff ? 16 : 8;
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = rwmem_opts.regsize * 2;
+	formatting.value_chars = rwmem_opts.data_size * 2;
 
 	const RegisterFileData* rfd = regfile->data();
 
@@ -440,7 +440,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 		while (op_offset < range) {
 			const RegisterData* rd = rbd->find_register(rfd, op_offset);
 
-			unsigned access_size = rd ? rd->size() : rwmem_opts.regsize;
+			unsigned access_size = rd ? rd->size() : rwmem_opts.data_size;
 
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
@@ -554,7 +554,9 @@ int main(int argc, char **argv)
 		r = parse_u64(strs[1], &addr);
 		ERR_ON(r, "failed to parse i2c address");
 
-		mm = make_unique<I2CMap>(bus, addr);
+		mm = make_unique<I2CMap>(bus, addr,
+					 rwmem_opts.address_size, rwmem_opts.address_endianness,
+					 rwmem_opts.data_endianness);
 		break;
 	}
 

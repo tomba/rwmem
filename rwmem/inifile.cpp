@@ -40,12 +40,12 @@ void load_opts_from_ini_pre()
 {
 	vprint("Reading settings from rwmem.ini\n");
 
-	unsigned rs = rwmem_ini.get_int("main", "regsize", rwmem_opts.regsize * 8);
+	unsigned rs = rwmem_ini.get_int("main", "regsize", rwmem_opts.data_size * 8);
 
 	if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
 		ERR("Invalid size '%d'", rs);
 
-	rwmem_opts.regsize = rs / 8;
+	rwmem_opts.data_size = rs / 8;
 }
 
 void detect_platform()

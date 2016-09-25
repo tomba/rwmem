@@ -55,3 +55,10 @@ int fls(uint64_t num);
 std::string sformat(const char *fmt, ...);
 
 std::string to_binary_str(uint64_t value, uint8_t numbits);
+
+enum class Endianness
+{
+	Default = 0,
+	Big,
+	Little,
+};

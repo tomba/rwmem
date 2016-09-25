@@ -104,17 +104,57 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		usage();
 }
 
+inline bool ends_with(const std::string& value, const std::string& ending)
+{
+	if (ending.size() > value.size())
+		return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
 void parse_cmdline(int argc, char **argv)
 {
 	OptionSet optionset = {
 		Option("s=", [](string s)
 		{
+			Endianness endianness = Endianness::Default;
+
+			if (ends_with(s, "be")) {
+				endianness = Endianness::Big;
+				s = s.substr(0, s.length() - 2);
+			} else if (ends_with(s, "le")) {
+				endianness = Endianness::Little;
+				s = s.substr(0, s.length() - 2);
+			}
+
+			rwmem_opts.data_endianness = endianness;
+
 			int rs = stoi(s);
 
 			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
 			ERR("Invalid size '%s'", s.c_str());
 
-			rwmem_opts.regsize = rs / 8;
+			rwmem_opts.data_size = rs / 8;
+		}),
+		Option("S=", [](string s)
+		{
+			Endianness endianness = Endianness::Default;
+
+			if (ends_with(s, "be")) {
+				endianness = Endianness::Big;
+				s = s.substr(0, s.length() - 2);
+			} else if (ends_with(s, "le")) {
+				endianness = Endianness::Little;
+				s = s.substr(0, s.length() - 2);
+			}
+
+			rwmem_opts.address_endianness = endianness;
+
+			int rs = stoi(s);
+
+			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
+			ERR("Invalid size '%s'", s.c_str());
+
+			rwmem_opts.address_size = rs / 8;
 		}),
 		Option("w=", [](string s)
 		{
