@@ -44,17 +44,12 @@ void MemMap::map(uint64_t offset, uint64_t length)
 	//printf("mmap '%s' offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
 	//       filename.c_str(), offset, length, mmap_offset, mmap_len);
 
-	// how to do the check only for normal files?
-	bool check_file_len = true;
+	struct stat st;
+	int r = fstat(m_fd, &st);
+	ERR_ON_ERRNO(r, "Failed to get map file stat");
 
-	if (check_file_len) {
-		const off_t file_len = lseek(m_fd, (size_t)0, SEEK_END);
-		lseek(m_fd, 0, SEEK_SET);
-
-		// note: use file_len only if lseek() succeeded
-		ERR_ON(file_len != (off_t)-1 && file_len < mmap_offset + (off_t)mmap_len,
-		       "Trying to access file past its end");
-	}
+	if (S_ISREG(st.st_mode))
+		ERR_ON(st.st_size < mmap_offset + (off_t)mmap_len, "Trying to access file past its end");
 
 	m_map_base = mmap(0, mmap_len,
 			  PROT_READ | PROT_WRITE,
