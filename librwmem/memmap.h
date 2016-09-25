@@ -6,8 +6,8 @@
 class MemMap : public IMap
 {
 public:
-	MemMap(const std::string& filename);
-	MemMap(const std::string& filename, uint64_t offset, uint64_t length);
+	MemMap(const std::string& filename, Endianness data_endianness);
+	MemMap(const std::string& filename, Endianness data_endianness, uint64_t offset, uint64_t length);
 	~MemMap();
 
 	void map(uint64_t offset, uint64_t length);
@@ -34,6 +34,8 @@ private:
 
 	uint64_t m_map_offset;
 	uint64_t m_map_len;
+
+	Endianness m_data_endianness;
 
 	void* maddr(uint64_t addr) const;
 

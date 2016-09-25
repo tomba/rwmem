@@ -440,7 +440,12 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 		while (op_offset < range) {
 			const RegisterData* rd = rbd->find_register(rfd, op_offset);
 
-			unsigned access_size = rd ? rd->size() : rwmem_opts.data_size;
+			unsigned access_size;
+
+			if (rwmem_opts.user_data_size)
+				access_size = rwmem_opts.data_size;
+			else
+				access_size = rd ? rd->size() : rwmem_opts.data_size;
 
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
@@ -453,7 +458,12 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 		for (const RegisterData* rd : op.rds) {
 			uint64_t op_offset = rd->offset();
 
-			unsigned access_size = rd->size();
+			unsigned access_size;
+
+			if (rwmem_opts.user_data_size)
+				access_size = rwmem_opts.data_size;
+			else
+				access_size = rd->size();
 
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
@@ -537,7 +547,7 @@ int main(int argc, char **argv)
 		if (file.empty())
 			file = "/dev/mem";
 
-		mm = make_unique<MemMap>(file);
+		mm = make_unique<MemMap>(file, rwmem_opts.data_endianness);
 		break;
 	}
 

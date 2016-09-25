@@ -69,6 +69,7 @@ struct RwmemOpts {
 	unsigned address_size = 1;	// bytes
 	Endianness address_endianness;
 
+	bool user_data_size;
 	unsigned data_size = 4;		// bytes
 	Endianness data_endianness;
 

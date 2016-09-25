@@ -14,16 +14,16 @@ using namespace std;
 static const unsigned pagesize = sysconf(_SC_PAGESIZE);
 static const unsigned pagemask = pagesize - 1;
 
-MemMap::MemMap(const string& filename)
-	: m_map_base(MAP_FAILED)
+MemMap::MemMap(const string& filename, Endianness data_endianness)
+	: m_map_base(MAP_FAILED), m_data_endianness(data_endianness)
 {
 	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '%s'", filename.c_str());
 }
 
-MemMap::MemMap(const string &filename, uint64_t offset, uint64_t length)
-	:MemMap(filename)
+MemMap::MemMap(const string &filename, Endianness data_endianness, uint64_t offset, uint64_t length)
+	:MemMap(filename, data_endianness)
 {
 	map(offset, length);
 }
@@ -125,32 +125,50 @@ void MemMap::write8(uint64_t addr, uint8_t value)
 
 uint16_t MemMap::read16(uint64_t addr) const
 {
-	return *addr16(addr);
+	if (m_data_endianness == Endianness::Big)
+		return be16toh(*addr16(addr));
+	else
+		return le16toh(*addr16(addr));
 }
 
 void MemMap::write16(uint64_t addr, uint16_t value)
 {
-	*addr16(addr) = value;
+	if (m_data_endianness == Endianness::Big)
+		*addr16(addr) = htobe16(value);
+	else
+		*addr16(addr) = htole16(value);
 }
 
 uint32_t MemMap::read32(uint64_t addr) const
 {
-	return *addr32(addr);
+	if (m_data_endianness == Endianness::Big)
+		return be32toh(*addr32(addr));
+	else
+		return le32toh(*addr32(addr));
 }
 
 void MemMap::write32(uint64_t addr, uint32_t value)
 {
-	*addr32(addr) = value;
+	if (m_data_endianness == Endianness::Big)
+		*addr32(addr) = htobe32(value);
+	else
+		*addr32(addr) = htole32(value);
 }
 
 uint64_t MemMap::read64(uint64_t addr) const
 {
-	return *addr64(addr);
+	if (m_data_endianness == Endianness::Big)
+		return be64toh(*addr64(addr));
+	else
+		return le16toh(*addr64(addr));
 }
 
 void MemMap::write64(uint64_t addr, uint64_t value)
 {
-	*addr64(addr) = value;
+	if (m_data_endianness == Endianness::Big)
+		*addr64(addr) = htobe64(value);
+	else
+		*addr64(addr) = htole64(value);
 }
 
 void* MemMap::maddr(uint64_t addr) const

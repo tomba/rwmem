@@ -134,6 +134,7 @@ void parse_cmdline(int argc, char **argv)
 			ERR("Invalid size '%s'", s.c_str());
 
 			rwmem_opts.data_size = rs / 8;
+			rwmem_opts.user_data_size = true;
 		}),
 		Option("S=", [](string s)
 		{
