@@ -53,3 +53,5 @@ int fls(uint64_t num);
 
 // Not thread safe
 std::string sformat(const char *fmt, ...);
+
+std::string to_binary_str(uint64_t value, uint8_t numbits);

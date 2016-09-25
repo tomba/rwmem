@@ -65,3 +65,16 @@ string sformat(const char *fmt, ...)
 
 	return string(s_format_buf);
 }
+
+string to_binary_str(uint64_t value, uint8_t numbits)
+{
+	string s = "0b";
+
+	for (unsigned i = 0; i < numbits; ++i) {
+		uint8_t b = (value >> (numbits - i)) & 1;
+
+		s += b ? '1' : '0';
+	}
+
+	return s;
+}
