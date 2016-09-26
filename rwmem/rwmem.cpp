@@ -430,6 +430,9 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 
 	const RegisterFileData* rfd = regfile->data();
 
+	// Accessing addresses not defined in regfile may cause problems. So skip those.
+	const bool skip_undefined_regs = true;
+
 	if (op.rds.empty()) {
 		uint64_t op_offset = 0;
 
@@ -442,6 +445,16 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 				access_size = rwmem_opts.data_size;
 			else
 				access_size = rd ? rd->size() : rwmem_opts.data_size;
+
+			if (!rd && skip_undefined_regs) {
+				if (rwmem_opts.raw_output) {
+					uint64_t v = 0;
+					write(STDOUT_FILENO, &v, access_size);
+				}
+
+				op_offset += access_size;
+				continue;
+			}
 
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
