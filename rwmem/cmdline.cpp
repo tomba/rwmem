@@ -104,7 +104,7 @@ static void parse_arg(std::string str, RwmemOptsArg *arg)
 		usage();
 }
 
-inline bool ends_with(const std::string& value, const std::string& ending)
+static bool ends_with(const std::string& value, const std::string& ending)
 {
 	if (ending.size() > value.size())
 		return false;

@@ -387,8 +387,6 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 
 static void do_op_numeric(const RwmemOp& op, IMap* mm)
 {
-	vprint("do_op(%lx+%lx)\n", op.reg_offset, op.range);
-
 	const uint64_t op_base = op.reg_offset;
 	const uint64_t range = op.range;
 
@@ -416,8 +414,6 @@ static void do_op_numeric(const RwmemOp& op, IMap* mm)
 
 static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap* mm)
 {
-	vprint("do_op(%lx+%lx)\n", op.reg_offset, op.range);
-
 	const RegisterBlockData* rbd = op.rbd;
 
 	const uint64_t rb_base = rbd->offset();
