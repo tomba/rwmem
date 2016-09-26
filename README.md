@@ -1,47 +1,26 @@
-# rwmem - A small tool to read/write memory
+# rwmem - A small tool to read & write device registers
 
 Copyright 2013-2016 Tomi Valkeinen
 
 ## Intro
 
-rwmem is a small tool to read and write arbitrary locations in a file.
-Normally, this file is /dev/mem, so the tool reads/writes memory, but the file
-can be any file that can be memory mapped (e.g. a normal file, /dev/fb0, etc.).
+rwmem is a small tool for reading and writing device registers. rwmem supports
+two modes: mmap mode and i2c mode.
 
-rwmem supports accessing 32/64 bit addresses, and accessing 8/16/32/64 bit
-memory locations.
+In mmap mode rwmem accesses a file by memory mapping it. Using /dev/mem as the
+memory mapped file makes rwmem access memory and can thus be used to access
+devices which have memory mapped registers.
 
-rwmem also supports bitfields (i.e. accessing only a subset of the memory
-location), and operations on address ranges.
+In i2c mode rwmem accesses an i2c peripheral by sending i2c messages to it.
 
-rwmem has support for using symbolic names for addresses and bitfields.
+rwmem features:
 
-## Usage
-
-```
-usage: rwmem [options] <address>[:field][=value]
-	
-	address		address to access:
-			<address>	single address
-			<start-end>	range with end address
-			<start+len>	range with length
-
-	field		bitfield (inclusive, start from 0):
-			<bit>		single bit
-			<high>:<low>	bitfield from high to low
-
-	value		value to be written
-
-	-h		show this help
-	-s <size>	size of the memory access: 8/16/32/64 (default: 32)
-	-w <mode>	write mode: w, rw or rwr (default)
-	-p <mode>	print mode: q, r or rf (default)
-	-b <address>	base address
-	-R		raw output mode
-	--file <file>	file to open (default: /dev/mem)
-	--conf <file>	config file (default: ~/.rwmem/rwmemrc)
-	--regs <file>	register set file
-```
+* addressing with 8/16/32/64 bit addresses
+* accessing 8/16/32/64 bit memory locations
+* little and big endian addressess and accesses
+* bitfields
+* address ranges
+* register description database
 
 ## Examples without register file
 
@@ -85,6 +64,10 @@ Read a byte from i2c device 0x50 on bus 4, address 0x20
 
         $ rwmem -s 8 --i2c=4:0x50 0x20
 
+Read a 32 bit big endian register with swapped 16-bit words from i2c device 0x50 on bus 4, address 0x800
+
+        $ rwmem -s 32bes -S 16 --i2c=4:0x50 0x800
+
 ## Examples with register file
 
 Show the whole DISPC address space
@@ -121,12 +104,11 @@ List fields in DISPC SYSCONFIG
 
 Read binary dump of DISPC to dispc.bin file
 
-        $ rwmem --raw DISPC 0x0..0x1000 > dispc.bin
+        $ rwmem --raw DISPC > dispc.bin
 
 Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
-        $ rwmem --file dispc.bin --regs dispc.regs --ignore-base DISPC.SYSCONFIG
-
+        $ rwmem --mmap dispc.bin --regs dispc.regs --ignore-base DISPC.SYSCONFIG
 
 ## Write mode
 
@@ -156,13 +138,13 @@ The print mode parameter affects what rwmem will output.
 In raw output mode rwmem will copy the values it reads to stdout without any
 formatting. This can be used to get binary dumps of memory areas.
 
-## Register set files
+## Register description file
 
-TODO
+A register description file is a binary register database. See the code and
+the included python scripts to see the details of the format.
 
-## Register set file format
-
-TODO
+It is easy to generate register description files using the regfile_writer.py
+python script.
 
 ## rwmem.cfg file format
 

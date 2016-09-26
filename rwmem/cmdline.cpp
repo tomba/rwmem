@@ -17,28 +17,30 @@ __attribute__ ((noreturn))
 static void usage()
 {
 	fprintf(stderr,
-		"usage: rwmem [options] [base] <address>[:field][=value]\n"
+		"usage: rwmem [options] <address>[:field][=value] ...\n"
 		"\n"
-		"	base		base address or register block\n"
+		"	address			address to access:\n"
+		"				<address>	single address\n"
+		"				<start-end>	range with end address\n"
+		"				<start+len>	range with length\n"
 		"\n"
-		"	address		address to access:\n"
-		"			<address>	single address\n"
-		"			<start-end>	range with end address\n"
-		"			<start+len>	range with length\n"
+		"	field			bitfield (inclusive, start from 0):\n"
+		"				<bit>		single bit\n"
+		"				<high>:<low>	bitfield from high to low\n"
 		"\n"
-		"	field		bitfield (inclusive, start from 0):\n"
-		"			<bit>		single bit\n"
-		"			<high>:<low>	bitfield from high to low\n"
+		"	value			value to be written\n"
 		"\n"
-		"	value		value to be written\n"
-		"\n"
-		"	-h		show this help\n"
-		"	-s <size>	size of the memory access: 8/16/32/64 (default: 32)\n"
-		"	-w <mode>	write mode: w, rw or rwr (default)\n"
-		"	-p <mode>	print mode: q, r or rf (default)\n"
-		"	-R		raw output mode\n"
-		"	--file <file>	file to open (default: /dev/mem)\n"
-		"	--regs <file>	register set file\n"
+		"	-h			show this help\n"
+		"	-s <size>[endian]	bit size of the memory access\n"
+		"	-S <size>[endian]	bit size of the address (i2c)\n"
+		"	-w <mode>		write mode: w, rw or rwr (default)\n"
+		"	-p <mode>		print mode: q, r or rf (default)\n"
+		"	-R			raw output mode\n"
+		"	--list			list-mode, do not read or write\n"
+		"	--mmap <file>		mmap-mode, file to open (default: /dev/mem)\n"
+		"	--i2c <bus>:<addr>	i2c-mode, device bus and address\n"
+		"	--regs <file>		register description file\n"
+		"	--ignore-base		ignore base from register desc file\n"
 		);
 
 	exit(1);
@@ -143,7 +145,7 @@ void parse_cmdline(int argc, char **argv)
 			parse_size_endian(s, &size, &endianness);
 
 			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-				"Invalid size '%s'", s.c_str());
+			"Invalid size '%s'", s.c_str());
 
 			rwmem_opts.data_size = size / 8;
 			rwmem_opts.data_endianness = endianness;
@@ -157,7 +159,7 @@ void parse_cmdline(int argc, char **argv)
 			parse_size_endian(s, &size, &endianness);
 
 			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-				"Invalid address size '%s'", s.c_str());
+			"Invalid address size '%s'", s.c_str());
 
 			rwmem_opts.address_size = size / 8;
 			rwmem_opts.address_endianness = endianness;
