@@ -26,7 +26,7 @@ public:
 private:
 	std::unique_ptr<RegisterFile> m_rf;
 	const RegisterBlockData* m_rbd;
-	std::unique_ptr<MMapTarget> m_map;
+	std::unique_ptr<ITarget> m_map;
 };
 
 class MappedRegister

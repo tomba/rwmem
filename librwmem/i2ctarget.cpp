@@ -231,3 +231,13 @@ void I2CTarget::write(uint64_t addr, unsigned numbytes, uint64_t value)
 	int r = ioctl(m_fd, I2C_RDWR, &data);
 	ERR_ON_ERRNO(r < 0, "i2c transfer failed");
 }
+
+uint32_t I2CTarget::read32(uint64_t addr) const
+{
+	return read(addr, 4);
+}
+
+void I2CTarget::write32(uint64_t addr, uint32_t value)
+{
+	write(addr, 4, value);
+}
