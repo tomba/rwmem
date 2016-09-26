@@ -1,8 +1,8 @@
-== rwmem - A small tool to read/write memory ==
+# rwmem - A small tool to read/write memory
 
 Copyright 2013-2016 Tomi Valkeinen
 
-== Intro ==
+## Intro
 
 rwmem is a small tool to read and write arbitrary locations in a file.
 Normally, this file is /dev/mem, so the tool reads/writes memory, but the file
@@ -16,7 +16,7 @@ location), and operations on address ranges.
 
 rwmem has support for using symbolic names for addresses and bitfields.
 
-== Usage ==
+## Usage
 
 usage: rwmem [options] <address>[:field][=value]
 
@@ -41,7 +41,7 @@ usage: rwmem [options] <address>[:field][=value]
 	--conf <file>	config file (default: ~/.rwmem/rwmemrc)
 	--regs <file>	register set file
 
-== Examples without register file ==
+## Examples without register file
 
 Show what's in memory location 0x58001000
 
@@ -83,7 +83,7 @@ Read a byte from i2c device 0x50 on bus 4, address 0x20
 
         $ rwmem -s 8 --i2c=4:0x50 0x20
 
-== Examples with register file ==
+## Examples with register file
 
 Show the whole DISPC address space
 
@@ -126,7 +126,7 @@ Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
         $ rwmem --file dispc.bin --regs dispc.regs --ignore-base DISPC.SYSCONFIG
 
 
-== Write mode ==
+## Write mode
 
 The write mode parameter affects how rwmem handles writing.
 
@@ -141,7 +141,7 @@ Write mode 'rwr' means read-write-read. This is the same as 'rw' except rwmem
 reads from the address again after writing for the purpose of showing the new
 value. This is the default mode.
 
-== Print mode ==
+## Print mode
 
 The print mode parameter affects what rwmem will output.
 
@@ -149,19 +149,19 @@ The print mode parameter affects what rwmem will output.
 'r'  - print only register value, not individual fields
 'rf' - print register and fields (when available).
 
-== Raw output mode ==
+## Raw output mode
 
 In raw output mode rwmem will copy the values it reads to stdout without any
 formatting. This can be used to get binary dumps of memory areas.
 
-== Register set files ==
+## Register set files
 
 TODO
 
-== Register set file format ==
+## Register set file format
 
 TODO
 
-== rwmem.cfg file format ==
+## rwmem.cfg file format
 
 TODO
