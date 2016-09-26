@@ -2,14 +2,10 @@
 
 import pyrwmem
 
-#mem = pyrwmem.mem("omap5")
-#dss = mem["dss"]
-#reg = dss["revision"]
+map = pyrwmem.MappedRegisterBlock("LICENSE", 0, "/home/tomba/work-lappy/rwmem-db/k2g.regs", "DSS")
+map.read32("REVISION")
 
-map = pyrwmem.MappedRegisterBlock("LICENSE", 0, "/home/tomba/work-lappy/rwmem-db/k2g.bin", "DSS")
-map.read32("DSS_REVISION")
-
-r = map.find_register("DSS_REVISION")
+r = map.find_register("REVISION")
 r.read32()
 
 v = r.read32value()
@@ -31,7 +27,7 @@ r.read32()
 #v = mem.read32(0x10)
 #print(format(v, "#0x"))
 
-rf = pyrwmem.RegisterFile("/home/tomba/work-lappy/rwmem-db/k2g.bin")
+rf = pyrwmem.RegisterFile("/home/tomba/work-lappy/rwmem-db/k2g.regs")
 print("RF {} blocks:{} regs:{} fields:{}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
 
 rb = rf[0]

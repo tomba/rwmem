@@ -8,6 +8,8 @@ MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, const string& re
 	m_rf = make_unique<RegisterFile>(regfile);
 
 	m_rbd = m_rf->data()->find_block(blockname);
+	if (!m_rbd)
+		throw runtime_error("register block not found");
 
 	m_map = make_unique<MemMap>(mapfile, Endianness::Default, m_rbd->offset(), m_rbd->size());
 }
@@ -17,6 +19,8 @@ MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset,
 	m_rf = make_unique<RegisterFile>(regfile);
 
 	m_rbd = m_rf->data()->find_block(blockname);
+	if (!m_rbd)
+		throw runtime_error("register block not found");
 
 	m_map = make_unique<MemMap>(mapfile, Endianness::Default, offset, m_rbd->size());
 }
@@ -33,6 +37,8 @@ uint32_t MappedRegisterBlock::read32(const string& regname) const
 		throw runtime_error("no register file");
 
 	const RegisterData* rd = m_rbd->find_register(m_rf->data(), regname);
+	if (!rd)
+		throw runtime_error("register not found");
 
 	return m_map->read32(rd->offset());
 }
