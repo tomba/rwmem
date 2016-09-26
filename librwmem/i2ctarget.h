@@ -1,15 +1,15 @@
 #pragma once
 
 #include <string>
-#include "imap.h"
+#include "itarget.h"
 #include "helpers.h"
 
-class I2CMap : public IMap
+class I2CTarget : public ITarget
 {
 public:
-	I2CMap(unsigned adapter_nr, uint16_t i2c_addr, uint16_t addr_len, Endianness addr_endianness,
+	I2CTarget(unsigned adapter_nr, uint16_t i2c_addr, uint16_t addr_len, Endianness addr_endianness,
 	       Endianness data_endianness);
-	~I2CMap();
+	~I2CTarget();
 
 	uint64_t read(uint64_t addr, unsigned numbytes) const;
 	void write(uint64_t addr, unsigned numbytes, uint64_t value);

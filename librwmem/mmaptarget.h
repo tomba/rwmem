@@ -1,14 +1,14 @@
 #pragma once
 
 #include <string>
-#include "imap.h"
+#include "itarget.h"
 
-class MemMap : public IMap
+class MMapTarget : public ITarget
 {
 public:
-	MemMap(const std::string& filename, Endianness data_endianness);
-	MemMap(const std::string& filename, Endianness data_endianness, uint64_t offset, uint64_t length);
-	~MemMap();
+	MMapTarget(const std::string& filename, Endianness data_endianness);
+	MMapTarget(const std::string& filename, Endianness data_endianness, uint64_t offset, uint64_t length);
+	~MMapTarget();
 
 	void map(uint64_t offset, uint64_t length);
 	void unmap();

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "memmap.h"
+#include "mmaptarget.h"
 
 class RegisterBlock;
 class RegisterFile;

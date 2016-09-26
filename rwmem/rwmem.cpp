@@ -23,7 +23,7 @@
 #include "rwmem.h"
 #include "helpers.h"
 #include "regs.h"
-#include "i2cmap.h"
+#include "i2ctarget.h"
 
 #include <fnmatch.h>
 
@@ -181,7 +181,7 @@ static void print_field(unsigned high, unsigned low,
 }
 
 static void readwriteprint(const RwmemOp& op,
-			   IMap* mm,
+			   ITarget* mm,
 			   uint64_t op_addr,
 			   uint64_t paddr,
 			   unsigned width,
@@ -263,7 +263,7 @@ static void readwriteprint(const RwmemOp& op,
 	}
 }
 
-static int readprint_raw(IMap* mm, uint64_t offset, unsigned size)
+static int readprint_raw(ITarget* mm, uint64_t offset, unsigned size)
 {
 	uint64_t v = mm->read(offset, size);
 
@@ -389,7 +389,7 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 	return op;
 }
 
-static void do_op_numeric(const RwmemOp& op, IMap* mm)
+static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 {
 	const uint64_t op_base = op.reg_offset;
 	const uint64_t range = op.range;
@@ -416,7 +416,7 @@ static void do_op_numeric(const RwmemOp& op, IMap* mm)
 	}
 }
 
-static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap* mm)
+static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarget* mm)
 {
 	const RegisterBlockData* rbd = op.rbd;
 
@@ -487,7 +487,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 	}
 }
 
-static void do_op(const RwmemOp& op, const RegisterFile* regfile, IMap* mm)
+static void do_op(const RwmemOp& op, const RegisterFile* regfile, ITarget* mm)
 {
 	if (op.rbd)
 		do_op_symbolic(op, regfile, mm);
@@ -559,7 +559,7 @@ int main(int argc, char **argv)
 	if (rwmem_opts.data_endianness == Endianness::Default)
 		rwmem_opts.data_endianness = Endianness::Little;
 
-	unique_ptr<IMap> mm;
+	unique_ptr<ITarget> mm;
 
 	switch (rwmem_opts.target_type) {
 	case TargetType::MMap: {
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
 		if (file.empty())
 			file = "/dev/mem";
 
-		mm = make_unique<MemMap>(file, rwmem_opts.data_endianness);
+		mm = make_unique<MMapTarget>(file, rwmem_opts.data_endianness);
 		break;
 	}
 
@@ -584,7 +584,7 @@ int main(int argc, char **argv)
 		r = parse_u64(strs[1], &addr);
 		ERR_ON(r, "failed to parse i2c address");
 
-		mm = make_unique<I2CMap>(bus, addr,
+		mm = make_unique<I2CTarget>(bus, addr,
 					 rwmem_opts.address_size, rwmem_opts.address_endianness,
 					 rwmem_opts.data_endianness);
 		break;

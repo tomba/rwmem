@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "memmap.h"
+#include "mmaptarget.h"
 #include "regs.h"
 #include "mappedregs.h"
 
@@ -51,10 +51,10 @@ PYBIND11_PLUGIN(pyrwmem) {
 
 
 
-	py::class_<MemMap>(m, "MemMap")
+	py::class_<MMapTarget>(m, "MMapTargetMap")
 			.def(py::init<const string&, Endianness, uint64_t, uint64_t>())
-			.def("read32", &MemMap::read32)
-			.def("write32", &MemMap::write32)
+			.def("read32", &MMapTarget::read32)
+			.def("write32", &MMapTarget::write32)
 			;
 
 

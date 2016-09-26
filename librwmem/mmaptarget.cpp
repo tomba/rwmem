@@ -1,4 +1,4 @@
-#include "memmap.h"
+#include "mmaptarget.h"
 
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -14,7 +14,7 @@ using namespace std;
 static const unsigned pagesize = sysconf(_SC_PAGESIZE);
 static const unsigned pagemask = pagesize - 1;
 
-MemMap::MemMap(const string& filename, Endianness data_endianness)
+MMapTarget::MMapTarget(const string& filename, Endianness data_endianness)
 	: m_map_base(MAP_FAILED), m_data_endianness(data_endianness)
 {
 	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
@@ -22,19 +22,19 @@ MemMap::MemMap(const string& filename, Endianness data_endianness)
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '%s'", filename.c_str());
 }
 
-MemMap::MemMap(const string &filename, Endianness data_endianness, uint64_t offset, uint64_t length)
-	:MemMap(filename, data_endianness)
+MMapTarget::MMapTarget(const string &filename, Endianness data_endianness, uint64_t offset, uint64_t length)
+	:MMapTarget(filename, data_endianness)
 {
 	map(offset, length);
 }
 
-MemMap::~MemMap()
+MMapTarget::~MMapTarget()
 {
 	unmap();
 	close(m_fd);
 }
 
-void MemMap::map(uint64_t offset, uint64_t length)
+void MMapTarget::map(uint64_t offset, uint64_t length)
 {
 	unmap();
 
@@ -61,7 +61,7 @@ void MemMap::map(uint64_t offset, uint64_t length)
 	m_map_len = mmap_len;
 }
 
-void MemMap::unmap()
+void MMapTarget::unmap()
 {
 	if (m_map_base == MAP_FAILED)
 		return;
@@ -72,7 +72,7 @@ void MemMap::unmap()
 	m_map_base = MAP_FAILED;
 }
 
-uint64_t MemMap::read(uint64_t addr, unsigned numbytes) const
+uint64_t MMapTarget::read(uint64_t addr, unsigned numbytes) const
 {
 	switch (numbytes) {
 	case 1:
@@ -88,7 +88,7 @@ uint64_t MemMap::read(uint64_t addr, unsigned numbytes) const
 	}
 }
 
-void MemMap::write(uint64_t addr, unsigned numbytes, uint64_t value)
+void MMapTarget::write(uint64_t addr, unsigned numbytes, uint64_t value)
 {
 	switch (numbytes) {
 	case 1:
@@ -108,17 +108,17 @@ void MemMap::write(uint64_t addr, unsigned numbytes, uint64_t value)
 	}
 }
 
-uint8_t MemMap::read8(uint64_t addr) const
+uint8_t MMapTarget::read8(uint64_t addr) const
 {
 	return *addr8(addr);
 }
 
-void MemMap::write8(uint64_t addr, uint8_t value)
+void MMapTarget::write8(uint64_t addr, uint8_t value)
 {
 	*addr8(addr) = value;
 }
 
-uint16_t MemMap::read16(uint64_t addr) const
+uint16_t MMapTarget::read16(uint64_t addr) const
 {
 	if (m_data_endianness == Endianness::Big)
 		return be16toh(*addr16(addr));
@@ -126,7 +126,7 @@ uint16_t MemMap::read16(uint64_t addr) const
 		return le16toh(*addr16(addr));
 }
 
-void MemMap::write16(uint64_t addr, uint16_t value)
+void MMapTarget::write16(uint64_t addr, uint16_t value)
 {
 	if (m_data_endianness == Endianness::Big)
 		*addr16(addr) = htobe16(value);
@@ -134,7 +134,7 @@ void MemMap::write16(uint64_t addr, uint16_t value)
 		*addr16(addr) = htole16(value);
 }
 
-uint32_t MemMap::read32(uint64_t addr) const
+uint32_t MMapTarget::read32(uint64_t addr) const
 {
 	if (m_data_endianness == Endianness::Big)
 		return be32toh(*addr32(addr));
@@ -142,7 +142,7 @@ uint32_t MemMap::read32(uint64_t addr) const
 		return le32toh(*addr32(addr));
 }
 
-void MemMap::write32(uint64_t addr, uint32_t value)
+void MMapTarget::write32(uint64_t addr, uint32_t value)
 {
 	if (m_data_endianness == Endianness::Big)
 		*addr32(addr) = htobe32(value);
@@ -150,7 +150,7 @@ void MemMap::write32(uint64_t addr, uint32_t value)
 		*addr32(addr) = htole32(value);
 }
 
-uint64_t MemMap::read64(uint64_t addr) const
+uint64_t MMapTarget::read64(uint64_t addr) const
 {
 	if (m_data_endianness == Endianness::Big)
 		return be64toh(*addr64(addr));
@@ -158,7 +158,7 @@ uint64_t MemMap::read64(uint64_t addr) const
 		return le16toh(*addr64(addr));
 }
 
-void MemMap::write64(uint64_t addr, uint64_t value)
+void MMapTarget::write64(uint64_t addr, uint64_t value)
 {
 	if (m_data_endianness == Endianness::Big)
 		*addr64(addr) = htobe64(value);
@@ -166,7 +166,7 @@ void MemMap::write64(uint64_t addr, uint64_t value)
 		*addr64(addr) = htole64(value);
 }
 
-void* MemMap::maddr(uint64_t addr) const
+void* MMapTarget::maddr(uint64_t addr) const
 {
 	FAIL_IF(addr < m_map_offset, "address below map range");
 	FAIL_IF(addr >= m_map_offset + m_map_len, "address above map range");
@@ -174,22 +174,22 @@ void* MemMap::maddr(uint64_t addr) const
 	return (uint8_t*)m_map_base + (addr - m_map_offset);
 }
 
-volatile uint8_t* MemMap::addr8(uint64_t addr) const
+volatile uint8_t* MMapTarget::addr8(uint64_t addr) const
 {
 	return (volatile uint8_t*)maddr(addr);
 }
 
-volatile uint16_t* MemMap::addr16(uint64_t addr) const
+volatile uint16_t* MMapTarget::addr16(uint64_t addr) const
 {
 	return (volatile uint16_t*)maddr(addr);
 }
 
-volatile uint32_t* MemMap::addr32(uint64_t addr) const
+volatile uint32_t* MMapTarget::addr32(uint64_t addr) const
 {
 	return (volatile uint32_t*)maddr(addr);
 }
 
-volatile uint64_t* MemMap::addr64(uint64_t addr) const
+volatile uint64_t* MMapTarget::addr64(uint64_t addr) const
 {
 	return (volatile uint64_t*)maddr(addr);
 }

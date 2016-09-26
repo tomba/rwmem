@@ -1,4 +1,4 @@
-#include "i2cmap.h"
+#include "i2ctarget.h"
 #include "helpers.h"
 
 #include <stdexcept>
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-I2CMap::I2CMap(unsigned adapter_nr, uint16_t i2c_addr,
+I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr,
 	       uint16_t addr_len, Endianness addr_endianness, Endianness data_endianness)
 	: m_i2c_addr(i2c_addr),
 	  m_address_bytes(addr_len), m_address_endianness(addr_endianness),
@@ -31,7 +31,7 @@ I2CMap::I2CMap(unsigned adapter_nr, uint16_t i2c_addr,
 	ERR_ON(!(i2c_funcs & I2C_FUNC_I2C), "no i2c functionality");
 }
 
-I2CMap::~I2CMap()
+I2CTarget::~I2CTarget()
 {
 	close(m_fd);
 }
@@ -174,7 +174,7 @@ static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], End
 	}
 }
 
-uint64_t I2CMap::read(uint64_t addr, unsigned numbytes) const
+uint64_t I2CTarget::read(uint64_t addr, unsigned numbytes) const
 {
 	uint8_t addr_buf[8] { };
 	uint8_t data_buf[8] { };
@@ -203,7 +203,7 @@ uint64_t I2CMap::read(uint64_t addr, unsigned numbytes) const
 	return device_to_host(data_buf, numbytes, m_data_endianness);
 }
 
-void I2CMap::write(uint64_t addr, unsigned numbytes, uint64_t value)
+void I2CTarget::write(uint64_t addr, unsigned numbytes, uint64_t value)
 {
 	uint8_t addr_buf[8] { };
 	uint8_t data_buf[8] { };
