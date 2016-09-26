@@ -50,7 +50,11 @@ void load_opts_from_ini_pre()
 
 void detect_platform()
 {
-	string platform = get_platform_name();
-	string plat_key = string("platform \"") + platform + "\"";
-	rwmem_opts.regfile = rwmem_ini.get(plat_key, "regfile", "");
+	if (rwmem_opts.regfile.empty()) {
+		string platform = get_platform_name();
+		if (!platform.empty()) {
+			string plat_key = string("platform \"") + platform + "\"";
+			rwmem_opts.regfile = rwmem_ini.get(plat_key, "regfile", "");
+		}
+	}
 }

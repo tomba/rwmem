@@ -232,7 +232,7 @@ void parse_cmdline(int argc, char **argv)
 
 	const vector<string> params = optionset.params();
 
-	if (params.empty())
+	if (!rwmem_opts.show_list && params.empty())
 		usage();
 
 	for (string p : params) {
