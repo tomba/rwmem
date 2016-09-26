@@ -44,10 +44,8 @@ static void usage()
 	exit(1);
 }
 
-static void parse_arg(std::string str, RwmemOptsArg *arg)
+void parse_arg(string str, RwmemOptsArg *arg)
 {
-	arg->arg_str = str;
-
 	size_t idx;
 
 	// extract value
@@ -236,9 +234,5 @@ void parse_cmdline(int argc, char **argv)
 	if (!rwmem_opts.show_list && params.empty())
 		usage();
 
-	for (string p : params) {
-		RwmemOptsArg arg;
-		parse_arg(p, &arg);
-		rwmem_opts.args.push_back(arg);
-	}
+	rwmem_opts.args = params;
 }

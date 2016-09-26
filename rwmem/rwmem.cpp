@@ -270,8 +270,12 @@ static int readprint_raw(IMap* mm, uint64_t offset, unsigned size)
 	return write(STDOUT_FILENO, &v, size);
 }
 
-static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
+static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 {
+	RwmemOptsArg arg;
+
+	parse_arg(arg_str, &arg);
+
 	RwmemOp op { };
 
 	const RegisterFileData* rfd = nullptr;
@@ -533,8 +537,8 @@ int main(int argc, char **argv)
 		if (rwmem_opts.args.empty()) {
 			print_regfile_all(regfile->data());
 		} else {
-			for (const RwmemOptsArg& arg : rwmem_opts.args) {
-				vector<RegMatch> m = match_reg(regfile->data(), arg.arg_str);
+			for (const string& arg : rwmem_opts.args) {
+				vector<RegMatch> m = match_reg(regfile->data(), arg);
 				print_reg_matches(regfile->data(), m);
 			}
 		}
@@ -544,7 +548,7 @@ int main(int argc, char **argv)
 
 	vector<RwmemOp> ops;
 
-	for (const RwmemOptsArg& arg : rwmem_opts.args) {
+	for (const string& arg : rwmem_opts.args) {
 		RwmemOp op = parse_op(arg, regfile.get());
 		ops.push_back(op);
 	}

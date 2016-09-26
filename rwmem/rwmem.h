@@ -52,8 +52,6 @@ struct RwmemOp {
 };
 
 struct RwmemOptsArg {
-	std::string arg_str;	// unparsed
-
 	std::string address;
 	bool range_is_offset;
 	std::string range;
@@ -83,7 +81,7 @@ struct RwmemOpts {
 
 	bool show_list;
 
-	std::vector<RwmemOptsArg> args;
+	std::vector<std::string> args;
 
 	bool verbose;
 	bool ignore_base;
@@ -99,6 +97,7 @@ struct RwmemFormatting {
 extern RwmemOpts rwmem_opts;
 
 void parse_cmdline(int argc, char **argv);
+void parse_arg(std::string str, RwmemOptsArg *arg);
 
 extern INIReader rwmem_ini;
 
