@@ -453,7 +453,8 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, IMap*
 			if (!rd && skip_undefined_regs) {
 				if (rwmem_opts.raw_output) {
 					uint64_t v = 0;
-					write(STDOUT_FILENO, &v, access_size);
+					ssize_t l = write(STDOUT_FILENO, &v, access_size);
+					ERR_ON_ERRNO(l == -1, "write failed");
 				}
 
 				op_offset += access_size;
