@@ -535,6 +535,11 @@ int main(int argc, char **argv)
 		ops.push_back(op);
 	}
 
+	if (rwmem_opts.address_endianness == Endianness::Default)
+		rwmem_opts.address_endianness = Endianness::Little;
+	if (rwmem_opts.data_endianness == Endianness::Default)
+		rwmem_opts.data_endianness = Endianness::Little;
+
 	unique_ptr<IMap> mm;
 
 	switch (rwmem_opts.target_type) {

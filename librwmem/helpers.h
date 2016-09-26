@@ -61,4 +61,6 @@ enum class Endianness
 	Default = 0,
 	Big,
 	Little,
+	BigSwapped,	// Big endian, 16/32 bit words swapped
+	LittleSwapped,	// Little endian, 16/32 bit words swapped
 };

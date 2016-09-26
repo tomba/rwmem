@@ -111,51 +111,56 @@ static bool ends_with(const std::string& value, const std::string& ending)
 	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
+static void parse_size_endian(string s, uint32_t* size, Endianness* e)
+{
+	if (ends_with(s, "be")) {
+		*e = Endianness::Big;
+		s = s.substr(0, s.length() - 2);
+	} else if (ends_with(s, "le")) {
+		*e = Endianness::Little;
+		s = s.substr(0, s.length() - 2);
+	} else if (ends_with(s, "bes")) {
+		*e = Endianness::BigSwapped;
+		s = s.substr(0, s.length() - 3);
+	} else if (ends_with(s, "les")) {
+		*e = Endianness::LittleSwapped;
+		s = s.substr(0, s.length() - 3);
+	} else {
+		*e = Endianness::Default;
+	}
+
+	*size = stoi(s);
+}
+
 void parse_cmdline(int argc, char **argv)
 {
 	OptionSet optionset = {
 		Option("s=", [](string s)
 		{
-			Endianness endianness = Endianness::Default;
+			Endianness endianness;
+			uint32_t size;
 
-			if (ends_with(s, "be")) {
-				endianness = Endianness::Big;
-				s = s.substr(0, s.length() - 2);
-			} else if (ends_with(s, "le")) {
-				endianness = Endianness::Little;
-				s = s.substr(0, s.length() - 2);
-			}
+			parse_size_endian(s, &size, &endianness);
 
+			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
+				"Invalid size '%s'", s.c_str());
+
+			rwmem_opts.data_size = size / 8;
 			rwmem_opts.data_endianness = endianness;
-
-			int rs = stoi(s);
-
-			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-			ERR("Invalid size '%s'", s.c_str());
-
-			rwmem_opts.data_size = rs / 8;
 			rwmem_opts.user_data_size = true;
 		}),
 		Option("S=", [](string s)
 		{
-			Endianness endianness = Endianness::Default;
+			Endianness endianness;
+			uint32_t size;
 
-			if (ends_with(s, "be")) {
-				endianness = Endianness::Big;
-				s = s.substr(0, s.length() - 2);
-			} else if (ends_with(s, "le")) {
-				endianness = Endianness::Little;
-				s = s.substr(0, s.length() - 2);
-			}
+			parse_size_endian(s, &size, &endianness);
 
+			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
+				"Invalid address size '%s'", s.c_str());
+
+			rwmem_opts.address_size = size / 8;
 			rwmem_opts.address_endianness = endianness;
-
-			int rs = stoi(s);
-
-			if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-			ERR("Invalid size '%s'", s.c_str());
-
-			rwmem_opts.address_size = rs / 8;
 		}),
 		Option("w=", [](string s)
 		{
