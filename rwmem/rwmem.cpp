@@ -517,12 +517,13 @@ int main(int argc, char **argv)
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
 
-		if (rwmem_opts.pattern.empty()) {
+		if (rwmem_opts.args.empty()) {
 			print_regfile_all(regfile->data());
 		} else {
-			vector<RegMatch> m = match_reg(regfile->data(), rwmem_opts.pattern);
-
-			print_reg_matches(regfile->data(), m);
+			for (const RwmemOptsArg& arg : rwmem_opts.args) {
+				vector<RegMatch> m = match_reg(regfile->data(), arg.arg_str);
+				print_reg_matches(regfile->data(), m);
+			}
 		}
 
 		return 0;

@@ -46,6 +46,8 @@ static void usage()
 
 static void parse_arg(std::string str, RwmemOptsArg *arg)
 {
+	arg->arg_str = str;
+
 	size_t idx;
 
 	// extract value
@@ -202,10 +204,9 @@ void parse_cmdline(int argc, char **argv)
 		{
 			rwmem_opts.regfile = s;
 		}),
-		Option("|list?", [](string s)
+		Option("|list", [](string s)
 		{
 			rwmem_opts.show_list = true;
-			rwmem_opts.pattern = s;
 		}),
 		Option("|ignore-base", []()
 		{

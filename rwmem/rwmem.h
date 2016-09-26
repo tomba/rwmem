@@ -52,6 +52,8 @@ struct RwmemOp {
 };
 
 struct RwmemOptsArg {
+	std::string arg_str;	// unparsed
+
 	std::string address;
 	bool range_is_offset;
 	std::string range;
@@ -80,7 +82,6 @@ struct RwmemOpts {
 	std::string regfile;
 
 	bool show_list;
-	std::string pattern;
 
 	std::vector<RwmemOptsArg> args;
 
