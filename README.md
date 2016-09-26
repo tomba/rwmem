@@ -18,8 +18,9 @@ rwmem has support for using symbolic names for addresses and bitfields.
 
 ## Usage
 
+```
 usage: rwmem [options] <address>[:field][=value]
-
+	
 	address		address to access:
 			<address>	single address
 			<start-end>	range with end address
@@ -40,6 +41,7 @@ usage: rwmem [options] <address>[:field][=value]
 	--file <file>	file to open (default: /dev/mem)
 	--conf <file>	config file (default: ~/.rwmem/rwmemrc)
 	--regs <file>	register set file
+```
 
 ## Examples without register file
 
