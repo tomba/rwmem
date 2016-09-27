@@ -528,8 +528,13 @@ int main(int argc, char **argv)
 	unique_ptr<RegisterFile> regfile = nullptr;
 
 	if (!rwmem_opts.regfile.empty()) {
-		vprint("Reading regfile '%s'\n", rwmem_opts.regfile.c_str());
-		regfile = make_unique<RegisterFile>(rwmem_opts.regfile.c_str());
+		string path = string(getenv("HOME")) + "/.rwmem/" + rwmem_opts.regfile;
+
+		if (!file_exists(path))
+			path = rwmem_opts.regfile;
+
+		vprint("Reading regfile '%s'\n", path.c_str());
+		regfile = make_unique<RegisterFile>(path.c_str());
 	}
 
 	if (rwmem_opts.show_list) {
@@ -585,8 +590,8 @@ int main(int argc, char **argv)
 		ERR_ON(r, "failed to parse i2c address");
 
 		mm = make_unique<I2CTarget>(bus, addr,
-					 rwmem_opts.address_size, rwmem_opts.address_endianness,
-					 rwmem_opts.data_endianness);
+					    rwmem_opts.address_size, rwmem_opts.address_endianness,
+					    rwmem_opts.data_endianness);
 		break;
 	}
 

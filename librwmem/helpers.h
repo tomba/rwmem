@@ -56,6 +56,8 @@ std::string sformat(const char *fmt, ...);
 
 std::string to_binary_str(uint64_t value, uint8_t numbits);
 
+bool file_exists(const std::string& name);
+
 enum class Endianness
 {
 	Default = 0,

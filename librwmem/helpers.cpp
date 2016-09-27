@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "helpers.h"
 
@@ -77,4 +78,10 @@ string to_binary_str(uint64_t value, uint8_t numbits)
 	}
 
 	return s;
+}
+
+bool file_exists(const string& name)
+{
+	struct stat buffer;
+	return (stat (name.c_str(), &buffer) == 0);
 }
