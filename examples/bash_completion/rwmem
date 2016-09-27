@@ -23,7 +23,7 @@ _rwmem()
 
 	# TODO look for --regs from the cmdline and use that
 
-	COMPREPLY=( $(rwmem --regs=/home/tomba/work-lappy/rwmem-db/omap5.regs --list="$cur"*) )
+	COMPREPLY=( $(rwmem --list "$cur"*) )
 
 	# if single match, append ":" or "." or " ", depending on what we're completing
 	if [ ${#COMPREPLY[@]} -eq 1 ]; then
