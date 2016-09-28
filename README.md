@@ -64,9 +64,9 @@ Read a byte from i2c device 0x50 on bus 4, address 0x20
 
         $ rwmem -s 8 --i2c=4:0x50 0x20
 
-Read a 32 bit big endian register with swapped 16-bit words from i2c device 0x50 on bus 4, address 0x800
+Read a 32 bit big endian value from 16 bit big endian address 0x800 from i2c device 0x50 on bus 4
 
-        $ rwmem -s 32bes -S 16 --i2c=4:0x50 0x800
+        $ rwmem -s 32be -S 16be --i2c=4:0x50 0x800
 
 ## Examples with register file
 
@@ -97,6 +97,10 @@ List registers in DISPC
 List registers in DISPC
 
         $ rwmem --list DISPC.*
+
+List registers in DISPC starting with VID
+
+        $ rwmem --list DISPC.VID*
 
 List fields in DISPC SYSCONFIG
 
