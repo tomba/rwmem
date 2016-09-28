@@ -4,6 +4,8 @@
 #include <endian.h>
 #include <string>
 
+#include "helpers.h"
+
 struct __attribute__(( packed )) RegisterFileData;
 struct __attribute__(( packed )) RegisterBlockData;
 struct __attribute__(( packed )) RegisterData;
@@ -15,6 +17,8 @@ struct __attribute__(( packed )) RegisterFileData
 	uint32_t num_blocks() const { return be32toh(m_num_blocks); }
 	uint32_t num_regs() const { return be32toh(m_num_regs); }
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
+	Endianness address_endianness() const { return (Endianness)be32toh(m_address_endianness); }
+	Endianness data_endianness() const { return (Endianness)be32toh(m_data_endianness); }
 
 	const RegisterBlockData* blocks() const;
 	const RegisterData* registers() const;
@@ -33,6 +37,8 @@ private:
 	uint32_t m_num_blocks;
 	uint32_t m_num_regs;
 	uint32_t m_num_fields;
+	uint32_t m_address_endianness;
+	uint32_t m_data_endianness;
 };
 
 struct __attribute__(( packed )) RegisterBlockData

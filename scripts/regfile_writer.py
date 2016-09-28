@@ -3,9 +3,15 @@
 from struct import *
 import os
 
-def regfile_write(file, name, blocks):
+ENDIAN_DEFAULT = 0
+ENDIAN_BIG = 1
+ENDIAN_LITTLE = 2
+ENDIAN_BIGSWAPPED = 3
+ENDIAN_LITTLESWAPPED = 4
 
-	fmt_regfile = ">IIII"
+def regfile_write(file, name, blocks, address_endianness = 0, data_endianness = 0):
+
+	fmt_regfile = ">IIIIII"
 	fmt_block = ">IQQII"
 	fmt_reg = ">IQIII"
 	fmt_field = ">IBB"
@@ -59,7 +65,7 @@ def regfile_write(file, name, blocks):
 
 	out = open(file, "wb")
 
-	out.write(pack(fmt_regfile, get_str_idx(name), num_blocks, num_regs, num_fields))
+	out.write(pack(fmt_regfile, get_str_idx(name), num_blocks, num_regs, num_fields, address_endianness, data_endianness))
 
 	for block in blocks:
 		out.write(pack(fmt_block, get_str_idx(block["name"]), block["offset"], block["size"], len(block["regs"]), block["regs_offset"]))

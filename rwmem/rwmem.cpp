@@ -117,8 +117,9 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 
 static void print_regfile_all(const RegisterFileData* rfd)
 {
-	printf("%s: total %u/%u/%u\n",
-	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
+	printf("%s: total %u/%u/%u, endianness: %u/%u\n",
+	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields(),
+	       (unsigned)rfd->address_endianness(), (unsigned)rfd->data_endianness());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
 		const RegisterBlockData* rbd = rfd->at(bidx);
@@ -559,10 +560,21 @@ int main(int argc, char **argv)
 		ops.push_back(op);
 	}
 
-	if (rwmem_opts.address_endianness == Endianness::Default)
-		rwmem_opts.address_endianness = Endianness::Little;
-	if (rwmem_opts.data_endianness == Endianness::Default)
-		rwmem_opts.data_endianness = Endianness::Little;
+	if (rwmem_opts.address_endianness == Endianness::Default) {
+		if (regfile)
+			rwmem_opts.address_endianness = regfile->data()->address_endianness();
+
+		if (rwmem_opts.address_endianness == Endianness::Default)
+			rwmem_opts.address_endianness = Endianness::Little;
+	}
+
+	if (rwmem_opts.data_endianness == Endianness::Default) {
+		if (regfile)
+			rwmem_opts.data_endianness = regfile->data()->data_endianness();
+
+		if (rwmem_opts.data_endianness == Endianness::Default)
+			rwmem_opts.data_endianness = Endianness::Little;
+	}
 
 	unique_ptr<ITarget> mm;
 
