@@ -4,7 +4,7 @@ _rwmem()
 	_init_completion -s -n : || return
 
 	case "${prev,,}" in
-		--mmap)
+		--mmap|--i2c|--regs)
 			_filedir
 			return 0
 			;;
@@ -13,7 +13,7 @@ _rwmem()
 	esac
 
 	# TODO: add options
-	opts="--mmap= --regs= -s"
+	opts="--mmap= --i2c= --regs= --list --ignore-base"
 
 	if [[ ${cur} == -* ]] ; then
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
