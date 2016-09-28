@@ -138,14 +138,37 @@ The print mode parameter affects what rwmem will output.
 In raw output mode rwmem will copy the values it reads to stdout without any
 formatting. This can be used to get binary dumps of memory areas.
 
+## Size and Endianness
+
+You can set the size and endianness for data and for address with -s and -S
+options. The size and endianness for address is used only for i2c. The size is
+in number of bits, and endianness is "be", "le", "bes" or "les".
+
+In addition to the normal big (be) and little endian (le), rwmem supports
+"swapped" modification for endianness (bes and les). In swapped endianness, 16
+bit words of a 32 bit value are swapped, and similarly 32 bit words of a 64
+bit value are swapped.
+
 ## Register description file
 
-A register description file is a binary register database. See the code and
-the included python scripts to see the details of the format.
+A register description file is a binary register database. See the code
+(regfiledata.h) and the included python scripts to see the details of the
+format.
 
 It is easy to generate register description files using the regfile_writer.py
-python script.
+python script. Two additional python scripts can be used to parse IPXACT files
+(ipxact_parse.py) and csv files from rwmem v1 (csv_parse.py).
 
-## rwmem.cfg file format
+## Bash completion
 
-TODO
+examples/bash_completion/rwmem is an example bash completion script for rwmem.
+
+## rwmem.ini file format
+
+rwmem will look for configuration options from ~/.rwmem/rwmem.ini file.
+examples/rwmem.ini has an example rwmem.ini file.
+
+main.detect entry can be set to point to a script which should echo the name
+of the platform rwmem is running on. The name of the platform is then used to
+look for "platform" entries in the rwmem.ini, which can be used to define
+platform specific rwmem configuration (mainline regfile for the time being).
