@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/tomba/rwmem.svg?branch=master)](https://travis-ci.org/tomba/rwmem)
+
 # rwmem - A small tool to read & write device registers
 
 Copyright 2013-2016 Tomi Valkeinen
