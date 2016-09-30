@@ -2,30 +2,37 @@
 sudo: required
 dist: trusty
 
-addons:
-    apt:
-        sources:
-            - llvm-toolchain-precise-3.8
-            - ubuntu-toolchain-r-test
-        packages:
-            - clang-3.8
-            - g++-5
-            - gcc-5
-
-install:
-    - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-    - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
-
 # Enable C++ support
 language: cpp
 
-# Compiler selection
-compiler:
-  - gcc
-  - clang
+# Need MYCC and MYCXX as travis overwrites CC and CXX
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-4.9']
+      env: MYCC=gcc-4.9 MYCXX=g++-4.9
+
+    - compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5']
+      env: MYCC=gcc-5 MYCXX=g++-5
+
+    # XXX: g++-5 installs something that makes clang work...
+    - compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.8']
+          packages: ['clang-3.8', 'g++-5']
+      env: MYCC=clang-3.8 MYCXX=clang++-3.8
 
 # Build steps
 script:
   - mkdir build
   - cd build
-  - cmake .. && make
+  - CC=$MYCC CXX=$MYCXX cmake .. && make
