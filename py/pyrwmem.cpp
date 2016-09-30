@@ -75,8 +75,12 @@ PYBIND11_PLUGIN(pyrwmem) {
 			;
 
 	py::class_<RegisterValue>(m, "RegisterValue")
+			.def("value", &RegisterValue::value)
 			.def("field_value", (uint64_t (RegisterValue::*)(const string&) const)&RegisterValue::field_value)
 			.def("field_value", (uint64_t (RegisterValue::*)(uint8_t, uint8_t) const)&RegisterValue::field_value)
+			.def("set_field_value", (void (RegisterValue::*)(const string&, uint64_t))&RegisterValue::set_field_value)
+			.def("set_field_value", (void (RegisterValue::*)(uint8_t, uint8_t, uint64_t))&RegisterValue::set_field_value)
+			.def("write", &RegisterValue::write)
 			;
 
 	return m.ptr();

@@ -100,6 +100,11 @@ RegisterValue MappedRegister::read_value() const
 	return RegisterValue(m_mrb, m_rd, read());
 }
 
+void MappedRegister::write(uint64_t value)
+{
+	m_mrb->m_map->write(m_offset, m_size, value);
+}
+
 RegisterValue::RegisterValue(const MappedRegisterBlock* mrb, const RegisterData* rd, uint64_t value)
 	:m_mrb(mrb), m_rd(rd), m_value(value)
 {
@@ -124,4 +129,28 @@ uint64_t RegisterValue::field_value(uint8_t high, uint8_t low) const
 	uint64_t mask = GENMASK(high, low);
 
 	return (m_value & mask) >> low;
+}
+
+void RegisterValue::set_field_value(const std::string& fieldname, uint64_t value)
+{
+	if (!m_mrb->m_rf)
+		throw runtime_error("no register file");
+
+	const FieldData* fd = m_rd->find_field(m_mrb->m_rf->data(), fieldname);
+	if (!fd)
+		throw runtime_error("field not found");
+
+	set_field_value(fd->high(), fd->low(), value);
+}
+
+void RegisterValue::set_field_value(uint8_t high, uint8_t low, uint64_t value)
+{
+	uint64_t mask = GENMASK(high, low);
+
+	m_value = (m_value & ~mask) | ((value << low) & mask);
+}
+
+void RegisterValue::write()
+{
+	m_mrb->m_map->write(m_rd->offset(), m_rd->size(), m_value);
 }

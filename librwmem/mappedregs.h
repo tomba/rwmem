@@ -40,6 +40,8 @@ public:
 	uint64_t read() const;
 	RegisterValue read_value() const;
 
+	void write(uint64_t value);
+
 private:
 	MappedRegisterBlock* m_mrb;
 	const RegisterData* m_rd;
@@ -55,7 +57,13 @@ public:
 	uint64_t field_value(const std::string& fieldname) const;
 	uint64_t field_value(uint8_t high, uint8_t low) const;
 
+	void set_field_value(const std::string& fieldname, uint64_t value);
+	void set_field_value(uint8_t high, uint8_t low, uint64_t value);
+
 	operator uint64_t() const { return m_value; }
+	uint64_t value() const { return m_value; }
+
+	void write();
 
 private:
 	const MappedRegisterBlock* m_mrb;
