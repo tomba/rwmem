@@ -31,7 +31,7 @@ MappedRegisterBlock::MappedRegisterBlock(const string& mapfile, uint64_t offset,
 	m_map = make_unique<MMapTarget>(mapfile, Endianness::Default, offset, length);
 }
 
-uint32_t MappedRegisterBlock::read32(const string& regname) const
+uint64_t MappedRegisterBlock::read(const string& regname) const
 {
 	if (!m_rf)
 		throw runtime_error("no register file");
@@ -40,7 +40,21 @@ uint32_t MappedRegisterBlock::read32(const string& regname) const
 	if (!rd)
 		throw runtime_error("register not found");
 
-	return m_map->read32(rd->offset());
+	return m_map->read(rd->offset(), rd->size());
+}
+
+RegisterValue MappedRegisterBlock::read_value(const std::string& regname) const
+{
+	if (!m_rf)
+		throw runtime_error("no register file");
+
+	const RegisterData* rd = m_rbd->find_register(m_rf->data(), regname);
+	if (!rd)
+		throw runtime_error("register not found");
+
+	uint64_t v = m_map->read(rd->offset(), rd->size());
+
+	return RegisterValue(this, rd, v);
 }
 
 uint32_t MappedRegisterBlock::read32(uint64_t offset) const
@@ -58,35 +72,35 @@ MappedRegister MappedRegisterBlock::find_register(const string& regname)
 	return MappedRegister(this, rd);
 }
 
-MappedRegister MappedRegisterBlock::get_register(uint64_t offset)
+MappedRegister MappedRegisterBlock::get_register(uint64_t offset, uint32_t size)
 {
-	return MappedRegister(this, offset);
+	return MappedRegister(this, offset, size);
 }
 
 
 MappedRegister::MappedRegister(MappedRegisterBlock* mrb, const RegisterData* rd)
-	: m_mrb(mrb), m_rd(rd), m_offset(rd->offset())
+	: m_mrb(mrb), m_rd(rd), m_offset(rd->offset()), m_size(rd->size())
 {
 
 }
 
-MappedRegister::MappedRegister(MappedRegisterBlock* mrb, uint64_t offset)
-	: m_mrb(mrb), m_rd(nullptr), m_offset(offset)
+MappedRegister::MappedRegister(MappedRegisterBlock* mrb, uint64_t offset, uint32_t size)
+	: m_mrb(mrb), m_rd(nullptr), m_offset(offset), m_size(size)
 {
 
 }
 
-uint32_t MappedRegister::read32() const
+uint64_t MappedRegister::read() const
 {
-	return m_mrb->m_map->read32(m_offset);
+	return m_mrb->m_map->read(m_offset, m_size);
 }
 
-RegisterValue MappedRegister::read32value() const
+RegisterValue MappedRegister::read_value() const
 {
-	return RegisterValue(m_mrb, m_rd, read32());
+	return RegisterValue(m_mrb, m_rd, read());
 }
 
-RegisterValue::RegisterValue(MappedRegisterBlock* mrb, const RegisterData* rd, uint64_t value)
+RegisterValue::RegisterValue(const MappedRegisterBlock* mrb, const RegisterData* rd, uint64_t value)
 	:m_mrb(mrb), m_rd(rd), m_value(value)
 {
 

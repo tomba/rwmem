@@ -62,15 +62,16 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def(py::init<const string&, const string&, const string&>())
 			.def(py::init<const string&, uint64_t, const string&, const string&>())
 			.def(py::init<const string&, uint64_t, uint64_t>())
-			.def("read32", (uint32_t (MappedRegisterBlock::*)(const string&) const)&MappedRegisterBlock::read32)
-			.def("read32", (uint32_t (MappedRegisterBlock::*)(uint64_t) const)&MappedRegisterBlock::read32)
+			.def("read", &MappedRegisterBlock::read)
+			.def("read_value", &MappedRegisterBlock::read_value)
+			.def("read32", &MappedRegisterBlock::read32)
 			.def("find_register", &MappedRegisterBlock::find_register)
 			.def("get_register", &MappedRegisterBlock::get_register)
 			;
 
 	py::class_<MappedRegister>(m, "MappedRegister")
-			.def("read32", &MappedRegister::read32)
-			.def("read32value", &MappedRegister::read32value)
+			.def("read", &MappedRegister::read)
+			.def("read_value", &MappedRegister::read_value)
 			;
 
 	py::class_<RegisterValue>(m, "RegisterValue")
