@@ -18,6 +18,7 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 option(BUILD_SHARED_LIBS "Build shared libs" FALSE)
 set(RWMEM_ENABLE_PYTHON ON CACHE BOOL "Enable Python wrappers")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wno-unused-parameter")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
@@ -26,6 +27,7 @@ if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
 	CHECK_CXX_COMPILER_FLAG("-flto" HAS_LTO_FLAG)
 
 	if (HAS_LTO_FLAG)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
 		set(CMAKE_AR gcc-ar)
 		set(CMAKE_RANLIB gcc-ranlib)
