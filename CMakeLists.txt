@@ -21,6 +21,10 @@ set(RWMEM_ENABLE_PYTHON ON CACHE BOOL "Enable Python wrappers")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wno-unused-parameter")
 
+# HACK: cmake always adds "-rdynamic", this removes it
+SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
+
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
