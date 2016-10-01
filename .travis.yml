@@ -35,7 +35,7 @@ matrix:
 script:
   - mkdir build
   - cd build
-  - CC=$MYCC CXX=$MYCXX cmake -DTREAT_WARNINGS_AS_ERRORS=1 .. && make
+  - CC=$MYCC CXX=$MYCXX cmake -DTREAT_WARNINGS_AS_ERRORS=1 .. && make VERBOSE=1
 
 notifications:
   email:
