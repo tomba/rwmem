@@ -3,6 +3,9 @@
 from struct import *
 import os
 
+RWMEM_MAGIC = 0x00e11554
+RWMEM_VERSION = 1
+
 ENDIAN_DEFAULT = 0
 ENDIAN_BIG = 1
 ENDIAN_LITTLE = 2
@@ -11,7 +14,7 @@ ENDIAN_LITTLESWAPPED = 4
 
 def regfile_write(file, name, blocks, address_endianness = 0, data_endianness = 0):
 
-	fmt_regfile = ">IIIIII"
+	fmt_regfile = ">IIIIIIII"
 	fmt_block = ">IQQII"
 	fmt_reg = ">IQIII"
 	fmt_field = ">IBB"
@@ -65,7 +68,7 @@ def regfile_write(file, name, blocks, address_endianness = 0, data_endianness = 
 
 	out = open(file, "wb")
 
-	out.write(pack(fmt_regfile, get_str_idx(name), num_blocks, num_regs, num_fields, address_endianness, data_endianness))
+	out.write(pack(fmt_regfile, RWMEM_MAGIC, RWMEM_VERSION, get_str_idx(name), num_blocks, num_regs, num_fields, address_endianness, data_endianness))
 
 	for block in blocks:
 		out.write(pack(fmt_block, get_str_idx(block["name"]), block["offset"], block["size"], len(block["regs"]), block["regs_offset"]))

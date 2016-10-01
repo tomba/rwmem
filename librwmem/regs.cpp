@@ -87,6 +87,12 @@ RegisterFile::RegisterFile(const std::string& filename)
 
 	m_rfd = (RegisterFileData*)data;
 	m_size = len;
+
+	if (m_rfd->magic() != RWMEM_MAGIC)
+		throw runtime_error("Bad registerfile magic number");
+
+	if (m_rfd->version() != RWMEM_VERSION)
+		throw runtime_error("Bad registerfile version");
 }
 
 RegisterFile::~RegisterFile()
