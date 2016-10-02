@@ -15,6 +15,7 @@ ENDIF()
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
+option(BUILD_STATIC_EXES "Build static executables" FALSE)
 option(BUILD_SHARED_LIBS "Build shared libs" FALSE)
 option(TREAT_WARNINGS_AS_ERRORS "Treat warnings as errors" FALSE)
 
@@ -50,6 +51,10 @@ if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
 		set(CMAKE_AR gcc-ar)
 		set(CMAKE_RANLIB gcc-ranlib)
 	endif()
+endif()
+
+if (BUILD_STATIC_EXES)
+	set(CMAKE_EXE_LINKER_FLAGS "-static")
 endif()
 
 find_package(PkgConfig REQUIRED)
