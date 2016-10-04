@@ -1,6 +1,6 @@
 [submodule "inih"]
 	path = ext/inih
-	url = git://github.com/benhoyt/inih.git
+	url = https://github.com/benhoyt/inih.git
 [submodule "ext/pybind11"]
 	path = ext/pybind11
-	url = git://github.com/pybind/pybind11.git
+	url = https://github.com/pybind/pybind11.git
