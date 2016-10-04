@@ -24,6 +24,68 @@ rwmem features:
 * address ranges
 * register description database
 
+## Build Dependencies
+
+You need `cmake` for creating the makefiles.
+
+You need python3 development files if python bindings are enabled (RWMEM_ENABLE_PYTHON, enabled by default). On debian based systems you need to install `python3-dev` package.
+
+## Build Instructions
+
+```
+git clone https://github.com/tomba/rwmem.git
+cd rwmem
+git submodule update --init
+mkdir build
+cd build
+cmake ..
+make -j4
+```
+
+## Cross Compiling Instructions:
+
+**Directions for cross compiling depend on your environment.**
+
+These are for mine with buildroot:
+
+```
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_TOOLCHAIN_FILE=<buildrootpath>/output/host/usr/share/buildroot/toolchainfile.cmake ..
+$ make -j4
+```
+
+Your environment may provide similar toolchainfile. If not, you can create a toolchainfile of your own, something along these lines:
+
+```
+SET(CMAKE_SYSTEM_NAME Linux)
+
+SET(BROOT "<buildroot>/output/")
+
+# specify the cross compiler
+SET(CMAKE_C_COMPILER   ${BROOT}/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc)
+SET(CMAKE_CXX_COMPILER ${BROOT}/host/usr/bin/arm-buildroot-linux-gnueabihf-g++)
+
+# where is the target environment
+SET(CMAKE_FIND_ROOT_PATH ${BROOT}/target ${BROOT}/host)
+
+SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+```
+
+## Build options
+
+You can use the following cmake flags to control the build. Use `-DFLAG=VALUE` to set them.
+
+Option name              | Values        | Default  | Notes
+------------------------ | ------------- | -------- | --------
+CMAKE_BUILD_TYPE         | Release/Debug | Release  |
+BUILD_SHARED_LIBS        | ON/OFF        | OFF      | librwmem.so instead of librwmem.a
+RWMEM_ENABLE_PYTHON      | ON/OFF        | ON       | Enable python bindings
+BUILD_STATIC_EXES        | ON/OFF        | OFF      | Build with -static
+TREAT_WARNINGS_AS_ERRORS | ON/OFF        | OFF      |
+
 ## Examples without register file
 
 Show what's in memory location 0x58001000
