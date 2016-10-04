@@ -6,6 +6,8 @@ Copyright 2013-2016 Tomi Valkeinen
 
 ## Intro
 
+**_WARNING: rwmem can break your hardware, use only if you know what you are doing._**
+
 rwmem is a small tool for reading and writing device registers. rwmem supports
 two modes: mmap mode and i2c mode.
 
