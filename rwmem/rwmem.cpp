@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <csignal>
 
 #include "rwmem.h"
 #include "helpers.h"
@@ -506,6 +507,18 @@ static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch
 		else
 			printf("%s\n", m.rbd->name(rfd));
 	}
+ }
+
+ static void main_sigbus_handler(int sig)
+ {
+         /* just to remove "unused parameter" warnings ... */
+
+         fprintf(stderr, "\n\n!!! OUPS... MEMORY ERROR !!\n");
+         fprintf(stderr, "Are you sure that:\n");
+         fprintf(stderr, "    MEMORY ADDRESS IS VALID?\n");
+         fprintf(stderr, "    TARGETED MODULE IS CLOCKED?\n\n");
+
+         exit(-1);
 }
 
 int main(int argc, char **argv)
@@ -514,6 +527,9 @@ int main(int argc, char **argv)
 		rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
 	} catch(...) {
 	}
+
+	/* handler to catch bad access */
+	signal(SIGBUS, main_sigbus_handler);
 
 	load_opts_from_ini_pre();
 
