@@ -2,7 +2,7 @@
 
 import xml.etree.ElementTree as ET
 
-def ipxact_parse(file, given_name, given_address):
+def ipxact_parse(file):
 	tree = ET.parse(file)
 
 	root = tree.getroot()
@@ -10,53 +10,59 @@ def ipxact_parse(file, given_name, given_address):
 	ns = {'spirit': 'http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009',
 	      'socns': 'http://www.duolog.com/2011/05/socrates'}
 
-	if len(root.findall('.//spirit:memoryMap', ns)) != 1:
-		print("Error: requires a single memorymap")
-		exit(1)
-
 	if len(root.findall('.//spirit:addressBlock/spirit:dim', ns)) > 0:
 		print("addressBlock dim not supported")
 		exit(1)
 
 	REGSIZE = 4
 
-	regs = []
+	mmaps = []
 
-	for abElem in root.findall('.//spirit:addressBlock', ns):
-		abName = abElem.find('spirit:name', ns).text
-		abOffset = int(abElem.find('spirit:baseAddress', ns).text)
+	for memMap in root.findall('.//spirit:memoryMap', ns):
+		memMapName = memMap.find('spirit:name', ns).text
 
-		for regElem in abElem.findall('spirit:register', ns):
-			e = regElem.find('spirit:dim', ns)
-			regDim = int(e.text) if e != None else 1
+		if len(memMap.findall('.//spirit:addressBlock', ns)) > 1:
+			print("multiple addressBlocks not supported")
+			exit(1)
 
-			for idx in range(0, regDim):
-				regname = regElem.find('spirit:name', ns).text
-				if regDim > 1:
-					regname += "_" + str(idx)
+		regs = []
 
-				regoffset = int(regElem.find('spirit:addressOffset', ns).text) + abOffset + idx * REGSIZE
+		for abElem in memMap.findall('.//spirit:addressBlock', ns):
+			abName = abElem.find('spirit:name', ns).text
+			abOffset = int(abElem.find('spirit:baseAddress', ns).text, 0)
 
-				fields = []
+			for regElem in abElem.findall('spirit:register', ns):
+				e = regElem.find('spirit:dim', ns)
+				regDim = int(e.text) if e != None else 1
 
-				for fieldElem in regElem.findall('spirit:field', ns):
-					fname = fieldElem.find('spirit:name', ns).text
-					fshift = int(fieldElem.find('spirit:bitOffset', ns).text)
-					fwidth = int(fieldElem.find('spirit:bitWidth', ns).text)
-					freserved = False
+				for idx in range(0, regDim):
+					regname = regElem.find('spirit:name', ns).text
+					if regDim > 1:
+						regname += "_" + str(idx)
 
-					e1 = fieldElem.find('spirit:vendorExtensions', ns)
-					if e1 != None:
-						e2 = e1.find('socns:reserved', ns)
-						if e2 != None:
-							if e2.text.lower() == "true":
-								fname = "Reserved"
+					regoffset = int(regElem.find('spirit:addressOffset', ns).text, 0) + abOffset + idx * REGSIZE
 
-					fields.append({ "name": fname, "high": fshift + fwidth - 1, "low": fshift })
+					fields = []
 
-				reg = { "name": regname, "offset": regoffset, "size": REGSIZE, "fields": fields }
+					for fieldElem in regElem.findall('spirit:field', ns):
+						fname = fieldElem.find('spirit:name', ns).text
+						fshift = int(fieldElem.find('spirit:bitOffset', ns).text, 0)
+						fwidth = int(fieldElem.find('spirit:bitWidth', ns).text, 0)
+						freserved = False
 
-				regs.append(reg)
+						e1 = fieldElem.find('spirit:vendorExtensions', ns)
+						if e1 != None:
+							e2 = e1.find('socns:reserved', ns)
+							if e2 != None:
+								if e2.text.lower() == "true":
+									fname = "Reserved"
 
-	return { "name": given_name, "offset": given_address, "size": 0, "regs": regs }
+						fields.append({ "name": fname, "high": fshift + fwidth - 1, "low": fshift })
 
+					reg = { "name": regname, "offset": regoffset, "size": REGSIZE, "fields": fields }
+
+					regs.append(reg)
+
+		mmaps.append({ "name": memMapName, "offset": 0, "size": 0, "regs": regs })
+
+	return mmaps
