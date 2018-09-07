@@ -9,9 +9,7 @@ namespace py = pybind11;
 
 using namespace std;
 
-PYBIND11_PLUGIN(pyrwmem) {
-	py::module m("pyrwmem", "rwmem bindings");
-
+PYBIND11_MODULE(pyrwmem, m) {
 	py::class_<RegisterFile>(m, "RegisterFile")
 			.def(py::init<const string&>())
 			.def_property_readonly("name", &RegisterFile::name)
@@ -82,6 +80,4 @@ PYBIND11_PLUGIN(pyrwmem) {
 			.def("set_field_value", (void (RegisterValue::*)(uint8_t, uint8_t, uint64_t))&RegisterValue::set_field_value)
 			.def("write", &RegisterValue::write)
 			;
-
-	return m.ptr();
 }
