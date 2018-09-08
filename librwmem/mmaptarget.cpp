@@ -15,7 +15,7 @@ static const unsigned pagesize = sysconf(_SC_PAGESIZE);
 static const unsigned pagemask = pagesize - 1;
 
 MMapTarget::MMapTarget(const string& filename, Endianness data_endianness)
-	: m_map_base(MAP_FAILED), m_data_endianness(data_endianness)
+	: m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0), m_data_endianness(data_endianness)
 {
 	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
