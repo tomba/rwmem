@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <exception>
 
 #include "regs.h"

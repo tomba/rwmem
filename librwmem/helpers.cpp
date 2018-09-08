@@ -2,14 +2,14 @@
 #include <sstream>
 #include <vector>
 
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdarg.h>
-#include <string.h>
+#include <cctype>
+#include <cerrno>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+
+#include <cstdarg>
+#include <cstring>
 #include <sys/stat.h>
 
 #include "helpers.h"

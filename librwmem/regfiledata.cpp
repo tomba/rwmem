@@ -1,5 +1,5 @@
 #include "regfiledata.h"
-#include <string.h>
+#include <cstring>
 
 using namespace std;
 
