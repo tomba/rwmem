@@ -46,6 +46,8 @@ const RegisterData* RegisterFileData::find_register(const string& name, const Re
 		*rbd = at(i);
 
 		const RegisterData* rd = (*rbd)->find_register(this, name);
+		if (!rd)
+			return nullptr;
 
 		if (strcasecmp(rd->name(this), name.c_str()) == 0)
 			return rd;
