@@ -68,7 +68,7 @@ void OptionSet::parse(int argc, char** argv)
 			struct option copt;
 			copt.name = o.m_long.c_str();
 			copt.has_arg = o.m_has_arg;
-			copt.flag = 0;
+			copt.flag = nullptr;
 			copt.val = opt_idx + 1000;
 			longopts.push_back(copt);
 		}
@@ -76,7 +76,7 @@ void OptionSet::parse(int argc, char** argv)
 
 	longopts.push_back(option {});
 
-	while (1) {
+	while (true) {
 		int long_idx = 0;
 		int c = getopt_long(argc, argv, shortopts.c_str(),
 				    longopts.data(), &long_idx);

@@ -51,7 +51,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length)
 	if (S_ISREG(st.st_mode))
 		ERR_ON(st.st_size < mmap_offset + (off_t)mmap_len, "Trying to access file past its end");
 
-	m_map_base = mmap(0, mmap_len,
+	m_map_base = mmap(nullptr, mmap_len,
 			  PROT_READ | PROT_WRITE,
 			  MAP_SHARED, m_fd, mmap_offset);
 

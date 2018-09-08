@@ -82,7 +82,7 @@ RegisterFile::RegisterFile(const std::string& filename)
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	void* data = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	void* data = mmap(nullptr, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	ERR_ON_ERRNO(data == MAP_FAILED, "mmap regfile failed");
 
 	m_rfd = (RegisterFileData*)data;
