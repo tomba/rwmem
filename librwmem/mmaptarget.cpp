@@ -155,7 +155,7 @@ uint64_t MMapTarget::read64(uint64_t addr) const
 	if (m_data_endianness == Endianness::Big)
 		return be64toh(*addr64(addr));
 	else
-		return le16toh(*addr64(addr));
+		return le64toh(*addr64(addr));
 }
 
 void MMapTarget::write64(uint64_t addr, uint64_t value)
