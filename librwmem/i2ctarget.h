@@ -17,12 +17,14 @@ public:
 	uint32_t read32(uint64_t addr) const;
 	void write32(uint64_t addr, uint32_t value);
 
-	void map(uint64_t offset, uint64_t length) { }
+	void map(uint64_t offset, uint64_t length) { m_offset = offset; }
 	void unmap() { }
 
 private:
 	int m_fd;
 	uint16_t m_i2c_addr;
+
+	uint64_t m_offset;
 
 	uint8_t m_address_bytes;
 	Endianness m_address_endianness;

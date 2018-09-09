@@ -14,7 +14,7 @@ using namespace std;
 
 I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr,
 	       uint16_t addr_len, Endianness addr_endianness, Endianness data_endianness)
-	: m_i2c_addr(i2c_addr),
+	: m_i2c_addr(i2c_addr), m_offset(0),
 	  m_address_bytes(addr_len), m_address_endianness(addr_endianness),
 	  m_data_endianness(data_endianness)
 {
@@ -176,6 +176,8 @@ static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], End
 
 uint64_t I2CTarget::read(uint64_t addr, unsigned numbytes) const
 {
+	addr += m_offset;
+
 	uint8_t addr_buf[8] { };
 	uint8_t data_buf[8] { };
 
@@ -205,6 +207,8 @@ uint64_t I2CTarget::read(uint64_t addr, unsigned numbytes) const
 
 void I2CTarget::write(uint64_t addr, unsigned numbytes, uint64_t value)
 {
+	addr += m_offset;
+
 	uint8_t addr_buf[8] { };
 	uint8_t data_buf[8] { };
 

@@ -450,9 +450,9 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 		unsigned access_size = rwmem_opts.data_size;
 
 		if (rwmem_opts.raw_output)
-			readprint_raw(mm, op_base + op_offset, access_size);
+			readprint_raw(mm, op_offset, access_size);
 		else
-			readwriteprint(op, mm, op_base + op_offset, op_base + op_offset, access_size, nullptr, nullptr, nullptr, formatting);
+			readwriteprint(op, mm, op_offset, op_base + op_offset, access_size, nullptr, nullptr, nullptr, formatting);
 
 		op_offset += access_size;
 	}
@@ -506,7 +506,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, access_size);
 			else
-				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
+				readwriteprint(op, mm, op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
 
 			op_offset += access_size;
 		}
@@ -522,9 +522,9 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 				access_size = rd->size();
 
 			if (rwmem_opts.raw_output)
-				readprint_raw(mm, rb_access_base + op_offset, access_size);
+				readprint_raw(mm, op_offset, access_size);
 			else
-				readwriteprint(op, mm, rb_access_base + op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
+				readwriteprint(op, mm, op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
 		}
 	}
 }

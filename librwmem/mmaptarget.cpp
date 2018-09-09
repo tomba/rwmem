@@ -15,7 +15,7 @@ static const unsigned pagesize = sysconf(_SC_PAGESIZE);
 static const unsigned pagemask = pagesize - 1;
 
 MMapTarget::MMapTarget(const string& filename, Endianness data_endianness)
-	: m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0), m_data_endianness(data_endianness)
+	: m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0), m_data_endianness(data_endianness)
 {
 	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
@@ -57,6 +57,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length)
 
 	ERR_ON_ERRNO(m_map_base == MAP_FAILED, "failed to mmap");
 
+	m_offset = offset;
 	m_map_offset = mmap_offset;
 	m_map_len = mmap_len;
 }
@@ -168,6 +169,8 @@ void MMapTarget::write64(uint64_t addr, uint64_t value)
 
 void* MMapTarget::maddr(uint64_t addr) const
 {
+	addr += m_offset;
+
 	FAIL_IF(addr < m_map_offset, "address below map range");
 	FAIL_IF(addr >= m_map_offset + m_map_len, "address above map range");
 

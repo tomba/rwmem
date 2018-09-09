@@ -30,6 +30,9 @@ public:
 
 private:
 	int m_fd;
+
+	uint64_t m_offset;
+
 	void* m_map_base;
 
 	uint64_t m_map_offset;
