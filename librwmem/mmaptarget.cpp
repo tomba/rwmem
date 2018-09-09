@@ -41,15 +41,15 @@ void MMapTarget::map(uint64_t offset, uint64_t length)
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length + pagesize - 1) & ~pagemask;
 
-	//printf("mmap '%s' offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
-	//       filename.c_str(), offset, length, mmap_offset, mmap_len);
+	//printf("mmap offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
+	//       offset, length, mmap_offset, mmap_len);
 
 	struct stat st;
 	int r = fstat(m_fd, &st);
 	ERR_ON_ERRNO(r, "Failed to get map file stat");
 
 	if (S_ISREG(st.st_mode))
-		ERR_ON(st.st_size < mmap_offset + (off_t)mmap_len, "Trying to access file past its end");
+		ERR_ON((size_t)st.st_size < offset + length, "Trying to access file past its end");
 
 	m_map_base = mmap(nullptr, mmap_len,
 			  PROT_READ | PROT_WRITE,
