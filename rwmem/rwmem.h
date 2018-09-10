@@ -85,6 +85,7 @@ struct RwmemOpts {
 
 	bool verbose;
 	bool ignore_base;
+	bool print_decimal;
 };
 
 struct RwmemFormatting {

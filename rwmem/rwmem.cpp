@@ -26,6 +26,7 @@
 #include "i2ctarget.h"
 
 #include <fnmatch.h>
+#include <limits>
 
 using namespace std;
 
@@ -169,13 +170,25 @@ static void print_field(unsigned high, unsigned low,
 	else
 		printq("%2d:%-2d = ", high, low);
 
-	if (rwmem_opts.write_mode != WriteMode::Write)
-		printq("0x%-*" PRIx64 " ", formatting.value_chars, oldval);
+	if (rwmem_opts.write_mode != WriteMode::Write) {
+		if (rwmem_opts.print_decimal)
+			printq("%-*" PRIu64 " ", formatting.value_chars, oldval);
+		else
+			printq("0x%-*" PRIx64 " ", formatting.value_chars, oldval);
+	}
 
 	if (op.value_valid) {
-		printq(":= 0x%-*" PRIx64 " ", formatting.value_chars, userval);
-		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead)
-			printq("-> 0x%-*" PRIx64 " ", formatting.value_chars, newval);
+		if (rwmem_opts.print_decimal)
+			printq(":= %-*" PRIu64 " ", formatting.value_chars, userval);
+		else
+			printq(":= 0x%-*" PRIx64 " ", formatting.value_chars, userval);
+
+		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
+			if (rwmem_opts.print_decimal)
+				printq("-> %-*" PRIu64 " ", formatting.value_chars, newval);
+			else
+				printq("-> 0x%-*" PRIx64 " ", formatting.value_chars, newval);
+		}
 	}
 
 	printq("\n");
@@ -208,7 +221,10 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		oldval = mm->read(op_addr, width);
 
-		printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
+		if (rwmem_opts.print_decimal)
+			printq("= %*" PRIu64 " ", formatting.value_chars, oldval);
+		else
+			printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
 
 		newval = oldval;
 	}
@@ -220,7 +236,10 @@ static void readwriteprint(const RwmemOp& op,
 		v &= ~GENMASK(op.high, op.low);
 		v |= op.value << op.low;
 
-		printq(":= 0x%0*" PRIx64 " ", formatting.value_chars, v);
+		if (rwmem_opts.print_decimal)
+			printq(":= %*" PRIu64 " ", formatting.value_chars, v);
+		else
+			printq(":= 0x%0*" PRIx64 " ", formatting.value_chars, v);
 
 		fflush(stdout);
 
@@ -232,7 +251,10 @@ static void readwriteprint(const RwmemOp& op,
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			newval = mm->read(op_addr, width);
 
-			printq("-> 0x%0*" PRIx64, formatting.value_chars, newval);
+			if (rwmem_opts.print_decimal)
+				printq("-> %*" PRIu64, formatting.value_chars, newval);
+			else
+				printq("-> 0x%0*" PRIx64, formatting.value_chars, newval);
 		}
 	}
 
@@ -390,6 +412,25 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 	return op;
 }
 
+static uint32_t print_chars_needed(uint32_t numbytes, bool decimal)
+{
+	if (!decimal)
+		return numbytes * 2; // for hex: char per byte and "0x"
+
+	switch (numbytes) {
+	case 1:
+		return std::numeric_limits<uint8_t>::digits10 + 1;
+	case 2:
+		return std::numeric_limits<uint16_t>::digits10 + 1;
+	case 4:
+		return std::numeric_limits<uint32_t>::digits10 + 1;
+	case 8:
+		return std::numeric_limits<uint64_t>::digits10 + 1;
+	default:
+		FAIL("Bad num bytes");
+	}
+}
+
 static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 {
 	const uint64_t op_base = op.reg_offset;
@@ -401,7 +442,7 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 	formatting.name_chars = 30;
 	formatting.address_chars = op_base > 0xffffffff ? 16 : 8;
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = rwmem_opts.data_size * 2;
+	formatting.value_chars = print_chars_needed(rwmem_opts.data_size, rwmem_opts.print_decimal);
 
 	uint64_t op_offset = 0;
 
@@ -431,7 +472,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 	formatting.name_chars = 30;
 	formatting.address_chars = rb_access_base > 0xffffffff ? 16 : 8;
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = rwmem_opts.data_size * 2;
+	formatting.value_chars = print_chars_needed(rwmem_opts.data_size, rwmem_opts.print_decimal);
 
 	const RegisterFileData* rfd = regfile->data();
 

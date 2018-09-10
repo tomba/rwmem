@@ -41,6 +41,7 @@ static void usage()
 		"	--i2c <bus>:<addr>	i2c-mode, device bus and address\n"
 		"	--regs <file>		register description file\n"
 		"	--ignore-base		ignore base from register desc file\n"
+		"	-d,--decimal		print values in decimal\n"
 		);
 
 	exit(1);
@@ -215,6 +216,10 @@ void parse_cmdline(int argc, char **argv)
 		Option("v|verbose", []()
 		{
 			rwmem_opts.verbose = true;
+		}),
+		Option("d|decimal", []()
+		{
+			rwmem_opts.print_decimal = true;
 		}),
 		Option("h|help", []()
 		{
