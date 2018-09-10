@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-import pyrwmem
+import pyrwmem as rw
 
-map = pyrwmem.MappedRegisterBlock("LICENSE", 0, "/home/tomba/work-lappy/rwmem-db/omap5.regs", "DISPC")
+map = rw.MappedRegisterBlock("LICENSE", 0, "/home/tomba/work/rwmem-db/omap5.regs", "DISPC")
 
 rv = map.read_value("CONTROL1")
 

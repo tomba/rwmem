@@ -16,18 +16,6 @@ public:
 	uint64_t read(uint64_t addr, unsigned numbytes) const;
 	void write(uint64_t addr, unsigned numbytes, uint64_t value);
 
-	uint8_t read8(uint64_t addr) const;
-	void write8(uint64_t addr, uint8_t value);
-
-	uint16_t read16(uint64_t addr) const;
-	void write16(uint64_t addr, uint16_t value);
-
-	uint32_t read32(uint64_t addr) const;
-	void write32(uint64_t addr, uint32_t value);
-
-	uint64_t read64(uint64_t addr) const;
-	void write64(uint64_t addr, uint64_t value);
-
 private:
 	int m_fd;
 
@@ -39,6 +27,18 @@ private:
 	uint64_t m_map_len;
 
 	Endianness m_data_endianness;
+
+	uint8_t read8(uint64_t addr) const;
+	void write8(uint64_t addr, uint8_t value);
+
+	uint16_t read16(uint64_t addr) const;
+	void write16(uint64_t addr, uint16_t value);
+
+	uint32_t read32(uint64_t addr) const;
+	void write32(uint64_t addr, uint32_t value);
+
+	uint64_t read64(uint64_t addr) const;
+	void write64(uint64_t addr, uint64_t value);
 
 	void* maddr(uint64_t addr) const;
 

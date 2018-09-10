@@ -21,7 +21,7 @@ Register::Register(const RegisterFileData* rfd, const RegisterBlockData* rbd, co
 Field Register::at(uint32_t idx) const
 {
 	if (idx >= m_rd->num_fields())
-		throw runtime_error("field idx too high");
+		throw out_of_range("field idx too high");
 
 	const FieldData* fd = m_rd->at(m_rfd, idx);
 	return Field(m_rfd, fd);
@@ -57,7 +57,7 @@ RegisterBlock Register::register_block() const
 Register RegisterBlock::at(uint32_t idx) const
 {
 	if (idx >= m_rbd->num_regs())
-		throw runtime_error("register idx too high");
+		throw out_of_range("register idx too high");
 
 	const RegisterData* rd = m_rbd->at(m_rfd, idx);
 	return Register(m_rfd, m_rbd, rd);
@@ -103,7 +103,7 @@ RegisterFile::~RegisterFile()
 RegisterBlock RegisterFile::at(uint32_t idx) const
 {
 	if (idx >= m_rfd->num_blocks())
-		throw runtime_error("register block idx too high");
+		throw out_of_range("register block idx too high");
 
 	const RegisterBlockData* rbd = m_rfd->at(idx);
 	return RegisterBlock(m_rfd, rbd);
