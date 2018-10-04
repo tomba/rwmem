@@ -10,6 +10,10 @@ if grep -sqi omap5 $c ; then
 	echo omap5
 fi
 
+if grep -sqi omap4 $c ; then
+	echo omap4
+fi
+
 if grep -sqi omap3 $c ; then
 	echo omap3
 fi
