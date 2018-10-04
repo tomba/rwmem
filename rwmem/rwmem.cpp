@@ -118,21 +118,21 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 
 static void print_regfile_all(const RegisterFileData* rfd)
 {
-	printf("%s: total %u/%u/%u, endianness: %u/%u\n",
-	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields(),
-	       (unsigned)rfd->address_endianness(), (unsigned)rfd->data_endianness());
+	printf("%s: total %u/%u/%u",
+	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
 		const RegisterBlockData* rbd = rfd->at(bidx);
 
-		printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u\n",
-		       rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs());
+		printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u, endianness: %u/%u\n",
+		       rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
+		       (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
 
 		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
 			const RegisterData* rd = rbd->at(rfd, ridx);
 
-			printf("    %s: %#" PRIx64 " %#x, fields %u\n",
-			       rd->name(rfd), rd->offset(), rd->size(), rd->num_fields());
+			printf("    %s: %#" PRIx64 ", fields %u\n",
+			       rd->name(rfd), rd->offset(), rd->num_fields());
 
 			if (rwmem_opts.print_mode != PrintMode::RegFields)
 				continue;
@@ -345,8 +345,8 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 			op.range = op.range - op.reg_offset;
 		}
 	} else {
-		if (rd)
-			op.range = rd->size();
+		if (op.rbd)
+			op.range = op.rbd->data_size();
 		else
 			op.range = rwmem_opts.data_size;
 	}
@@ -436,25 +436,27 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 	const uint64_t op_base = op.reg_offset;
 	const uint64_t range = op.range;
 
-	mm->map(op_base, range);
+	const uint8_t data_size = rwmem_opts.data_size;
+	const uint8_t addr_size = rwmem_opts.address_size;
+
+	mm->map(op_base, range, rwmem_opts.address_endianness, rwmem_opts.address_size, rwmem_opts.data_endianness, data_size);
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;
-	formatting.address_chars = op_base > 0xffffffff ? 16 : 8;
+	formatting.address_chars = print_chars_needed(addr_size, false);
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = print_chars_needed(rwmem_opts.data_size, rwmem_opts.print_decimal);
+	formatting.value_chars = print_chars_needed(data_size, rwmem_opts.print_decimal);
 
 	uint64_t op_offset = 0;
 
 	while (op_offset < range) {
-		unsigned access_size = rwmem_opts.data_size;
 
 		if (rwmem_opts.raw_output)
-			readprint_raw(mm, op_offset, access_size);
+			readprint_raw(mm, op_offset, data_size);
 		else
-			readwriteprint(op, mm, op_offset, op_base + op_offset, access_size, nullptr, nullptr, nullptr, formatting);
+			readwriteprint(op, mm, op_offset, op_base + op_offset, data_size, nullptr, nullptr, nullptr, formatting);
 
-		op_offset += access_size;
+		op_offset += data_size;
 	}
 }
 
@@ -466,13 +468,32 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 	const uint64_t rb_access_base = rwmem_opts.ignore_base ? 0 : rbd->offset();
 	const uint64_t range = rbd->size();
 
-	mm->map(rb_access_base, rbd->size());
+	Endianness addr_endianness, data_endianness;
+	uint8_t addr_size, data_size;
+
+	if (rwmem_opts.user_address_size) {
+		addr_endianness = rwmem_opts.address_endianness;
+		addr_size = rwmem_opts.address_size;
+	} else {
+		addr_endianness = rbd->addr_endianness();
+		addr_size = rbd->addr_size();
+	}
+
+	if (rwmem_opts.user_data_size) {
+		data_endianness = rwmem_opts.data_endianness;
+		data_size = rwmem_opts.data_size;
+	} else {
+		data_endianness = rbd->data_endianness();
+		data_size = rbd->data_size();
+	}
+
+	mm->map(rb_access_base, rbd->size(), addr_endianness, addr_size, data_endianness, data_size);
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;
-	formatting.address_chars = rb_access_base > 0xffffffff ? 16 : 8;
+	formatting.address_chars = print_chars_needed(addr_size, false);
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = print_chars_needed(rwmem_opts.data_size, rwmem_opts.print_decimal);
+	formatting.value_chars = print_chars_needed(data_size, rwmem_opts.print_decimal);
 
 	const RegisterFileData* rfd = regfile->data();
 
@@ -485,46 +506,32 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 		while (op_offset < range) {
 			const RegisterData* rd = rbd->find_register(rfd, op_offset);
 
-			unsigned access_size;
-
-			if (rwmem_opts.user_data_size)
-				access_size = rwmem_opts.data_size;
-			else
-				access_size = rd ? rd->size() : rwmem_opts.data_size;
-
 			if (!rd && skip_undefined_regs) {
 				if (rwmem_opts.raw_output) {
 					uint64_t v = 0;
-					ssize_t l = write(STDOUT_FILENO, &v, access_size);
+					ssize_t l = write(STDOUT_FILENO, &v, data_size);
 					ERR_ON_ERRNO(l == -1, "write failed");
 				}
 
-				op_offset += access_size;
+				op_offset += data_size;
 				continue;
 			}
 
 			if (rwmem_opts.raw_output)
-				readprint_raw(mm, rb_access_base + op_offset, access_size);
+				readprint_raw(mm, rb_access_base + op_offset, data_size);
 			else
-				readwriteprint(op, mm, op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
+				readwriteprint(op, mm, op_offset, rb_base + op_offset, data_size, rfd, rbd, rd, formatting);
 
-			op_offset += access_size;
+			op_offset += data_size;
 		}
 	} else {
 		for (const RegisterData* rd : op.rds) {
 			uint64_t op_offset = rd->offset();
 
-			unsigned access_size;
-
-			if (rwmem_opts.user_data_size)
-				access_size = rwmem_opts.data_size;
-			else
-				access_size = rd->size();
-
 			if (rwmem_opts.raw_output)
-				readprint_raw(mm, op_offset, access_size);
+				readprint_raw(mm, op_offset, data_size);
 			else
-				readwriteprint(op, mm, op_offset, rb_base + op_offset, access_size, rfd, rbd, rd, formatting);
+				readwriteprint(op, mm, op_offset, rb_base + op_offset, data_size, rfd, rbd, rd, formatting);
 		}
 	}
 }
@@ -601,21 +608,11 @@ int main(int argc, char **argv)
 		ops.push_back(op);
 	}
 
-	if (rwmem_opts.address_endianness == Endianness::Default) {
-		if (regfile)
-			rwmem_opts.address_endianness = regfile->data()->address_endianness();
+	if (rwmem_opts.address_endianness == Endianness::Default)
+		rwmem_opts.address_endianness = Endianness::Little;
 
-		if (rwmem_opts.address_endianness == Endianness::Default)
-			rwmem_opts.address_endianness = Endianness::Little;
-	}
-
-	if (rwmem_opts.data_endianness == Endianness::Default) {
-		if (regfile)
-			rwmem_opts.data_endianness = regfile->data()->data_endianness();
-
-		if (rwmem_opts.data_endianness == Endianness::Default)
-			rwmem_opts.data_endianness = Endianness::Little;
-	}
+	if (rwmem_opts.data_endianness == Endianness::Default)
+		rwmem_opts.data_endianness = Endianness::Little;
 
 	unique_ptr<ITarget> mm;
 
@@ -625,7 +622,7 @@ int main(int argc, char **argv)
 		if (file.empty())
 			file = "/dev/mem";
 
-		mm = make_unique<MMapTarget>(file, rwmem_opts.data_endianness);
+		mm = make_unique<MMapTarget>(file);
 		break;
 	}
 
@@ -642,9 +639,7 @@ int main(int argc, char **argv)
 		r = parse_u64(strs[1], &addr);
 		ERR_ON(r, "failed to parse i2c address");
 
-		mm = make_unique<I2CTarget>(bus, addr,
-					    rwmem_opts.address_size, rwmem_opts.address_endianness,
-					    rwmem_opts.data_endianness);
+		mm = make_unique<I2CTarget>(bus, addr);
 		break;
 	}
 

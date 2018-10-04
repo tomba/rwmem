@@ -7,7 +7,7 @@
 #include "helpers.h"
 
 const uint32_t RWMEM_MAGIC = 0x00e11554;
-const uint32_t RWMEM_VERSION = 1;
+const uint32_t RWMEM_VERSION = 2;
 
 struct __attribute__(( packed )) RegisterFileData;
 struct __attribute__(( packed )) RegisterBlockData;
@@ -22,8 +22,6 @@ struct __attribute__(( packed )) RegisterFileData
 	uint32_t num_blocks() const { return be32toh(m_num_blocks); }
 	uint32_t num_regs() const { return be32toh(m_num_regs); }
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
-	Endianness address_endianness() const { return (Endianness)be32toh(m_address_endianness); }
-	Endianness data_endianness() const { return (Endianness)be32toh(m_data_endianness); }
 
 	const RegisterBlockData* blocks() const;
 	const RegisterData* registers() const;
@@ -44,8 +42,6 @@ private:
 	uint32_t m_num_blocks;
 	uint32_t m_num_regs;
 	uint32_t m_num_fields;
-	uint32_t m_address_endianness;
-	uint32_t m_data_endianness;
 };
 
 struct __attribute__(( packed )) RegisterBlockData
@@ -55,6 +51,10 @@ struct __attribute__(( packed )) RegisterBlockData
 	uint64_t size() const { return be64toh(m_size); }
 	uint32_t num_regs() const { return be32toh(m_num_registers); }
 	uint32_t regs_offset() const { return be32toh(m_regs_offset); }
+	Endianness addr_endianness() const { return (Endianness)m_addr_endianness; }
+	uint8_t addr_size() const { return m_addr_size; }
+	Endianness data_endianness() const { return (Endianness)m_data_endianness; }
+	uint8_t data_size() const { return m_data_size; }
 
 	const char* name(const RegisterFileData* rfd) const { return rfd->strings() + name_offset(); }
 	const RegisterData* at(const RegisterFileData* rfd, uint32_t idx) const;
@@ -67,13 +67,17 @@ private:
 	uint64_t m_size;
 	uint32_t m_num_registers;
 	uint32_t m_regs_offset;
+
+	uint8_t m_addr_endianness;
+	uint8_t m_addr_size;
+	uint8_t m_data_endianness;
+	uint8_t m_data_size;
 };
 
 struct __attribute__(( packed )) RegisterData
 {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
-	uint32_t size() const { return be32toh(m_size); }
 
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
 	uint32_t fields_offset() const { return be32toh(m_fields_offset); }
@@ -86,7 +90,6 @@ struct __attribute__(( packed )) RegisterData
 private:
 	uint32_t m_name_offset;
 	uint64_t m_offset;
-	uint32_t m_size;
 
 	uint32_t m_num_fields;
 	uint32_t m_fields_offset;

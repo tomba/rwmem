@@ -1,22 +1,24 @@
 #!/usr/bin/python3
 
 from struct import *
+from enum import IntEnum
 import os
 
 RWMEM_MAGIC = 0x00e11554
-RWMEM_VERSION = 1
+RWMEM_VERSION = 2
 
-ENDIAN_DEFAULT = 0
-ENDIAN_BIG = 1
-ENDIAN_LITTLE = 2
-ENDIAN_BIGSWAPPED = 3
-ENDIAN_LITTLESWAPPED = 4
+class Endianness(IntEnum):
+	DEFAULT = 0
+	BIG = 1
+	LITTLE = 2
+	BIGSWAPPED = 3
+	LITTLESWAPPED = 4
 
-def regfile_write(file, name, blocks, address_endianness = 0, data_endianness = 0):
+def regfile_write(file, name, blocks):
 
-	fmt_regfile = ">IIIIIIII"
-	fmt_block = ">IQQII"
-	fmt_reg = ">IQIII"
+	fmt_regfile = ">IIIIII"
+	fmt_block = ">IQQIIBBBB"
+	fmt_reg = ">IQII"
 	fmt_field = ">IBB"
 
 	blocks = sorted(blocks, key=lambda x: x["offset"])
@@ -43,7 +45,7 @@ def regfile_write(file, name, blocks, address_endianness = 0, data_endianness = 
 
 		if block["size"] == 0:
 			reg = max(block["regs"], key=lambda x: x["offset"])
-			block["size"] = reg["offset"] + reg["size"]
+			block["size"] = reg["offset"] + block.get("data_size", 4)
 
 		num_regs += len(block["regs"])
 
@@ -68,14 +70,21 @@ def regfile_write(file, name, blocks, address_endianness = 0, data_endianness = 
 
 	out = open(file, "wb")
 
-	out.write(pack(fmt_regfile, RWMEM_MAGIC, RWMEM_VERSION, get_str_idx(name), num_blocks, num_regs, num_fields, address_endianness, data_endianness))
+	out.write(pack(fmt_regfile, RWMEM_MAGIC, RWMEM_VERSION, get_str_idx(name), num_blocks, num_regs, num_fields))
 
 	for block in blocks:
-		out.write(pack(fmt_block, get_str_idx(block["name"]), block["offset"], block["size"], len(block["regs"]), block["regs_offset"]))
+		addr_e = block.get("addr_endianness", Endianness.DEFAULT)
+		addr_s = block.get("addr_size", 4)
+		data_e = block.get("data_endianness", Endianness.DEFAULT)
+		data_s = block.get("data_size", 4)
 
+		out.write(pack(fmt_block, get_str_idx(block["name"]), block["offset"], block["size"], len(block["regs"]), block["regs_offset"],
+		               addr_e, addr_s, data_e, data_s))
+
+#  reg["size"],
 	for block in blocks:
 		for reg in block["regs"]:
-			out.write(pack(fmt_reg, get_str_idx(reg["name"]), reg["offset"], reg["size"], len(reg["fields"]), reg["fields_offset"]))
+			out.write(pack(fmt_reg, get_str_idx(reg["name"]), reg["offset"], len(reg["fields"]), reg["fields_offset"]))
 
 	for block in blocks:
 		for reg in block["regs"]:

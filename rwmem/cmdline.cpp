@@ -164,6 +164,7 @@ void parse_cmdline(int argc, char **argv)
 
 			rwmem_opts.address_size = size / 8;
 			rwmem_opts.address_endianness = endianness;
+			rwmem_opts.user_address_size = true;
 		}),
 		Option("w=", [](string s)
 		{

@@ -39,6 +39,7 @@ PYBIND11_MODULE(pyrwmem, m) {
 			.def_property_readonly("offset", &RegisterBlock::offset)
 			.def_property_readonly("size", &RegisterBlock::size)
 			.def_property_readonly("num_regs", &RegisterBlock::num_regs)
+			.def_property_readonly("data_size", &RegisterBlock::data_size)
 
 			.def("__getitem__", &RegisterBlock::get_register)
 			.def("__getitem__",  &RegisterBlock::at)
@@ -49,7 +50,6 @@ PYBIND11_MODULE(pyrwmem, m) {
 	py::class_<Register>(m, "Register")
 			.def_property_readonly("name", &Register::name)
 			.def_property_readonly("offset", &Register::offset)
-			.def_property_readonly("size", &Register::size)
 			.def_property_readonly("num_fields", &Register::num_fields)
 
 			.def("__getitem__", (unique_ptr<Field> (Register::*)(const string&) const)&Register::find_field)
@@ -58,7 +58,7 @@ PYBIND11_MODULE(pyrwmem, m) {
 			.def("__getitem__",  [](Register* self, py::slice slice) {
 				size_t start, stop, step, slicelength;
 
-				if (!slice.compute(self->size() * 8 - 1, &start, &stop, &step, &slicelength))
+				if (!slice.compute(self->register_block().data_size() * 8 - 1, &start, &stop, &step, &slicelength))
 					throw py::error_already_set();
 
 				if (step != 1)
@@ -86,15 +86,21 @@ PYBIND11_MODULE(pyrwmem, m) {
                         .value("LittleSwapped", Endianness::LittleSwapped)
                         ;
 
-	py::class_<MMapTarget>(m, "MMapTarget")
-			.def(py::init<const string&, Endianness, uint64_t, uint64_t>())
-			.def("read", &MMapTarget::read)
-			.def("write", &MMapTarget::write)
+	py::class_<ITarget>(m, "ITarget")
+			.def("map", &ITarget::map)
+			.def("unmap", &ITarget::unmap)
+			.def("read", (uint64_t (ITarget::*)(uint64_t) const)&ITarget::read)
+			.def("write", (void (ITarget::*)(uint64_t, uint64_t))&ITarget::write)
+			.def("read", (uint64_t (ITarget::*)(uint64_t, uint8_t) const)&ITarget::read)
+			.def("write", (void (ITarget::*)(uint64_t, uint8_t, uint64_t))&ITarget::write)
 			;
 
-	py::class_<I2CTarget>(m, "I2CTarget")
-			.def(py::init<unsigned, uint16_t, uint16_t, Endianness, Endianness>())
-			.def("read", &I2CTarget::read)
-			.def("write", &I2CTarget::write)
+	py::class_<MMapTarget, ITarget>(m, "MMapTarget")
+			.def(py::init<const string&>())
+			.def(py::init<const string&, Endianness, uint64_t, uint64_t>())
+			;
+
+	py::class_<I2CTarget, ITarget>(m, "I2CTarget")
+			.def(py::init<unsigned, uint16_t>())
 			;
 }

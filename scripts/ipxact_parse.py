@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from regfile_writer import Endianness
 import xml.etree.ElementTree as ET
 
 def ipxact_parse(file):
@@ -59,10 +60,12 @@ def ipxact_parse(file):
 
 						fields.append({ "name": fname, "high": fshift + fwidth - 1, "low": fshift })
 
-					reg = { "name": regname, "offset": regoffset, "size": REGSIZE, "fields": fields }
+					reg = { "name": regname, "offset": regoffset, "fields": fields }
 
 					regs.append(reg)
 
-		mmaps.append({ "name": memMapName, "offset": 0, "size": 0, "regs": regs })
+		mmaps.append({ "name": memMapName, "offset": 0, "size": 0, "regs": regs,
+		             "addr_endianness": Endianness.DEFAULT, "addr_size": 4,
+		             "data_endianness": Endianness.DEFAULT, "data_size": 4})
 
 	return mmaps

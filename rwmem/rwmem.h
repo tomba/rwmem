@@ -66,12 +66,13 @@ struct RwmemOpts {
 	std::string i2c_target;
 
 	// for i2c
-	unsigned address_size = 1;	// bytes
-	Endianness address_endianness;
+	bool user_address_size = false;
+	uint8_t address_size = 1;	// bytes
+	Endianness address_endianness = Endianness::Default;
 
-	bool user_data_size;
-	unsigned data_size = 4;		// bytes
-	Endianness data_endianness;
+	bool user_data_size = false;
+	uint8_t data_size = 4;		// bytes
+	Endianness data_endianness = Endianness::Default;
 
 	WriteMode write_mode = WriteMode::ReadWriteRead;
 	PrintMode print_mode = PrintMode::RegFields;

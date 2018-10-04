@@ -34,7 +34,6 @@ public:
 
 	const char* name() const { return m_rd->name(m_rfd); }
 	uint64_t offset() const { return m_rd->offset(); }
-	uint32_t size() const { return m_rd->size(); }
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
 	Field at(uint32_t idx) const;
@@ -62,6 +61,7 @@ public:
 	uint64_t offset() const { return m_rbd->offset(); }
 	uint64_t size() const { return m_rbd->size(); }
 	uint32_t num_regs() const { return m_rbd->num_regs(); }
+	uint8_t data_size() const { return m_rbd->data_size(); }
 
 	Register at(uint32_t idx) const;
 

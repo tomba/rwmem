@@ -12,11 +12,8 @@
 
 using namespace std;
 
-I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr,
-	       uint16_t addr_len, Endianness addr_endianness, Endianness data_endianness)
-	: m_i2c_addr(i2c_addr), m_offset(0),
-	  m_address_bytes(addr_len), m_address_endianness(addr_endianness),
-	  m_data_endianness(data_endianness)
+I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr)
+	: m_i2c_addr(i2c_addr), m_offset(0)
 {
 	string name("/dev/i2c-");
 	name += to_string(adapter_nr);
@@ -34,6 +31,15 @@ I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr,
 I2CTarget::~I2CTarget()
 {
 	close(m_fd);
+}
+
+void I2CTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
+{
+	m_offset = offset;
+	m_address_endianness = addr_endianness;
+	m_address_bytes = addr_size;
+	m_data_endianness = data_endianness;
+	m_data_bytes = data_size;
 }
 
 static uint32_t swap32(uint32_t v)
@@ -174,12 +180,15 @@ static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], End
 	}
 }
 
-uint64_t I2CTarget::read(uint64_t addr, unsigned numbytes) const
+uint64_t I2CTarget::read(uint64_t addr, uint8_t numbytes) const
 {
 	addr += m_offset;
 
 	uint8_t addr_buf[8] { };
 	uint8_t data_buf[8] { };
+
+	if (!numbytes)
+		numbytes = m_data_bytes;
 
 	host_to_device(addr, m_address_bytes, addr_buf, m_address_endianness);
 
@@ -205,32 +214,29 @@ uint64_t I2CTarget::read(uint64_t addr, unsigned numbytes) const
 	return device_to_host(data_buf, numbytes, m_data_endianness);
 }
 
-void I2CTarget::write(uint64_t addr, unsigned numbytes, uint64_t value)
+void I2CTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
 {
 	addr += m_offset;
 
-	uint8_t addr_buf[8] { };
-	uint8_t data_buf[8] { };
+	uint8_t data_buf[12] { };
 
-	host_to_device(addr, m_address_bytes, addr_buf, m_address_endianness);
+	if (!numbytes)
+		numbytes = m_data_bytes;
 
-	host_to_device(value, numbytes, data_buf, m_data_endianness);
+	host_to_device(addr, m_address_bytes, data_buf, m_address_endianness);
 
-	struct i2c_msg msgs[2] { };
+	host_to_device(value, numbytes, data_buf + m_address_bytes, m_data_endianness);
+
+	struct i2c_msg msgs[1] { };
 
 	msgs[0].addr = m_i2c_addr;
 	msgs[0].flags = 0;
-	msgs[0].len = m_address_bytes;
-	msgs[0].buf = addr_buf;
-
-	msgs[1].addr = m_i2c_addr;
-	msgs[1].flags = 0;
-	msgs[1].len = numbytes;
-	msgs[1].buf = data_buf;
+	msgs[0].len = m_address_bytes + numbytes;
+	msgs[0].buf = data_buf;
 
 	struct i2c_rdwr_ioctl_data data;
 	data.msgs = msgs;
-	data.nmsgs = 2;
+	data.nmsgs = 1;
 
 	int r = ioctl(m_fd, I2C_RDWR, &data);
 	ERR_ON_ERRNO(r < 0, "i2c transfer failed");

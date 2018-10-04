@@ -12,9 +12,8 @@ def csv_parse(file):
 				regs.append(reg)
 				reg = None
 			elif reg == None:
-				reg = {"name": row[0], "offset": int(row[1], 0), "size": int(row[2], 0) // 8, "fields": [] }
+				reg = {"name": row[0], "offset": int(row[1], 0), "fields": [] }
 			else:
 				reg["fields"].append({ "name": row[0], "high": int(row[1], 0), "low": int(row[2], 0) })
 
 	return regs
-

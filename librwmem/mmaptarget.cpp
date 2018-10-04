@@ -14,8 +14,8 @@ using namespace std;
 static const unsigned pagesize = sysconf(_SC_PAGESIZE);
 static const unsigned pagemask = pagesize - 1;
 
-MMapTarget::MMapTarget(const string& filename, Endianness data_endianness)
-	: m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0), m_data_endianness(data_endianness)
+MMapTarget::MMapTarget(const string& filename)
+	: m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
 {
 	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
@@ -23,9 +23,9 @@ MMapTarget::MMapTarget(const string& filename, Endianness data_endianness)
 }
 
 MMapTarget::MMapTarget(const string &filename, Endianness data_endianness, uint64_t offset, uint64_t length)
-	:MMapTarget(filename, data_endianness)
+	:MMapTarget(filename)
 {
-	map(offset, length);
+	map(offset, length, Endianness::Default, 0, data_endianness, 0);
 }
 
 MMapTarget::~MMapTarget()
@@ -34,9 +34,12 @@ MMapTarget::~MMapTarget()
 	close(m_fd);
 }
 
-void MMapTarget::map(uint64_t offset, uint64_t length)
+void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
 {
 	unmap();
+
+	m_data_endianness = data_endianness;
+	m_data_size = data_size;
 
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length + pagesize - 1) & ~pagemask;
@@ -73,7 +76,7 @@ void MMapTarget::unmap()
 	m_map_base = MAP_FAILED;
 }
 
-uint64_t MMapTarget::read(uint64_t addr, unsigned numbytes) const
+uint64_t MMapTarget::read(uint64_t addr, uint8_t numbytes) const
 {
 	switch (numbytes) {
 	case 1:
@@ -89,7 +92,7 @@ uint64_t MMapTarget::read(uint64_t addr, unsigned numbytes) const
 	}
 }
 
-void MMapTarget::write(uint64_t addr, unsigned numbytes, uint64_t value)
+void MMapTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
 {
 	switch (numbytes) {
 	case 1:

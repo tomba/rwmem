@@ -6,15 +6,19 @@
 class MMapTarget : public ITarget
 {
 public:
-	MMapTarget(const std::string& filename, Endianness data_endianness);
+	MMapTarget(const std::string& filename);
 	MMapTarget(const std::string& filename, Endianness data_endianness, uint64_t offset, uint64_t length);
 	~MMapTarget();
 
-	void map(uint64_t offset, uint64_t length);
-	void unmap();
+	// addr_endianness, addr_size are ignored
+	void map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size) override;
+	void unmap() override;
 
-	uint64_t read(uint64_t addr, unsigned numbytes) const;
-	void write(uint64_t addr, unsigned numbytes, uint64_t value);
+	uint64_t read(uint64_t addr) const override { return read(addr, m_data_size); }
+	void write(uint64_t addr, uint64_t value) override { write(addr, m_data_size, value); };
+
+	uint64_t read(uint64_t addr, uint8_t numbytes) const override;
+	void write(uint64_t addr, uint8_t numbytes, uint64_t value) override;
 
 private:
 	int m_fd;
@@ -27,6 +31,7 @@ private:
 	uint64_t m_map_len;
 
 	Endianness m_data_endianness;
+	uint8_t m_data_size;
 
 	uint8_t read8(uint64_t addr) const;
 	void write8(uint64_t addr, uint8_t value);

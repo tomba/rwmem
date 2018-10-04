@@ -1,8 +1,9 @@
 from .pyrwmem import *
 
 class MappedRegister:
-	def __init__(self, map, reg):
+	def __init__(self, map, reg, size):
 		self._map = map
+		self._size = size
 		self._reg = reg
 		self._frozen = None
 		self._initialized = True
@@ -14,10 +15,10 @@ class MappedRegister:
 		if not self._frozen is None:
 			raise RuntimeError("Register already frozen")
 
-		self._frozen = self._map.read(self._reg.offset, self._reg.size)
+		self._frozen = self._map.read(self._reg.offset, self._size)
 
 	def unfreeze(self):
-		return self._map.write(self._reg.offset, self._reg.size, self._frozen)
+		return self._map.write(self._reg.offset, self._size, self._frozen)
 		self._frozen = None
 
 	def __getitem__(self, idx):
@@ -30,12 +31,12 @@ class MappedRegister:
 			return get_field_value(self.value, f.high, f.low)
 
 		elif isinstance(idx, int):
-			if idx < 0 or idx >= self._reg.size * 8:
+			if idx < 0 or idx >= self._size * 8:
 				raise IndexError("Index out of bounds")
 
 			return get_field_value(self.value, idx, idx)
 		elif isinstance(idx, slice):
-			indices = idx.indices(self._reg.size * 8 - 1)
+			indices = idx.indices(self._size * 8 - 1)
 
 			low = indices[0]
 			high = indices[1]
@@ -59,7 +60,7 @@ class MappedRegister:
 			self.value = v
 
 		elif isinstance(idx, int):
-			if idx < 0 or idx >= self._reg.size * 8:
+			if idx < 0 or idx >= self._size * 8:
 				raise IndexError("Index out of bounds")
 
 			v = self.value
@@ -67,7 +68,7 @@ class MappedRegister:
 			self.value = v
 
 		elif isinstance(idx, slice):
-			indices = idx.indices(self._reg.size * 8 - 1)
+			indices = idx.indices(self._size * 8 - 1)
 
 			low = indices[0]
 			high = indices[1]
@@ -84,8 +85,7 @@ class MappedRegister:
 	def __str__(self):
 		return "{:#x}".format(self.value)
 
-	@property
-	def fields(self):
+	def get_fields(self):
 		self.freeze()
 
 		fields = { }
@@ -96,17 +96,15 @@ class MappedRegister:
 
 		return fields
 
-	@property
-	def value(self):
+	def get_value(self):
 		if self._frozen is None:
-			return self._map.read(self._reg.offset, self._reg.size)
+			return self._map.read(self._reg.offset, self._size)
 		else:
 			return self._frozen
 
-	@value.setter
-	def value(self, val):
+	def set_value(self, val):
 		if self._frozen is None:
-			self._map.write(self._reg.offset, self._reg.size, val)
+			self._map.write(self._reg.offset, self._size, val)
 		else:
 			self._frozen = val
 
@@ -116,6 +114,10 @@ class MappedRegister:
 	def __getattr__(self, name):
 		if name in self:
 			return self[name]
+		elif name == "value":
+			return self.get_value()
+		elif name == "fields":
+			return self.get_fields()
 		else:
 			raise AttributeError('No field {0} found!'.format(name))
 
@@ -143,7 +145,7 @@ class MappedRegisterBlock:
 		if not r:
 			raise IndexError("Register not found")
 
-		return MappedRegister(self._map, r)
+		return MappedRegister(self._map, r, self._regblock.data_size)
 
 	def __setitem__(self, idx, val):
 		if isinstance(idx, str):
