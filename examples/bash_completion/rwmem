@@ -4,7 +4,7 @@ _rwmem()
 	_init_completion -s -n : || return
 
 	case "${prev,,}" in
-		--mmap|--i2c|--regs)
+		--mmap|--regs)
 			_filedir
 			return 0
 			;;
