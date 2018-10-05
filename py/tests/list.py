@@ -8,6 +8,6 @@ print("{}: blocks {}, regs {}, fields {}".format(rf.name, rf.num_blocks, rf.num_
 for rb in rf:
 	print("{} {:#x} {:#x}".format(rb.name, rb.offset, rb.size))
 	for r in rb:
-		print("  {} {:#x} {:#x}".format(r.name, r.offset, r.size))
+		print("  {} {:#x}".format(r.name, r.offset))
 		for f in r:
 			print("    {} {}:{}".format(f.name, f.low, f.high))
