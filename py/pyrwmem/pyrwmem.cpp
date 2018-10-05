@@ -39,6 +39,7 @@ PYBIND11_MODULE(pyrwmem, m) {
 			.def_property_readonly("offset", &RegisterBlock::offset)
 			.def_property_readonly("size", &RegisterBlock::size)
 			.def_property_readonly("num_regs", &RegisterBlock::num_regs)
+			.def_property_readonly("data_endianness", &RegisterBlock::data_endianness)
 			.def_property_readonly("data_size", &RegisterBlock::data_size)
 
 			.def("__getitem__", &RegisterBlock::get_register)

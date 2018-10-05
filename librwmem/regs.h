@@ -61,6 +61,7 @@ public:
 	uint64_t offset() const { return m_rbd->offset(); }
 	uint64_t size() const { return m_rbd->size(); }
 	uint32_t num_regs() const { return m_rbd->num_regs(); }
+	Endianness data_endianness() const { return m_rbd->data_endianness(); }
 	uint8_t data_size() const { return m_rbd->data_size(); }
 
 	Register at(uint32_t idx) const;

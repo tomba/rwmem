@@ -4,7 +4,7 @@ import pyrwmem as rw
 
 rf = rw.RegisterFile("py/tests/test.regs")
 
-b1 = rw.MappedRegisterBlock("py/tests/test.bin", rf["BLOCK1"], endianness = rw.Endianness.Big)
+b1 = rw.MappedRegisterBlock("py/tests/test.bin", rf["BLOCK1"])
 
 def check():
 	assert("REG1" in b1)

@@ -45,7 +45,7 @@ blocks = []
 
 blocks.append({ "name": "BLOCK1", "offset": 0x8, "size": 0x10, "regs": regs,
                 "addr_endianness": Endianness.DEFAULT, "addr_size": 4,
-                "data_endianness": Endianness.DEFAULT, "data_size": 4})
+                "data_endianness": Endianness.BIG, "data_size": 4})
 
 regfile_write("test.regs", "TEST", blocks)
 
