@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cerrno>
 #include <string>
 #include <vector>
 #include <string.h>
