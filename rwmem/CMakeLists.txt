@@ -16,3 +16,9 @@ add_test(NAME rwmem-list
 add_test(NAME rwmem-reg1
     COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/rwmem" --mmap py/tests/test.bin --regs py/tests/test.regs BLOCK1.REG1
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+INSTALL(TARGETS rwmem-bin
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
