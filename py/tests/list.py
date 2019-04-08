@@ -1,8 +1,13 @@
 #!/usr/bin/python3
 
 import pyrwmem as rw
+import argparse
 
-rf = rw.RegisterFile("py/tests/test.regs")
+parser = argparse.ArgumentParser()
+parser.add_argument("regfile")
+args = parser.parse_args()
+
+rf = rw.RegisterFile(args.regfile)
 print("{}: blocks {}, regs {}, fields {}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
 
 for rb in rf:
