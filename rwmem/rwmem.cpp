@@ -210,9 +210,14 @@ static void readwriteprint(const RwmemOp& op,
 	}
 
 	printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
+	vprint("Accessing 0x%0*" PRIx64, formatting.address_chars, paddr);
 
-	if (op_addr != paddr)
+	if (op_addr != paddr) {
 		printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, op_addr);
+		vprint(" (+0x%0*" PRIx64 ")", formatting.offset_chars, op_addr);
+	}
+
+	vprint("\n");
 
 	uint64_t oldval, userval, newval;
 
@@ -439,6 +444,8 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 	const uint8_t data_size = rwmem_opts.data_size;
 	const uint8_t addr_size = rwmem_opts.address_size;
 
+	vprint("mmap offset=%#" PRIx64 " length=%#" PRIx64 "\n", op_base, range);
+
 	mm->map(op_base, range, rwmem_opts.address_endianness, rwmem_opts.address_size, rwmem_opts.data_endianness, data_size);
 
 	RwmemFormatting formatting;
@@ -486,6 +493,8 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 		data_endianness = rbd->data_endianness();
 		data_size = rbd->data_size();
 	}
+
+	vprint("mmap offset=%#" PRIx64 " length=%#" PRIx64 "\n", rb_access_base, rbd->size());
 
 	mm->map(rb_access_base, rbd->size(), addr_endianness, addr_size, data_endianness, data_size);
 
