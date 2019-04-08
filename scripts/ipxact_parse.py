@@ -31,6 +31,7 @@ def ipxact_parse(file):
 		for abElem in memMap.findall('.//spirit:addressBlock', ns):
 			abName = abElem.find('spirit:name', ns).text
 			abOffset = int(abElem.find('spirit:baseAddress', ns).text, 0)
+			abOffset = 0
 
 			for regElem in abElem.findall('spirit:register', ns):
 				e = regElem.find('spirit:dim', ns)
