@@ -42,7 +42,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endiannes
 	m_data_size = data_size;
 
 	const off_t mmap_offset = offset & ~pagemask;
-	const size_t mmap_len = (offset + length + pagesize - 1) & ~pagemask;
+	const size_t mmap_len = (offset + length - mmap_offset + pagesize - 1) & ~pagemask;
 
 	//printf("mmap offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
 	//       offset, length, mmap_offset, mmap_len);
