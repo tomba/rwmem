@@ -8,7 +8,7 @@ librwmem_sources = files([
 
 public_includes = include_directories('.')
 
-librwmem = library('kms++',
+librwmem = library('rwmem',
                    librwmem_sources,
                    install : true)
 

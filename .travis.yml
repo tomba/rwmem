@@ -1,6 +1,6 @@
-# Ubuntu 18.04 Trusty support
-sudo: required
-dist: bionic
+# Ubuntu 20.04
+dist: focal
+os: linux
 
 # Only build test master & travis
 branches:
@@ -11,76 +11,74 @@ branches:
 # Enable C++ support
 language: cpp
 
+addons:
+  apt:
+    packages: &packages
+      - meson
+      - ninja-build
+
 # Need MYCC and MYCXX as travis overwrites CC and CXX
 
-matrix:
+jobs:
   include:
     - compiler: gcc
       addons:
         apt:
-          packages: ['g++-5']
-      env: MYCC=gcc-5 MYCXX=g++-5
-
-    - compiler: gcc
-      addons:
-        apt:
-          packages: ['g++-6']
-      env: MYCC=gcc-6 MYCXX=g++-6
-
-    - compiler: gcc
-      addons:
-        apt:
-          packages: ['g++-7']
+          packages: [*packages, 'g++-7']
       env: MYCC=gcc-7 MYCXX=g++-7
 
     - compiler: gcc
       addons:
         apt:
-          packages: ['g++-8']
+          packages: [*packages, 'g++-8']
       env: MYCC=gcc-8 MYCXX=g++-8
 
-    - compiler: clang
+    - compiler: gcc
       addons:
         apt:
-          packages: ['clang-3.9']
-      env: MYCC=clang-3.9 MYCXX=clang++-3.9
+          packages: [*packages, 'g++-9']
+      env: MYCC=gcc-9 MYCXX=g++-9
+
+    - compiler: gcc
+      addons:
+        apt:
+          packages: [*packages, 'g++-10']
+      env: MYCC=gcc-10 MYCXX=g++-10
 
     - compiler: clang
       addons:
         apt:
-          packages: ['clang-4.0']
-      env: MYCC=clang-4.0 MYCXX=clang++-4.0
-
-    - compiler: clang
-      addons:
-        apt:
-          packages: ['clang-5.0']
-      env: MYCC=clang-5.0 MYCXX=clang++-5.0
-
-    - compiler: clang
-      addons:
-        apt:
-          packages: ['clang-6.0']
+          packages: [*packages, 'clang-6.0', 'llvm-6.0-dev']
       env: MYCC=clang-6.0 MYCXX=clang++-6.0
 
     - compiler: clang
       addons:
         apt:
-          packages: ['clang-7']
+          packages: [*packages, 'clang-7', 'llvm-7-dev']
       env: MYCC=clang-7 MYCXX=clang++-7
 
     - compiler: clang
       addons:
         apt:
-          packages: ['clang-8']
+          packages: [*packages, 'clang-8', 'llvm-8-dev']
       env: MYCC=clang-8 MYCXX=clang++-8
+
+    - compiler: clang
+      addons:
+        apt:
+          packages: [*packages, 'clang-9', 'llvm-9-dev']
+      env: MYCC=clang-9 MYCXX=clang++-9
+
+    - compiler: clang
+      addons:
+        apt:
+          packages: [*packages, 'clang-10', 'llvm-10-dev']
+      env: MYCC=clang-10 MYCXX=clang++-10
 
 # Build steps
 script:
-  - mkdir build
-  - cd build
-  - CC=$MYCC CXX=$MYCXX cmake -DTREAT_WARNINGS_AS_ERRORS=1 .. && make VERBOSE=1
-  - ctest --output-on-failure
+  - CC=$MYCC CXX=$MYCXX meson -Dpyrwmem=enabled -Dwerror=true -Db_lto=true build
+  - ninja -v -C build
 
 notifications:
   email:
