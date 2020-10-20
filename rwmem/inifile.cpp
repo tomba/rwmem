@@ -30,7 +30,6 @@ static string get_platform_name()
 
 		pclose(pipe);
 	} catch (...) {
-
 	}
 
 	return result;

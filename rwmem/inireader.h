@@ -18,7 +18,6 @@ public:
 	std::vector<std::string> get_sections() const;
 	std::vector<std::string> get_keys(const std::string section) const;
 
-
 private:
 	std::map<std::string, std::map<std::string, std::string>> m_values;
 };

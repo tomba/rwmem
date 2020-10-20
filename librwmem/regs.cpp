@@ -74,7 +74,6 @@ unique_ptr<Register> RegisterBlock::get_register(const string& name) const
 	return make_unique<Register>(m_rfd, m_rbd, rd);
 }
 
-
 RegisterFile::RegisterFile(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
@@ -145,4 +144,3 @@ unique_ptr<Register> RegisterFile::find_register(uint64_t offset) const
 
 	return make_unique<Register>(m_rfd, rbd, rd);
 }
-

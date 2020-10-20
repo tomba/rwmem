@@ -5,7 +5,7 @@
 class ITarget
 {
 public:
-	virtual ~ITarget() { }
+	virtual ~ITarget() {}
 
 	virtual void map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size) = 0;
 	virtual void unmap() = 0;

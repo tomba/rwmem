@@ -30,11 +30,11 @@
 
 using namespace std;
 
-#define printq(format...) \
-	do { \
-	if (rwmem_opts.print_mode != PrintMode::Quiet) \
-	printf(format); \
-	} while(0)
+#define printq(format...)                                      \
+	do {                                                   \
+		if (rwmem_opts.print_mode != PrintMode::Quiet) \
+			printf(format);                        \
+	} while (0)
 
 static vector<const RegisterData*> match_registers(const RegisterFileData* rfd, const RegisterBlockData* rbd, const string& pattern)
 {
@@ -80,7 +80,7 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 		if (fnmatch(rb_pat.c_str(), rbd->name(rfd), FNM_CASEFOLD) != 0)
 			continue;
 
-		RegMatch m { };
+		RegMatch m{};
 		m.rbd = rbd;
 
 		if (r_pat.empty()) {
@@ -276,7 +276,7 @@ static void readwriteprint(const RwmemOp& op,
 				    newval, userval, oldval, op, formatting);
 		} else {
 			for (unsigned i = 0; i < rd->num_fields(); ++i) {
-				const FieldData *fd = rd->at(rfd, i);
+				const FieldData* fd = rd->at(rfd, i);
 
 				if (fd->high() >= op.low && fd->low() <= op.high)
 					print_field(fd->high(), fd->low(), rfd, fd,
@@ -304,7 +304,7 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 
 	parse_arg(arg_str, &arg);
 
-	RwmemOp op { };
+	RwmemOp op{};
 
 	const RegisterFileData* rfd = nullptr;
 	if (regfile)
@@ -360,7 +360,7 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 
 	if (arg.field.size()) {
 		unsigned fl, fh;
-		char *endptr;
+		char* endptr;
 
 		bool ok = false;
 
@@ -457,7 +457,6 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 	uint64_t op_offset = 0;
 
 	while (op_offset < range) {
-
 		if (rwmem_opts.raw_output)
 			readprint_raw(mm, op_offset, data_size);
 		else
@@ -565,11 +564,11 @@ static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch
 	}
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 	try {
 		rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
-	} catch(...) {
+	} catch (...) {
 	}
 
 	load_opts_from_ini_pre();

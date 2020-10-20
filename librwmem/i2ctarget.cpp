@@ -184,15 +184,15 @@ uint64_t I2CTarget::read(uint64_t addr, uint8_t numbytes) const
 {
 	addr += m_offset;
 
-	uint8_t addr_buf[8] { };
-	uint8_t data_buf[8] { };
+	uint8_t addr_buf[8]{};
+	uint8_t data_buf[8]{};
 
 	if (!numbytes)
 		numbytes = m_data_bytes;
 
 	host_to_device(addr, m_address_bytes, addr_buf, m_address_endianness);
 
-	struct i2c_msg msgs[2] { };
+	struct i2c_msg msgs[2]{};
 
 	msgs[0].addr = m_i2c_addr;
 	msgs[0].flags = 0;
@@ -218,7 +218,7 @@ void I2CTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
 {
 	addr += m_offset;
 
-	uint8_t data_buf[12] { };
+	uint8_t data_buf[12]{};
 
 	if (!numbytes)
 		numbytes = m_data_bytes;
@@ -227,7 +227,7 @@ void I2CTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
 
 	host_to_device(value, numbytes, data_buf + m_address_bytes, m_data_endianness);
 
-	struct i2c_msg msgs[1] { };
+	struct i2c_msg msgs[1]{};
 
 	msgs[0].addr = m_i2c_addr;
 	msgs[0].flags = 0;

@@ -75,7 +75,7 @@ void OptionSet::parse(int argc, char** argv)
 		}
 	}
 
-	longopts.push_back(option {});
+	longopts.push_back(option{});
 
 	while (true) {
 		int long_idx = 0;

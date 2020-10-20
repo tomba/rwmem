@@ -16,7 +16,7 @@
 
 using namespace std;
 
-void split(const string &s, char delim, vector<string> &elems)
+void split(const string& s, char delim, vector<string>& elems)
 {
 	stringstream ss(s);
 	string item;
@@ -25,17 +25,17 @@ void split(const string &s, char delim, vector<string> &elems)
 		elems.push_back(item);
 }
 
-vector<string> split(const string &s, char delim)
+vector<string> split(const string& s, char delim)
 {
 	vector<string> elems;
 	split(s, delim, elems);
 	return elems;
 }
 
-int parse_u64(const std::string& str, uint64_t *value)
+int parse_u64(const std::string& str, uint64_t* value)
 {
 	uint64_t v;
-	char *endptr;
+	char* endptr;
 
 	v = strtoull(str.c_str(), &endptr, 0);
 	if (*endptr != 0)
@@ -53,7 +53,7 @@ int fls(uint64_t num)
 	return i;
 }
 
-string sformat(const char *fmt, ...)
+string sformat(const char* fmt, ...)
 {
 	static char s_format_buf[1024];
 
@@ -83,5 +83,5 @@ string to_binary_str(uint64_t value, uint8_t numbits)
 bool file_exists(const string& name)
 {
 	struct stat buffer;
-	return (stat (name.c_str(), &buffer) == 0);
+	return (stat(name.c_str(), &buffer) == 0);
 }

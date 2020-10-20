@@ -9,13 +9,12 @@
 const uint32_t RWMEM_MAGIC = 0x00e11554;
 const uint32_t RWMEM_VERSION = 2;
 
-struct __attribute__(( packed )) RegisterFileData;
-struct __attribute__(( packed )) RegisterBlockData;
-struct __attribute__(( packed )) RegisterData;
-struct __attribute__(( packed )) FieldData;
+struct __attribute__((packed)) RegisterFileData;
+struct __attribute__((packed)) RegisterBlockData;
+struct __attribute__((packed)) RegisterData;
+struct __attribute__((packed)) FieldData;
 
-struct __attribute__(( packed )) RegisterFileData
-{
+struct __attribute__((packed)) RegisterFileData {
 	uint32_t magic() const { return be32toh(m_magic); }
 	uint32_t version() const { return be32toh(m_version); }
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
@@ -44,8 +43,7 @@ private:
 	uint32_t m_num_fields;
 };
 
-struct __attribute__(( packed )) RegisterBlockData
-{
+struct __attribute__((packed)) RegisterBlockData {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
 	uint64_t size() const { return be64toh(m_size); }
@@ -74,8 +72,7 @@ private:
 	uint8_t m_data_size;
 };
 
-struct __attribute__(( packed )) RegisterData
-{
+struct __attribute__((packed)) RegisterData {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
 
@@ -95,8 +92,7 @@ private:
 	uint32_t m_fields_offset;
 };
 
-struct __attribute__(( packed )) FieldData
-{
+struct __attribute__((packed)) FieldData {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint8_t low() const { return m_low; }
 	uint8_t high() const { return m_high; }

@@ -14,7 +14,7 @@ class Field
 {
 public:
 	Field(const RegisterFileData* rfd, const FieldData* fd)
-		:m_rfd(rfd), m_fd(fd)
+		: m_rfd(rfd), m_fd(fd)
 	{
 	}
 

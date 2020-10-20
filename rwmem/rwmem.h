@@ -29,8 +29,7 @@ enum class TargetType {
 	I2C,
 };
 
-struct RegMatch
-{
+struct RegMatch {
 	const RegisterBlockData* rbd;
 	const RegisterData* rd;
 	const FieldData* fd;
@@ -67,11 +66,11 @@ struct RwmemOpts {
 
 	// for i2c
 	bool user_address_size = false;
-	uint8_t address_size = 1;	// bytes
+	uint8_t address_size = 1; // bytes
 	Endianness address_endianness = Endianness::Default;
 
 	bool user_data_size = false;
-	uint8_t data_size = 4;		// bytes
+	uint8_t data_size = 4; // bytes
 	Endianness data_endianness = Endianness::Default;
 
 	WriteMode write_mode = WriteMode::ReadWriteRead;
@@ -98,18 +97,18 @@ struct RwmemFormatting {
 
 extern RwmemOpts rwmem_opts;
 
-void parse_cmdline(int argc, char **argv);
-void parse_arg(std::string str, RwmemOptsArg *arg);
+void parse_cmdline(int argc, char** argv);
+void parse_arg(std::string str, RwmemOptsArg* arg);
 
 extern INIReader rwmem_ini;
 
 void load_opts_from_ini_pre();
 void detect_platform();
 
-#define vprint(format...) \
-	do { \
-		if (rwmem_opts.verbose) \
+#define vprint(format...)                        \
+	do {                                     \
+		if (rwmem_opts.verbose)          \
 			fprintf(stderr, format); \
-	} while(0)
+	} while (0)
 
 #endif /* __RWMEM_H__ */

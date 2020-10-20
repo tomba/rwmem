@@ -13,8 +13,7 @@ using namespace std;
 
 RwmemOpts rwmem_opts;
 
-__attribute__ ((noreturn))
-static void usage()
+__attribute__((noreturn)) static void usage()
 {
 	fprintf(stderr,
 		"usage: rwmem [options] <address>[:field][=value] ...\n"
@@ -41,13 +40,12 @@ static void usage()
 		"	--i2c <bus>:<addr>	i2c-mode, device bus and address\n"
 		"	--regs <file>		register description file\n"
 		"	--ignore-base		ignore base from register desc file\n"
-		"	-d,--decimal		print values in decimal\n"
-		);
+		"	-d,--decimal		print values in decimal\n");
 
 	exit(1);
 }
 
-void parse_arg(string str, RwmemOptsArg *arg)
+void parse_arg(string str, RwmemOptsArg* arg)
 {
 	size_t idx;
 
@@ -135,105 +133,89 @@ static void parse_size_endian(string s, uint32_t* size, Endianness* e)
 	*size = stoi(s);
 }
 
-void parse_cmdline(int argc, char **argv)
+void parse_cmdline(int argc, char** argv)
 {
 	OptionSet optionset = {
-		Option("s=", [](string s)
-		{
+		Option("s=", [](string s) {
 			Endianness endianness;
 			uint32_t size;
 
 			parse_size_endian(s, &size, &endianness);
 
 			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-			"Invalid size '%s'", s.c_str());
+			       "Invalid size '%s'", s.c_str());
 
 			rwmem_opts.data_size = size / 8;
 			rwmem_opts.data_endianness = endianness;
 			rwmem_opts.user_data_size = true;
 		}),
-		Option("S=", [](string s)
-		{
+		Option("S=", [](string s) {
 			Endianness endianness;
 			uint32_t size;
 
 			parse_size_endian(s, &size, &endianness);
 
 			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-			"Invalid address size '%s'", s.c_str());
+			       "Invalid address size '%s'", s.c_str());
 
 			rwmem_opts.address_size = size / 8;
 			rwmem_opts.address_endianness = endianness;
 			rwmem_opts.user_address_size = true;
 		}),
-		Option("w=", [](string s)
-		{
+		Option("w=", [](string s) {
 			if (s == "w")
-			rwmem_opts.write_mode = WriteMode::Write;
+				rwmem_opts.write_mode = WriteMode::Write;
 			else if (s == "rw")
-			rwmem_opts.write_mode = WriteMode::ReadWrite;
+				rwmem_opts.write_mode = WriteMode::ReadWrite;
 			else if (s == "rwr")
-			rwmem_opts.write_mode = WriteMode::ReadWriteRead;
+				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
-			ERR("illegal write mode '%s'", s.c_str());
+				ERR("illegal write mode '%s'", s.c_str());
 		}),
-		Option("R|raw", []()
-		{
+		Option("R|raw", []() {
 			rwmem_opts.raw_output = true;
 		}),
-		Option("p=", [](string s)
-		{
+		Option("p=", [](string s) {
 			if (s == "q")
-			rwmem_opts.print_mode = PrintMode::Quiet;
+				rwmem_opts.print_mode = PrintMode::Quiet;
 			else if (s == "r")
-			rwmem_opts.print_mode = PrintMode::Reg;
+				rwmem_opts.print_mode = PrintMode::Reg;
 			else if (s == "rf")
-			rwmem_opts.print_mode = PrintMode::RegFields;
+				rwmem_opts.print_mode = PrintMode::RegFields;
 			else
-			ERR("illegal print mode '%s'", s.c_str());
+				ERR("illegal print mode '%s'", s.c_str());
 		}),
-		Option("|mmap=", [](string s)
-		{
+		Option("|mmap=", [](string s) {
 			rwmem_opts.mmap_target = s;
 			rwmem_opts.target_type = TargetType::MMap;
 		}),
-		Option("|i2c=", [](string s)
-		{
+		Option("|i2c=", [](string s) {
 			rwmem_opts.i2c_target = s;
 			rwmem_opts.target_type = TargetType::I2C;
 		}),
-		Option("|regs=", [](string s)
-		{
+		Option("|regs=", [](string s) {
 			rwmem_opts.regfile = s;
 		}),
-		Option("|list", [](string s)
-		{
+		Option("|list", [](string s) {
 			rwmem_opts.show_list = true;
 		}),
-		Option("|ignore-base", []()
-		{
+		Option("|ignore-base", []() {
 			rwmem_opts.ignore_base = true;
 		}),
-		Option("v|verbose", []()
-		{
+		Option("v|verbose", []() {
 			rwmem_opts.verbose = true;
 		}),
-		Option("d|decimal", []()
-		{
+		Option("d|decimal", []() {
 			rwmem_opts.print_decimal = true;
 		}),
-		Option("h|help", []()
-		{
+		Option("h|help", []() {
 			usage();
 		}),
 	};
 
-	try
-	{
+	try {
 		optionset.parse(argc, argv);
-	}
-	catch(std::exception const& e)
-	{
+	} catch (std::exception const& e) {
 		ERR("Failed to parse options: %s\n", e.what());
 	}
 
