@@ -65,7 +65,7 @@ def ipxact_parse(file):
 		memMapName = memMap.find('spirit:name', ns).text
 
 		if len(memMap.findall('.//spirit:addressBlock', ns)) > 1:
-			print("multiple addressBlocks not supported")
+			print("multiple addressBlocks not supported: {}".format(memMapName))
 			exit(1)
 
 		regs = []

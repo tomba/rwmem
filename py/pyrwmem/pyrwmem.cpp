@@ -52,6 +52,7 @@ PYBIND11_MODULE(pyrwmem, m) {
 			.def_property_readonly("name", &Register::name)
 			.def_property_readonly("offset", &Register::offset)
 			.def_property_readonly("num_fields", &Register::num_fields)
+			.def_property_readonly("register_block", &Register::register_block)
 
 			.def("__getitem__", (unique_ptr<Field> (Register::*)(const string&) const)&Register::find_field)
 			.def("__getitem__",  &Register::at)
