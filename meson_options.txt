@@ -1,0 +1,2 @@
+option('pyrwmem', type : 'feature', value : 'auto')
+option('static-libc', type : 'boolean', value : false)
