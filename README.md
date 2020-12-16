@@ -2,7 +2,7 @@
 
 # rwmem - A small tool to read & write device registers
 
-Copyright 2013-2016 Tomi Valkeinen
+Copyright 2013-2020 Tomi Valkeinen
 
 ## Intro
 
@@ -28,65 +28,56 @@ rwmem features:
 
 ## Build Dependencies
 
-You need `cmake` for creating the makefiles.
+You need `meson` and `ninja` for building.
 
-You need python3 development files if python bindings are enabled (RWMEM_ENABLE_PYTHON, enabled by default). On debian based systems you need to install `python3-dev` package.
+You need python3 development files if python bindings are enabled. On debian based systems you need to install `python3-dev` package.
 
 ## Build Instructions
 
 ```
 git clone https://github.com/tomba/rwmem.git
 cd rwmem
-git submodule update --init
-mkdir build
-cd build
-cmake ..
-make -j4
+meson build
+ninja -C build
 ```
 
 ## Cross Compiling Instructions:
 
 **Directions for cross compiling depend on your environment.**
 
-These are for mine with buildroot:
-
 ```
-$ mkdir build
-$ cd build
-$ cmake -DCMAKE_TOOLCHAIN_FILE=<buildrootpath>/output/host/usr/share/buildroot/toolchainfile.cmake ..
-$ make -j4
+meson build --cross-file=<path-to-meson-cross-file>
+ninja -C build
 ```
 
-Your environment may provide similar toolchainfile. If not, you can create a toolchainfile of your own, something along these lines:
+Here is my cross file for arm32 (where ${BROOT} is path to my buildroot output dir):
 
 ```
-SET(CMAKE_SYSTEM_NAME Linux)
+[binaries]
+c = ['ccache', '${BROOT}/host/bin/arm-buildroot-linux-gnueabihf-gcc']
+cpp = ['ccache', '${BROOT}/host/bin/arm-buildroot-linux-gnueabihf-g++']
+ar = '${BROOT}/host/bin/arm-buildroot-linux-gnueabihf-ar'
+strip = '${BROOT}/host/bin/arm-buildroot-linux-gnueabihf-strip'
+pkgconfig = '${BROOT}/host/bin/pkg-config'
 
-SET(BROOT "<buildroot>/output/")
-
-# specify the cross compiler
-SET(CMAKE_C_COMPILER   ${BROOT}/host/usr/bin/arm-buildroot-linux-gnueabihf-gcc)
-SET(CMAKE_CXX_COMPILER ${BROOT}/host/usr/bin/arm-buildroot-linux-gnueabihf-g++)
-
-# where is the target environment
-SET(CMAKE_FIND_ROOT_PATH ${BROOT}/target ${BROOT}/host)
-
-SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
-SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+[host_machine]
+system = 'linux'
+cpu_family = 'arm'
+cpu = 'arm'
+endian = 'little'
 ```
 
 ## Build options
 
-You can use the following cmake flags to control the build. Use `-DFLAG=VALUE` to set them.
+You can use meson options to configure the build. E.g.
 
-Option name              | Values        | Default  | Notes
------------------------- | ------------- | -------- | --------
-CMAKE_BUILD_TYPE         | Release/Debug | Release  |
-BUILD_SHARED_LIBS        | ON/OFF        | OFF      | librwmem.so instead of librwmem.a
-RWMEM_ENABLE_PYTHON      | ON/OFF        | ON       | Enable python bindings
-BUILD_STATIC_EXES        | ON/OFF        | OFF      | Build with -static
-TREAT_WARNINGS_AS_ERRORS | ON/OFF        | OFF      |
+```
+meson build -Dstatic-libc=true
+```
+
+Use `meson configure build` to see all the configuration options and their current values.
+
+See `meson_options.txt` for rwmem specific options.
 
 ## Examples without register file
 
@@ -235,10 +226,10 @@ examples/bash_completion/rwmem is an example bash completion script for rwmem.
 
 ## rwmem.ini file format
 
-rwmem will look for configuration options from ~/.rwmem/rwmem.ini file.
-examples/rwmem.ini has an example rwmem.ini file.
+rwmem will look for configuration options from `~/.rwmem/rwmem.ini` file.
+`examples/rwmem.ini` has an example rwmem.ini file.
 
-main.detect entry can be set to point to a script which should echo the name
+`main.detect` entry can be set to point to a script which should echo the name
 of the platform rwmem is running on. The name of the platform is then used to
 look for "platform" entries in the rwmem.ini, which can be used to define
 platform specific rwmem configuration (mainline regfile for the time being).
