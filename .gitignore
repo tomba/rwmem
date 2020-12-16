@@ -2,3 +2,5 @@ build
 *.txt.user
 *.swp
 __pycache__
+subprojects/packagecache/
+subprojects/inih-*/
