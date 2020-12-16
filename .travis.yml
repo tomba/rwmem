@@ -55,7 +55,7 @@ jobs:
       addons:
         apt:
           packages: [*packages, 'clang-7', 'llvm-7-dev']
-      env: MYCC=clang-7 MYCXX=clang++-7
+      env: MYCC=/usr/bin/clang-7 MYCXX=/usr/bin/clang++-7
 
     - compiler: clang
       addons:
