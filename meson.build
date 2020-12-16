@@ -25,9 +25,6 @@ endif
 
 add_global_link_arguments(link_arguments, language : 'cpp')
 
-pybind11_includes = include_directories('ext/pybind11/include')
-pybind11_dep = declare_dependency(include_directories : pybind11_includes)
-
 subdir('librwmem')
 subdir('rwmem')
 subdir('py')

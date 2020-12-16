@@ -4,3 +4,4 @@ build
 __pycache__
 subprojects/packagecache/
 subprojects/inih-*/
+subprojects/pybind11-*/

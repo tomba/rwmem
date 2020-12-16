@@ -4,6 +4,8 @@ if py3_dep.found() == false
     subdir_done()
 endif
 
+pybind11_dep = dependency('pybind11', fallback : ['pybind11', 'pybind11_dep'])
+
 pyrwmem_sources = files([
     'pyrwmem.cpp',
 ])
