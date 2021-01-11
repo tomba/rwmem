@@ -25,6 +25,8 @@ endif
 
 add_global_link_arguments(link_arguments, language : 'cpp')
 
+libfmt_dep = dependency('fmt')
+
 subdir('librwmem')
 subdir('rwmem')
 subdir('py')

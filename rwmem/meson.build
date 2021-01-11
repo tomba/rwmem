@@ -9,7 +9,7 @@ rwmem_sources = files([
 ])
 
 executable('rwmem', rwmem_sources,
-           dependencies : [ librwmem_dep, inih_dep ],
+           dependencies : [ librwmem_dep, inih_dep, libfmt_dep ],
            install : true,
            cpp_args : '-DINI_ALLOW_MULTILINE=0',
            c_args : '-DINI_ALLOW_MULTILINE=0')
