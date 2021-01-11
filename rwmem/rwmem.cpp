@@ -28,12 +28,14 @@
 #include <fnmatch.h>
 #include <limits>
 
+#include <fmt/format.h>
+
 using namespace std;
 
-#define rwmem_printq(format...)                                      \
+#define rwmem_printq(format...)                             \
 	do {                                                   \
 		if (rwmem_opts.print_mode != PrintMode::Quiet) \
-			printf(format);                        \
+			fmt::print(format);                    \
 	} while (0)
 
 static vector<const RegisterData*> match_registers(const RegisterFileData* rfd, const RegisterBlockData* rbd, const string& pattern)
@@ -163,31 +165,31 @@ static void print_field(unsigned high, unsigned low,
 	rwmem_printq("  ");
 
 	if (fd)
-		rwmem_printq("%-*s ", formatting.name_chars, fd->name(rfd));
+		rwmem_printq("{:<{}} ", fd->name(rfd), formatting.name_chars);
 
 	if (high == low)
-		rwmem_printq("   %-2d = ", low);
+		rwmem_printq("   {:<2} = ", low);
 	else
-		rwmem_printq("%2d:%-2d = ", high, low);
+		rwmem_printq("{:2}:{:<2} = ", high, low);
 
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		if (rwmem_opts.print_decimal)
-			rwmem_printq("%-*" PRIu64 " ", formatting.value_chars, oldval);
+			rwmem_printq("{:<{}} ", oldval, formatting.value_chars);
 		else
-			rwmem_printq("0x%-*" PRIx64 " ", formatting.value_chars, oldval);
+			rwmem_printq("{:<#0{}x} ", oldval, formatting.value_chars);
 	}
 
 	if (op.value_valid) {
 		if (rwmem_opts.print_decimal)
-			rwmem_printq(":= %-*" PRIu64 " ", formatting.value_chars, userval);
+			rwmem_printq(":= {:<{}} ", userval, formatting.value_chars);
 		else
-			rwmem_printq(":= 0x%-*" PRIx64 " ", formatting.value_chars, userval);
+			rwmem_printq(":= {:<#0{}x} ", userval, formatting.value_chars);
 
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			if (rwmem_opts.print_decimal)
-				rwmem_printq("-> %-*" PRIu64 " ", formatting.value_chars, newval);
+				rwmem_printq("-> {:<{}} ", newval, formatting.value_chars);
 			else
-				rwmem_printq("-> 0x%-*" PRIx64 " ", formatting.value_chars, newval);
+				rwmem_printq("-> {:<#0{}x} ", newval, formatting.value_chars);
 		}
 	}
 
@@ -206,14 +208,14 @@ static void readwriteprint(const RwmemOp& op,
 {
 	if (rd) {
 		string name = sformat("%s.%s", rbd->name(rfd), rd->name(rfd));
-		rwmem_printq("%-*s ", formatting.name_chars, name.c_str());
+		rwmem_printq("{:<{}} ", name.c_str(), formatting.name_chars);
 	}
 
-	rwmem_printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
+	rwmem_printq("{:#0{}x} ", paddr, formatting.address_chars);
 	rwmem_vprint("Accessing 0x%0*" PRIx64, formatting.address_chars, paddr);
 
 	if (op_addr != paddr) {
-		rwmem_printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, op_addr);
+		rwmem_printq("(+{:#0{}x}) ", op_addr, formatting.offset_chars);
 		rwmem_vprint(" (+0x%0*" PRIx64 ")", formatting.offset_chars, op_addr);
 	}
 
@@ -227,9 +229,9 @@ static void readwriteprint(const RwmemOp& op,
 		oldval = mm->read(op_addr, width);
 
 		if (rwmem_opts.print_decimal)
-			rwmem_printq("= %*" PRIu64 " ", formatting.value_chars, oldval);
+			rwmem_printq("= {:{}} ", oldval, formatting.value_chars);
 		else
-			rwmem_printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
+			rwmem_printq("= {:#0{}x} ", oldval, formatting.value_chars);
 
 		newval = oldval;
 	}
@@ -242,9 +244,9 @@ static void readwriteprint(const RwmemOp& op,
 		v |= op.value << op.low;
 
 		if (rwmem_opts.print_decimal)
-			rwmem_printq(":= %*" PRIu64 " ", formatting.value_chars, v);
+			rwmem_printq(":= {:{}} ", v, formatting.value_chars);
 		else
-			rwmem_printq(":= 0x%0*" PRIx64 " ", formatting.value_chars, v);
+			rwmem_printq(":= {:#0{}x} ", v, formatting.value_chars);
 
 		fflush(stdout);
 
@@ -257,9 +259,9 @@ static void readwriteprint(const RwmemOp& op,
 			newval = mm->read(op_addr, width);
 
 			if (rwmem_opts.print_decimal)
-				rwmem_printq("-> %*" PRIu64, formatting.value_chars, newval);
+				rwmem_printq("-> {:{}}", newval, formatting.value_chars);
 			else
-				rwmem_printq("-> 0x%0*" PRIx64, formatting.value_chars, newval);
+				rwmem_printq("-> {:#0{}x}", newval, formatting.value_chars);
 		}
 	}
 
