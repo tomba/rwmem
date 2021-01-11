@@ -37,7 +37,7 @@ static string get_platform_name()
 
 void load_opts_from_ini_pre()
 {
-	vprint("Reading settings from rwmem.ini\n");
+	rwmem_vprint("Reading settings from rwmem.ini\n");
 
 	unsigned rs = rwmem_ini.get_int("main", "regsize", rwmem_opts.data_size * 8);
 

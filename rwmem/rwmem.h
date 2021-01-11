@@ -105,7 +105,7 @@ extern INIReader rwmem_ini;
 void load_opts_from_ini_pre();
 void detect_platform();
 
-#define vprint(format...)                        \
+#define rwmem_vprint(format...)                        \
 	do {                                     \
 		if (rwmem_opts.verbose)          \
 			fprintf(stderr, format); \
