@@ -30,7 +30,7 @@
 
 using namespace std;
 
-#define printq(format...)                                      \
+#define rwmem_printq(format...)                                      \
 	do {                                                   \
 		if (rwmem_opts.print_mode != PrintMode::Quiet) \
 			printf(format);                        \
@@ -160,38 +160,38 @@ static void print_field(unsigned high, unsigned low,
 	oldval = (oldval & mask) >> low;
 	userval = (userval & mask) >> low;
 
-	printq("  ");
+	rwmem_printq("  ");
 
 	if (fd)
-		printq("%-*s ", formatting.name_chars, fd->name(rfd));
+		rwmem_printq("%-*s ", formatting.name_chars, fd->name(rfd));
 
 	if (high == low)
-		printq("   %-2d = ", low);
+		rwmem_printq("   %-2d = ", low);
 	else
-		printq("%2d:%-2d = ", high, low);
+		rwmem_printq("%2d:%-2d = ", high, low);
 
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		if (rwmem_opts.print_decimal)
-			printq("%-*" PRIu64 " ", formatting.value_chars, oldval);
+			rwmem_printq("%-*" PRIu64 " ", formatting.value_chars, oldval);
 		else
-			printq("0x%-*" PRIx64 " ", formatting.value_chars, oldval);
+			rwmem_printq("0x%-*" PRIx64 " ", formatting.value_chars, oldval);
 	}
 
 	if (op.value_valid) {
 		if (rwmem_opts.print_decimal)
-			printq(":= %-*" PRIu64 " ", formatting.value_chars, userval);
+			rwmem_printq(":= %-*" PRIu64 " ", formatting.value_chars, userval);
 		else
-			printq(":= 0x%-*" PRIx64 " ", formatting.value_chars, userval);
+			rwmem_printq(":= 0x%-*" PRIx64 " ", formatting.value_chars, userval);
 
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			if (rwmem_opts.print_decimal)
-				printq("-> %-*" PRIu64 " ", formatting.value_chars, newval);
+				rwmem_printq("-> %-*" PRIu64 " ", formatting.value_chars, newval);
 			else
-				printq("-> 0x%-*" PRIx64 " ", formatting.value_chars, newval);
+				rwmem_printq("-> 0x%-*" PRIx64 " ", formatting.value_chars, newval);
 		}
 	}
 
-	printq("\n");
+	rwmem_printq("\n");
 }
 
 static void readwriteprint(const RwmemOp& op,
@@ -206,14 +206,14 @@ static void readwriteprint(const RwmemOp& op,
 {
 	if (rd) {
 		string name = sformat("%s.%s", rbd->name(rfd), rd->name(rfd));
-		printq("%-*s ", formatting.name_chars, name.c_str());
+		rwmem_printq("%-*s ", formatting.name_chars, name.c_str());
 	}
 
-	printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
+	rwmem_printq("0x%0*" PRIx64 " ", formatting.address_chars, paddr);
 	rwmem_vprint("Accessing 0x%0*" PRIx64, formatting.address_chars, paddr);
 
 	if (op_addr != paddr) {
-		printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, op_addr);
+		rwmem_printq("(+0x%0*" PRIx64 ") ", formatting.offset_chars, op_addr);
 		rwmem_vprint(" (+0x%0*" PRIx64 ")", formatting.offset_chars, op_addr);
 	}
 
@@ -227,9 +227,9 @@ static void readwriteprint(const RwmemOp& op,
 		oldval = mm->read(op_addr, width);
 
 		if (rwmem_opts.print_decimal)
-			printq("= %*" PRIu64 " ", formatting.value_chars, oldval);
+			rwmem_printq("= %*" PRIu64 " ", formatting.value_chars, oldval);
 		else
-			printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
+			rwmem_printq("= 0x%0*" PRIx64 " ", formatting.value_chars, oldval);
 
 		newval = oldval;
 	}
@@ -242,9 +242,9 @@ static void readwriteprint(const RwmemOp& op,
 		v |= op.value << op.low;
 
 		if (rwmem_opts.print_decimal)
-			printq(":= %*" PRIu64 " ", formatting.value_chars, v);
+			rwmem_printq(":= %*" PRIu64 " ", formatting.value_chars, v);
 		else
-			printq(":= 0x%0*" PRIx64 " ", formatting.value_chars, v);
+			rwmem_printq(":= 0x%0*" PRIx64 " ", formatting.value_chars, v);
 
 		fflush(stdout);
 
@@ -257,13 +257,13 @@ static void readwriteprint(const RwmemOp& op,
 			newval = mm->read(op_addr, width);
 
 			if (rwmem_opts.print_decimal)
-				printq("-> %*" PRIu64, formatting.value_chars, newval);
+				rwmem_printq("-> %*" PRIu64, formatting.value_chars, newval);
 			else
-				printq("-> 0x%0*" PRIx64, formatting.value_chars, newval);
+				rwmem_printq("-> 0x%0*" PRIx64, formatting.value_chars, newval);
 		}
 	}
 
-	printq("\n");
+	rwmem_printq("\n");
 
 	if (rwmem_opts.print_mode != PrintMode::RegFields)
 		return;
