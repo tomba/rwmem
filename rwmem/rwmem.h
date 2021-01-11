@@ -25,6 +25,12 @@ enum class PrintMode {
 	RegFields,
 };
 
+enum class NumberPrintMode {
+	Hex,
+	Dec,
+	Bin,
+};
+
 enum class TargetType {
 	None,
 	MMap,
@@ -87,7 +93,7 @@ struct RwmemOpts {
 
 	bool verbose;
 	bool ignore_base;
-	bool print_decimal;
+	NumberPrintMode number_print_mode = NumberPrintMode::Hex;
 };
 
 struct RwmemFormatting {

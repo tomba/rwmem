@@ -165,23 +165,47 @@ static void print_field(unsigned high, unsigned low,
 		rwmem_printq("{:2}:{:<2} = ", high, low);
 
 	if (rwmem_opts.write_mode != WriteMode::Write) {
-		if (rwmem_opts.print_decimal)
+		switch (rwmem_opts.number_print_mode) {
+		case NumberPrintMode::Dec:
 			rwmem_printq("{:<{}} ", oldval, formatting.value_chars);
-		else
+			break;
+		default:
+		case NumberPrintMode::Hex:
 			rwmem_printq("{:<#0{}x} ", oldval, formatting.value_chars);
+			break;
+		case NumberPrintMode::Bin:
+			rwmem_printq("{:<#0{}b} ", oldval, formatting.value_chars);
+			break;
+		}
 	}
 
 	if (op.value_valid) {
-		if (rwmem_opts.print_decimal)
+		switch (rwmem_opts.number_print_mode) {
+		case NumberPrintMode::Dec:
 			rwmem_printq(":= {:<{}} ", userval, formatting.value_chars);
-		else
+			break;
+		default:
+		case NumberPrintMode::Hex:
 			rwmem_printq(":= {:<#0{}x} ", userval, formatting.value_chars);
+			break;
+		case NumberPrintMode::Bin:
+			rwmem_printq(":= {:<#0{}b} ", userval, formatting.value_chars);
+			break;
+		}
 
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
-			if (rwmem_opts.print_decimal)
+			switch (rwmem_opts.number_print_mode) {
+			case NumberPrintMode::Dec:
 				rwmem_printq("-> {:<{}} ", newval, formatting.value_chars);
-			else
+				break;
+			default:
+			case NumberPrintMode::Hex:
 				rwmem_printq("-> {:<#0{}x} ", newval, formatting.value_chars);
+				break;
+			case NumberPrintMode::Bin:
+				rwmem_printq("-> {:<#0{}b} ", newval, formatting.value_chars);
+				break;
+			}
 		}
 	}
 
@@ -220,10 +244,18 @@ static void readwriteprint(const RwmemOp& op,
 	if (rwmem_opts.write_mode != WriteMode::Write) {
 		oldval = mm->read(op_addr, width);
 
-		if (rwmem_opts.print_decimal)
+		switch (rwmem_opts.number_print_mode) {
+		case NumberPrintMode::Dec:
 			rwmem_printq("= {:{}} ", oldval, formatting.value_chars);
-		else
+			break;
+		default:
+		case NumberPrintMode::Hex:
 			rwmem_printq("= {:#0{}x} ", oldval, formatting.value_chars);
+			break;
+		case NumberPrintMode::Bin:
+			rwmem_printq("= {:#0{}b} ", oldval, formatting.value_chars);
+			break;
+		}
 
 		newval = oldval;
 	}
@@ -235,10 +267,18 @@ static void readwriteprint(const RwmemOp& op,
 		v &= ~GENMASK(op.high, op.low);
 		v |= op.value << op.low;
 
-		if (rwmem_opts.print_decimal)
+		switch (rwmem_opts.number_print_mode) {
+		case NumberPrintMode::Dec:
 			rwmem_printq(":= {:{}} ", v, formatting.value_chars);
-		else
+			break;
+		default:
+		case NumberPrintMode::Hex:
 			rwmem_printq(":= {:#0{}x} ", v, formatting.value_chars);
+			break;
+		case NumberPrintMode::Bin:
+			rwmem_printq(":= {:#0{}b} ", v, formatting.value_chars);
+			break;
+		}
 
 		fflush(stdout);
 
@@ -250,10 +290,18 @@ static void readwriteprint(const RwmemOp& op,
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
 			newval = mm->read(op_addr, width);
 
-			if (rwmem_opts.print_decimal)
+			switch (rwmem_opts.number_print_mode) {
+			case NumberPrintMode::Dec:
 				rwmem_printq("-> {:{}}", newval, formatting.value_chars);
-			else
+				break;
+			default:
+			case NumberPrintMode::Hex:
 				rwmem_printq("-> {:#0{}x}", newval, formatting.value_chars);
+				break;
+			case NumberPrintMode::Bin:
+				rwmem_printq("-> {:#0{}b}", newval, formatting.value_chars);
+				break;
+			}
 		}
 	}
 
@@ -411,22 +459,27 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 	return op;
 }
 
-static uint32_t print_chars_needed(uint32_t numbytes, bool decimal)
+static uint32_t print_chars_needed(uint32_t numbytes, NumberPrintMode mode)
 {
-	if (!decimal)
-		return numbytes * 2; // for hex: char per byte and "0x"
-
-	switch (numbytes) {
-	case 1:
-		return std::numeric_limits<uint8_t>::digits10 + 1;
-	case 2:
-		return std::numeric_limits<uint16_t>::digits10 + 1;
-	case 4:
-		return std::numeric_limits<uint32_t>::digits10 + 1;
-	case 8:
-		return std::numeric_limits<uint64_t>::digits10 + 1;
+	switch (mode) {
 	default:
-		FAIL("Bad num bytes");
+	case NumberPrintMode::Hex:
+		return numbytes * 2; // for hex: char per byte and "0x"
+	case NumberPrintMode::Dec:
+		switch (numbytes) {
+		case 1:
+			return std::numeric_limits<uint8_t>::digits10 + 1;
+		case 2:
+			return std::numeric_limits<uint16_t>::digits10 + 1;
+		case 4:
+			return std::numeric_limits<uint32_t>::digits10 + 1;
+		case 8:
+			return std::numeric_limits<uint64_t>::digits10 + 1;
+		default:
+			FAIL("Bad num bytes");
+		}
+	case NumberPrintMode::Bin:
+		return numbytes * 8 + 2; // for bin: 8 chars per byte and "0b"
 	}
 }
 
@@ -444,9 +497,9 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;
-	formatting.address_chars = print_chars_needed(addr_size, false);
+	formatting.address_chars = print_chars_needed(addr_size, NumberPrintMode::Hex);
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = print_chars_needed(data_size, rwmem_opts.print_decimal);
+	formatting.value_chars = print_chars_needed(data_size, rwmem_opts.number_print_mode);
 
 	uint64_t op_offset = 0;
 
@@ -493,9 +546,9 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;
-	formatting.address_chars = print_chars_needed(addr_size, false);
+	formatting.address_chars = print_chars_needed(addr_size, NumberPrintMode::Hex);
 	formatting.offset_chars = DIV_ROUND_UP(fls(range), 4);
-	formatting.value_chars = print_chars_needed(data_size, rwmem_opts.print_decimal);
+	formatting.value_chars = print_chars_needed(data_size, rwmem_opts.number_print_mode);
 
 	const RegisterFileData* rfd = regfile->data();
 

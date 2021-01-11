@@ -40,6 +40,7 @@ __attribute__((noreturn)) static void usage()
 		"	--i2c <bus>:<addr>	i2c-mode, device bus and address\n"
 		"	--regs <file>		register description file\n"
 		"	--ignore-base		ignore base from register desc file\n"
+		"	-b,--binary		print values in binary\n"
 		"	-d,--decimal		print values in decimal\n");
 
 	exit(1);
@@ -206,7 +207,10 @@ void parse_cmdline(int argc, char** argv)
 			rwmem_opts.verbose = true;
 		}),
 		Option("d|decimal", []() {
-			rwmem_opts.print_decimal = true;
+			rwmem_opts.number_print_mode = NumberPrintMode::Dec;
+		}),
+		Option("b|binary", []() {
+			rwmem_opts.number_print_mode = NumberPrintMode::Bin;
 		}),
 		Option("h|help", []() {
 			usage();
