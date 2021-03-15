@@ -464,7 +464,7 @@ static uint32_t print_chars_needed(uint32_t numbytes, NumberPrintMode mode)
 	switch (mode) {
 	default:
 	case NumberPrintMode::Hex:
-		return numbytes * 2; // for hex: char per byte and "0x"
+		return numbytes * 2 + 2; // for hex: 2 chars per byte and "0x"
 	case NumberPrintMode::Dec:
 		switch (numbytes) {
 		case 1:
