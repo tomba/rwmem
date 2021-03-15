@@ -120,20 +120,20 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 
 static void print_regfile_all(const RegisterFileData* rfd)
 {
-	printf("%s: total %u/%u/%u",
+	fmt::print("{}: total {}/{}/{}",
 	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
 		const RegisterBlockData* rbd = rfd->at(bidx);
 
-		printf("  %s: %#" PRIx64 " %#" PRIx64 ", regs %u, endianness: %u/%u\n",
+		fmt::print("  {}: {:#x} {:#x}, regs {}, endianness: {}/{}\n",
 		       rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
 		       (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
 
 		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
 			const RegisterData* rd = rbd->at(rfd, ridx);
 
-			printf("    %s: %#" PRIx64 ", fields %u\n",
+			fmt::print("    {}: {:#x}, fields {}\n",
 			       rd->name(rfd), rd->offset(), rd->num_fields());
 
 			if (rwmem_opts.print_mode != PrintMode::RegFields)
@@ -142,7 +142,7 @@ static void print_regfile_all(const RegisterFileData* rfd)
 			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
 				const FieldData* fd = rd->at(rfd, fidx);
 
-				printf("      %s: %u:%u\n",
+				fmt::print("      {}: {}:{}\n",
 				       fd->name(rfd), fd->high(), fd->low());
 			}
 		}
@@ -558,11 +558,11 @@ static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch
 {
 	for (const RegMatch& m : matches) {
 		if (m.rd && m.fd)
-			printf("%s.%s:%s\n", m.rbd->name(rfd), m.rd->name(rfd), m.fd->name(rfd));
+			fmt::print("{}.{}:{}\n", m.rbd->name(rfd), m.rd->name(rfd), m.fd->name(rfd));
 		else if (m.rd)
-			printf("%s.%s\n", m.rbd->name(rfd), m.rd->name(rfd));
+			fmt::print("{}.{}\n", m.rbd->name(rfd), m.rd->name(rfd));
 		else
-			printf("%s\n", m.rbd->name(rfd));
+			fmt::print("{}\n", m.rbd->name(rfd));
 	}
 }
 
