@@ -113,20 +113,20 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 static void print_regfile_all(const RegisterFileData* rfd)
 {
 	fmt::print("{}: total {}/{}/{}",
-	       rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
+		   rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
 		const RegisterBlockData* rbd = rfd->at(bidx);
 
 		fmt::print("  {}: {:#x} {:#x}, regs {}, endianness: {}/{}\n",
-		       rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
-		       (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
+			   rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
+			   (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
 
 		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
 			const RegisterData* rd = rbd->at(rfd, ridx);
 
 			fmt::print("    {}: {:#x}, fields {}\n",
-			       rd->name(rfd), rd->offset(), rd->num_fields());
+				   rd->name(rfd), rd->offset(), rd->num_fields());
 
 			if (rwmem_opts.print_mode != PrintMode::RegFields)
 				continue;
@@ -135,7 +135,7 @@ static void print_regfile_all(const RegisterFileData* rfd)
 				const FieldData* fd = rd->at(rfd, fidx);
 
 				fmt::print("      {}: {}:{}\n",
-				       fd->name(rfd), fd->high(), fd->low());
+					   fd->name(rfd), fd->high(), fd->low());
 			}
 		}
 	}

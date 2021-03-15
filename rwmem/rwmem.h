@@ -113,13 +113,13 @@ extern INIReader rwmem_ini;
 void load_opts_from_ini_pre();
 void detect_platform();
 
-#define rwmem_vprint(format...)                        \
-	do {                                     \
-		if (rwmem_opts.verbose)          \
+#define rwmem_vprint(format...)                     \
+	do {                                        \
+		if (rwmem_opts.verbose)             \
 			fmt::print(stderr, format); \
 	} while (0)
 
-#define rwmem_printq(format...)                             \
+#define rwmem_printq(format...)                                \
 	do {                                                   \
 		if (rwmem_opts.print_mode != PrintMode::Quiet) \
 			fmt::print(format);                    \
