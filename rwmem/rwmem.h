@@ -11,6 +11,8 @@
 #include "inireader.h"
 #include "helpers.h"
 
+#include <fmt/format.h>
+
 enum class WriteMode {
 	Write,
 	ReadWrite,
@@ -108,7 +110,7 @@ void detect_platform();
 #define rwmem_vprint(format...)                        \
 	do {                                     \
 		if (rwmem_opts.verbose)          \
-			fprintf(stderr, format); \
+			fmt::print(stderr, format); \
 	} while (0)
 
 #endif /* __RWMEM_H__ */

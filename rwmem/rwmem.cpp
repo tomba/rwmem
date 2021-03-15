@@ -212,11 +212,11 @@ static void readwriteprint(const RwmemOp& op,
 	}
 
 	rwmem_printq("{:#0{}x} ", paddr, formatting.address_chars);
-	rwmem_vprint("Accessing 0x%0*" PRIx64, formatting.address_chars, paddr);
+	rwmem_vprint("Accessing {:#0{}x}", paddr, formatting.address_chars);
 
 	if (op_addr != paddr) {
 		rwmem_printq("(+{:#0{}x}) ", op_addr, formatting.offset_chars);
-		rwmem_vprint(" (+0x%0*" PRIx64 ")", formatting.offset_chars, op_addr);
+		rwmem_vprint(" (+{:#{}x})", op_addr, formatting.offset_chars);
 	}
 
 	rwmem_vprint("\n");
@@ -446,7 +446,7 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 	const uint8_t data_size = rwmem_opts.data_size;
 	const uint8_t addr_size = rwmem_opts.address_size;
 
-	rwmem_vprint("mmap offset=%#" PRIx64 " length=%#" PRIx64 "\n", op_base, range);
+	rwmem_vprint("mmap offset={:x} length={:x}\n", op_base, range);
 
 	mm->map(op_base, range, rwmem_opts.address_endianness, rwmem_opts.address_size, rwmem_opts.data_endianness, data_size);
 
@@ -495,7 +495,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 		data_size = rbd->data_size();
 	}
 
-	rwmem_vprint("mmap offset=%#" PRIx64 " length=%#" PRIx64 "\n", rb_access_base, rbd->size());
+	rwmem_vprint("mmap offset={:x} length={:x}\n", rb_access_base, rbd->size());
 
 	mm->map(rb_access_base, rbd->size(), addr_endianness, addr_size, data_endianness, data_size);
 
@@ -592,7 +592,7 @@ int main(int argc, char** argv)
 		if (!file_exists(path))
 			path = rwmem_opts.regfile;
 
-		rwmem_vprint("Reading regfile '%s'\n", path.c_str());
+		rwmem_vprint("Reading regfile '{}'\n", path.c_str());
 		regfile = make_unique<RegisterFile>(path.c_str());
 	}
 
