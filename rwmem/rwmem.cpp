@@ -207,7 +207,7 @@ static void readwriteprint(const RwmemOp& op,
 			   const RwmemFormatting& formatting)
 {
 	if (rd) {
-		string name = sformat("%s.%s", rbd->name(rfd), rd->name(rfd));
+		string name = fmt::format("{}.{}", rbd->name(rfd), rd->name(rfd));
 		rwmem_printq("{:<{}} ", name.c_str(), formatting.name_chars);
 	}
 
