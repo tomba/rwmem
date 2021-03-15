@@ -16,6 +16,7 @@ addons:
     packages: &packages
       - meson
       - ninja-build
+      - libfmt-dev
 
 # Need MYCC and MYCXX as travis overwrites CC and CXX
 
