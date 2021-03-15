@@ -113,4 +113,10 @@ void detect_platform();
 			fmt::print(stderr, format); \
 	} while (0)
 
+#define rwmem_printq(format...)                             \
+	do {                                                   \
+		if (rwmem_opts.print_mode != PrintMode::Quiet) \
+			fmt::print(format);                    \
+	} while (0)
+
 #endif /* __RWMEM_H__ */

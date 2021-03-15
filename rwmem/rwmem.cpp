@@ -28,15 +28,7 @@
 #include <fnmatch.h>
 #include <limits>
 
-#include <fmt/format.h>
-
 using namespace std;
-
-#define rwmem_printq(format...)                             \
-	do {                                                   \
-		if (rwmem_opts.print_mode != PrintMode::Quiet) \
-			fmt::print(format);                    \
-	} while (0)
 
 static vector<const RegisterData*> match_registers(const RegisterFileData* rfd, const RegisterBlockData* rbd, const string& pattern)
 {
