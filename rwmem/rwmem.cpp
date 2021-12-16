@@ -112,7 +112,7 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 
 static void print_regfile_all(const RegisterFileData* rfd)
 {
-	fmt::print("{}: total {}/{}/{}",
+	fmt::print("{}: total {}/{}/{}\n",
 		   rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
