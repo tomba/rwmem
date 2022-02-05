@@ -171,10 +171,10 @@ static void print_field(unsigned high, unsigned low,
 			break;
 		default:
 		case NumberPrintMode::Hex:
-			rwmem_printq("{:<#0{}x} ", oldval, formatting.value_chars);
+			rwmem_printq("{:#0{}x} ", oldval, formatting.value_chars);
 			break;
 		case NumberPrintMode::Bin:
-			rwmem_printq("{:<#0{}b} ", oldval, formatting.value_chars);
+			rwmem_printq("{:#0{}b} ", oldval, formatting.value_chars);
 			break;
 		}
 	}
@@ -186,10 +186,10 @@ static void print_field(unsigned high, unsigned low,
 			break;
 		default:
 		case NumberPrintMode::Hex:
-			rwmem_printq(":= {:<#0{}x} ", userval, formatting.value_chars);
+			rwmem_printq(":= {:#0{}x} ", userval, formatting.value_chars);
 			break;
 		case NumberPrintMode::Bin:
-			rwmem_printq(":= {:<#0{}b} ", userval, formatting.value_chars);
+			rwmem_printq(":= {:#0{}b} ", userval, formatting.value_chars);
 			break;
 		}
 
@@ -200,10 +200,10 @@ static void print_field(unsigned high, unsigned low,
 				break;
 			default:
 			case NumberPrintMode::Hex:
-				rwmem_printq("-> {:<#0{}x} ", newval, formatting.value_chars);
+				rwmem_printq("-> {:#0{}x} ", newval, formatting.value_chars);
 				break;
 			case NumberPrintMode::Bin:
-				rwmem_printq("-> {:<#0{}b} ", newval, formatting.value_chars);
+				rwmem_printq("-> {:#0{}b} ", newval, formatting.value_chars);
 				break;
 			}
 		}
