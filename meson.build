@@ -1,4 +1,5 @@
 project('rwmem', 'cpp', 'c',
+    version : '2.0.0',
     default_options : [
         'cpp_std=c++17',
     ],
