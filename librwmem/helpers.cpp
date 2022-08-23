@@ -16,6 +16,18 @@
 
 using namespace std;
 
+void err_vprint(fmt::string_view fmt, fmt::format_args args)
+{
+	fmt::vprint(stderr, fmt, args);
+	fputc('\n', stderr);
+}
+
+void errno_vprint(int eno, fmt::string_view fmt, fmt::format_args args)
+{
+	fmt::vprint(stderr, fmt, args);
+	fmt::print(": {}\n", strerror(eno));
+}
+
 void split(const string& s, char delim, vector<string>& elems)
 {
 	stringstream ss(s);

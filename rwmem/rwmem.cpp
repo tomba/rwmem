@@ -358,11 +358,11 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 	const RegisterData* rd = nullptr;
 
 	if (parse_u64(arg.address, &op.reg_offset) != 0) {
-		ERR_ON(!rfd, "Invalid address '%s'", arg.address.c_str());
+		ERR_ON(!rfd, "Invalid address '{}'", arg.address);
 
 		vector<string> strs = split(arg.address, '.');
 
-		ERR_ON(strs.size() > 2, "Invalid address '%s'", arg.address.c_str());
+		ERR_ON(strs.size() > 2, "Invalid address '{}'", arg.address);
 
 		const RegisterBlockData* rbd = rfd->find_block(strs[0]);
 
@@ -384,10 +384,10 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 
 	if (arg.range.size()) {
 		int r = parse_u64(arg.range, &op.range);
-		ERR_ON(r, "Invalid range '%s'", arg.range.c_str());
+		ERR_ON(r, "Invalid range '{}'", arg.range);
 
 		if (!arg.range_is_offset) {
-			ERR_ON(op.range <= op.reg_offset, "range '%s' is <= 0", arg.range.c_str());
+			ERR_ON(op.range <= op.reg_offset, "range '{}' is <= 0", arg.range);
 
 			op.range = op.range - op.reg_offset;
 		}
@@ -424,7 +424,7 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 			}
 		}
 
-		ERR_ON(!ok, "Field not found '%s'", arg.field.c_str());
+		ERR_ON(!ok, "Field not found '{}'", arg.field);
 
 		ERR_ON(fl >= rwmem_opts.data_size * 8 || fh >= rwmem_opts.data_size * 8,
 		       "Field bits higher than register size");
@@ -443,7 +443,7 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 	if (arg.value.size()) {
 		uint64_t value;
 		int r = parse_u64(arg.value, &value);
-		ERR_ON(r, "Invalid value '%s'", arg.value.c_str());
+		ERR_ON(r, "Invalid value '{}'", arg.value);
 
 		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.data_size * 8);
 

@@ -144,7 +144,7 @@ void parse_cmdline(int argc, char** argv)
 			parse_size_endian(s, &size, &endianness);
 
 			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-			       "Invalid size '%s'", s.c_str());
+			       "Invalid size '{}'", s);
 
 			rwmem_opts.data_size = size / 8;
 			rwmem_opts.data_endianness = endianness;
@@ -157,7 +157,7 @@ void parse_cmdline(int argc, char** argv)
 			parse_size_endian(s, &size, &endianness);
 
 			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-			       "Invalid address size '%s'", s.c_str());
+			       "Invalid address size '{}'", s);
 
 			rwmem_opts.address_size = size / 8;
 			rwmem_opts.address_endianness = endianness;
@@ -171,7 +171,7 @@ void parse_cmdline(int argc, char** argv)
 			else if (s == "rwr")
 				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
-				ERR("illegal write mode '%s'", s.c_str());
+				ERR("illegal write mode '{}'", s);
 		}),
 		Option("R|raw", []() {
 			rwmem_opts.raw_output = true;
@@ -184,7 +184,7 @@ void parse_cmdline(int argc, char** argv)
 			else if (s == "rf")
 				rwmem_opts.print_mode = PrintMode::RegFields;
 			else
-				ERR("illegal print mode '%s'", s.c_str());
+				ERR("illegal print mode '{}'", s);
 		}),
 		Option("|mmap=", [](string s) {
 			rwmem_opts.mmap_target = s;
@@ -220,7 +220,7 @@ void parse_cmdline(int argc, char** argv)
 	try {
 		optionset.parse(argc, argv);
 	} catch (std::exception const& e) {
-		ERR("Failed to parse options: %s\n", e.what());
+		ERR("Failed to parse options: {}\n", e.what());
 	}
 
 	const vector<string> params = optionset.params();

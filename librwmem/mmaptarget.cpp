@@ -19,7 +19,7 @@ MMapTarget::MMapTarget(const string& filename)
 {
 	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
-	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '%s'", filename.c_str());
+	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '{}'", filename);
 }
 
 MMapTarget::MMapTarget(const string& filename, Endianness data_endianness, uint64_t offset, uint64_t length)
@@ -88,7 +88,7 @@ uint64_t MMapTarget::read(uint64_t addr, uint8_t numbytes) const
 	case 8:
 		return read64(addr);
 	default:
-		FAIL("Illegal data regsize '%d'", numbytes);
+		FAIL("Illegal data regsize '{}'", numbytes);
 	}
 }
 
@@ -108,7 +108,7 @@ void MMapTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
 		write64(addr, value);
 		break;
 	default:
-		FAIL("Illegal data regsize '%d'", numbytes);
+		FAIL("Illegal data regsize '{}'", numbytes);
 	}
 }
 
