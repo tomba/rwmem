@@ -74,11 +74,6 @@ int parse_u64(const std::string& str, uint64_t* value);
 int fls(uint64_t num);
 #define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
-// Not thread safe
-std::string sformat(const char* fmt, ...);
-
-std::string to_binary_str(uint64_t value, uint8_t numbits);
-
 bool file_exists(const std::string& name);
 
 // Note: values stored in the register file

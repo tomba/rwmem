@@ -65,19 +65,6 @@ int fls(uint64_t num)
 	return i;
 }
 
-string to_binary_str(uint64_t value, uint8_t numbits)
-{
-	string s = "0b";
-
-	for (unsigned i = 0; i < numbits; ++i) {
-		uint8_t b = (value >> (numbits - i)) & 1;
-
-		s += b ? '1' : '0';
-	}
-
-	return s;
-}
-
 bool file_exists(const string& name)
 {
 	struct stat buffer;
