@@ -4,6 +4,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <unistd.h>
+#include <charconv>
 
 #include "rwmem.h"
 #include "helpers.h"
@@ -106,32 +107,38 @@ void parse_arg(string str, RwmemOptsArg* arg)
 		usage();
 }
 
-static bool ends_with(const std::string& value, const std::string& ending)
+static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 {
-	if (ending.size() > value.size())
-		return false;
-	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
-}
+	auto start = s.begin();
+	auto end = s.end();
+	uint32_t num;
 
-static void parse_size_endian(string s, uint32_t* size, Endianness* e)
-{
-	if (ends_with(s, "be")) {
-		*e = Endianness::Big;
-		s = s.substr(0, s.length() - 2);
-	} else if (ends_with(s, "le")) {
-		*e = Endianness::Little;
-		s = s.substr(0, s.length() - 2);
-	} else if (ends_with(s, "bes")) {
-		*e = Endianness::BigSwapped;
-		s = s.substr(0, s.length() - 3);
-	} else if (ends_with(s, "les")) {
-		*e = Endianness::LittleSwapped;
-		s = s.substr(0, s.length() - 3);
-	} else {
-		*e = Endianness::Default;
+	auto [ptr, ec] { std::from_chars(start, end, num) };
+
+	if (ec != std::errc()) {
+		ERR("Failed to parse size '{}'\n", s);
+		return;
 	}
 
-	*size = stoi(s);
+	ERR_ON(num != 8 && num != 16 && num != 32 && num != 64,
+	       "Invalid size '{}'", num);
+
+	string_view ending(ptr, end);
+
+	if (ending == "")
+		*e = Endianness::Default;
+	else if (ending == "be")
+		*e = Endianness::Big;
+	else if (ending == "le")
+		*e = Endianness::Little;
+	else if (ending == "bes")
+		*e = Endianness::BigSwapped;
+	else if (ending == "les")
+		*e = Endianness::LittleSwapped;
+	else
+		ERR("Bad endianness '{}'", ending);
+
+	*size = num;
 }
 
 void parse_cmdline(int argc, char** argv)
@@ -143,9 +150,6 @@ void parse_cmdline(int argc, char** argv)
 
 			parse_size_endian(s, &size, &endianness);
 
-			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-			       "Invalid size '{}'", s);
-
 			rwmem_opts.data_size = size / 8;
 			rwmem_opts.data_endianness = endianness;
 			rwmem_opts.user_data_size = true;
@@ -155,9 +159,6 @@ void parse_cmdline(int argc, char** argv)
 			uint32_t size;
 
 			parse_size_endian(s, &size, &endianness);
-
-			ERR_ON(size != 8 && size != 16 && size != 32 && size != 64,
-			       "Invalid address size '{}'", s);
 
 			rwmem_opts.address_size = size / 8;
 			rwmem_opts.address_endianness = endianness;
