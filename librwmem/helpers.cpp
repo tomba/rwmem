@@ -70,3 +70,12 @@ bool file_exists(const string& name)
 	struct stat buffer;
 	return (stat(name.c_str(), &buffer) == 0);
 }
+
+std::string get_home()
+{
+	char *p = getenv("HOME");
+	if (!p)
+		throw runtime_error("Failed to get home directory");
+
+	return string(p);
+}

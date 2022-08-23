@@ -614,7 +614,7 @@ static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch
 int main(int argc, char** argv)
 {
 	try {
-		rwmem_ini.load(string(getenv("HOME")) + "/.rwmem/rwmem.ini");
+		rwmem_ini.load(get_home() + "/.rwmem/rwmem.ini");
 	} catch (...) {
 	}
 
@@ -632,7 +632,7 @@ int main(int argc, char** argv)
 	unique_ptr<RegisterFile> regfile = nullptr;
 
 	if (!rwmem_opts.regfile.empty()) {
-		string path = string(getenv("HOME")) + "/.rwmem/" + rwmem_opts.regfile;
+		string path = get_home() + "/.rwmem/" + rwmem_opts.regfile;
 
 		if (!file_exists(path))
 			path = rwmem_opts.regfile;
