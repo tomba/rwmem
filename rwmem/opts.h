@@ -10,7 +10,7 @@ class Option
 
 public:
 	Option(const std::string& str, std::function<void()> func);
-	Option(const std::string& str, std::function<void(const std::string)> func);
+	Option(const std::string& str, std::function<void(std::string_view)> func);
 
 private:
 	void parse(const std::string& str);
@@ -19,7 +19,7 @@ private:
 	std::string m_long;
 	int m_has_arg;
 	std::function<void()> m_void_func;
-	std::function<void(const std::string)> m_func;
+	std::function<void(std::string_view)> m_func;
 };
 
 class OptionSet
@@ -29,7 +29,7 @@ public:
 
 	void parse(int argc, char** argv);
 
-	const std::vector<std::string> params() const { return m_params; }
+	const std::vector<std::string>& params() const { return m_params; }
 
 private:
 	const Option& find_opt(int c);

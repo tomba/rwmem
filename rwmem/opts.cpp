@@ -14,7 +14,7 @@ Option::Option(const string& str, function<void()> func)
 	parse(str);
 }
 
-Option::Option(const string& str, function<void(const string)> func)
+Option::Option(const string& str, function<void(string_view)> func)
 	: m_func(func)
 {
 	parse(str);
@@ -95,7 +95,7 @@ void OptionSet::parse(int argc, char** argv)
 				throw std::invalid_argument(string("Missing argument to --") + o.m_long);
 		}
 
-		string sarg = { optarg ?: "" };
+		string_view sarg = optarg ?: "";
 
 		const Option& opt = find_opt(c);
 

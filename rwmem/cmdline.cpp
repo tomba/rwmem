@@ -144,7 +144,7 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 void parse_cmdline(int argc, char** argv)
 {
 	OptionSet optionset = {
-		Option("s=", [](string s) {
+		Option("s=", [](string_view s) {
 			Endianness endianness;
 			uint32_t size;
 
@@ -154,7 +154,7 @@ void parse_cmdline(int argc, char** argv)
 			rwmem_opts.data_endianness = endianness;
 			rwmem_opts.user_data_size = true;
 		}),
-		Option("S=", [](string s) {
+		Option("S=", [](string_view s) {
 			Endianness endianness;
 			uint32_t size;
 
@@ -164,7 +164,7 @@ void parse_cmdline(int argc, char** argv)
 			rwmem_opts.address_endianness = endianness;
 			rwmem_opts.user_address_size = true;
 		}),
-		Option("w=", [](string s) {
+		Option("w=", [](string_view s) {
 			if (s == "w")
 				rwmem_opts.write_mode = WriteMode::Write;
 			else if (s == "rw")
@@ -177,7 +177,7 @@ void parse_cmdline(int argc, char** argv)
 		Option("R|raw", []() {
 			rwmem_opts.raw_output = true;
 		}),
-		Option("p=", [](string s) {
+		Option("p=", [](string_view s) {
 			if (s == "q")
 				rwmem_opts.print_mode = PrintMode::Quiet;
 			else if (s == "r")
@@ -187,18 +187,18 @@ void parse_cmdline(int argc, char** argv)
 			else
 				ERR("illegal print mode '{}'", s);
 		}),
-		Option("|mmap=", [](string s) {
+		Option("|mmap=", [](string_view s) {
 			rwmem_opts.mmap_target = s;
 			rwmem_opts.target_type = TargetType::MMap;
 		}),
-		Option("|i2c=", [](string s) {
+		Option("|i2c=", [](string_view s) {
 			rwmem_opts.i2c_target = s;
 			rwmem_opts.target_type = TargetType::I2C;
 		}),
-		Option("|regs=", [](string s) {
+		Option("|regs=", [](string_view s) {
 			rwmem_opts.regfile = s;
 		}),
-		Option("|list", [](string s) {
+		Option("|list", [](string_view s) {
 			rwmem_opts.show_list = true;
 		}),
 		Option("|ignore-base", []() {
@@ -224,7 +224,7 @@ void parse_cmdline(int argc, char** argv)
 		ERR("Failed to parse options: {}\n", e.what());
 	}
 
-	const vector<string> params = optionset.params();
+	const vector<string>& params = optionset.params();
 
 	if (!rwmem_opts.show_list && params.empty())
 		usage();
