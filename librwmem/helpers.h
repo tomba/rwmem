@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cerrno>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <string.h>
