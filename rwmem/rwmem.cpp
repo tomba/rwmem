@@ -423,7 +423,7 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 
 		bool ok = false;
 
-		if (sscanf(arg.field.c_str(), "%i:%i", &fh, &fl) == 2)
+		if (sscanf(arg.field.c_str(), "%u:%u", &fh, &fl) == 2)
 			ok = true;
 
 		if (!ok) {

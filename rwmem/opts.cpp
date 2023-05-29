@@ -95,7 +95,7 @@ void OptionSet::parse(int argc, char** argv)
 				throw std::invalid_argument(string("Missing argument to --") + o.m_long);
 		}
 
-		string_view sarg = optarg ?: "";
+		string_view sarg = optarg ? optarg : "";
 
 		const Option& opt = find_opt(c);
 
