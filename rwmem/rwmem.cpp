@@ -364,19 +364,36 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 
 		ERR_ON(strs.size() > 2, "Invalid address '{}'", arg.address);
 
-		const RegisterBlockData* rbd = rfd->find_block(strs[0]);
+		// First try with str[0] meaning the reg block, if that fails
+		// search all regblocks for the str[0] register.
+		if (const RegisterBlockData* rbd = rfd->find_block(strs[0])) {
+			op.rbd = rbd;
 
-		ERR_ON(!rbd, "Failed to find register block");
+			if (strs.size() > 1) {
+				op.rds = match_registers(rfd, rbd, strs[1]);
+				ERR_ON(op.rds.empty(), "Failed to find register");
+				rd = op.rds[0];
+			} else {
+				rd = rbd->at(rfd, 0);
+				ERR_ON(!rd, "Failed to figure out first register");
+			}
+		} else if (strs.size() == 1) {
+			for (uint32_t bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
+				const RegisterBlockData* rbd = rfd->at(bidx);
+				const auto rds = match_registers(rfd, rbd, strs[0]);
+				if (!rds.empty()) {
+					op.rbd = rbd;
+					op.rds = rds;
+					break;
+				}
+			}
 
-		op.rbd = rbd;
+			ERR_ON(op.rds.empty(), "Failed to find reg by search");
 
-		if (strs.size() > 1) {
-			op.rds = match_registers(rfd, rbd, strs[1]);
-			ERR_ON(op.rds.empty(), "Failed to find register");
 			rd = op.rds[0];
-		} else {
-			rd = rbd->at(rfd, 0);
 			ERR_ON(!rd, "Failed to figure out first register");
+		} else {
+			ERR("Failed to find register block or register");
 		}
 	}
 
