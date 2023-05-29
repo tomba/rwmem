@@ -77,7 +77,7 @@ unique_ptr<Register> RegisterBlock::get_register(const string& name) const
 RegisterFile::RegisterFile(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
-	ERR_ON_ERRNO(fd < 0, "Open regfile '%s' failed", filename.c_str());
+	ERR_ON_ERRNO(fd < 0, "Open regfile '{}' failed", filename);
 
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);

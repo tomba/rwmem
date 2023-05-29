@@ -42,7 +42,7 @@ void load_opts_from_ini_pre()
 	unsigned rs = rwmem_ini.get_int("main", "regsize", rwmem_opts.data_size * 8);
 
 	if (rs != 8 && rs != 16 && rs != 32 && rs != 64)
-		ERR("Invalid size '%d'", rs);
+		ERR("Invalid size '{}'", rs);
 
 	rwmem_opts.data_size = rs / 8;
 }
