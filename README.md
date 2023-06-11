@@ -79,6 +79,15 @@ Use `meson configure build` to see all the configuration options and their curre
 
 See `meson_options.txt` for rwmem specific options.
 
+### Build a static rwmem
+
+You can build a static rwmem executable e.g. with:
+
+```
+meson setup -Dfmt:cpp_std=c++20 -Dbuildtype=minsize -Db_lto=true -Dwrap_mode=forcefallback -Dpyrwmem=disabled -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
+ninja -C build
+```
+
 ## Examples without register file
 
 Show what's in memory location 0x58001000
