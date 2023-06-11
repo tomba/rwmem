@@ -72,7 +72,7 @@ endian = 'little'
 You can use meson options to configure the build. E.g.
 
 ```
-meson build -Dstatic-libc=true
+meson build -Dpyrwmem=disabled
 ```
 
 Use `meson configure build` to see all the configuration options and their current values.

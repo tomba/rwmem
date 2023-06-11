@@ -23,14 +23,6 @@ endif
 
 add_project_arguments(cpp_arguments, language : 'cpp')
 
-link_arguments = []
-
-if get_option('static-libc')
-    link_arguments += ['-static-libgcc', '-static-libstdc++']
-endif
-
-add_global_link_arguments(link_arguments, language : 'cpp')
-
 libfmt_dep = dependency('fmt', fallback : ['fmt', 'fmt_dep'])
 
 subdir('librwmem')

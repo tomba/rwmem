@@ -1,5 +1,2 @@
 option('pyrwmem', type : 'feature', value : 'auto',
        description : 'Build python bindings')
-
-option('static-libc', type : 'boolean', value : false,
-       description : 'Build with -static-libgcc -static-libstdc++')
