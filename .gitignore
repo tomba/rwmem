@@ -5,3 +5,4 @@ __pycache__
 subprojects/packagecache/
 subprojects/inih-*/
 subprojects/pybind11-*/
+subprojects/fmt-*/

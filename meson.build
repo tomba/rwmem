@@ -31,7 +31,7 @@ endif
 
 add_global_link_arguments(link_arguments, language : 'cpp')
 
-libfmt_dep = dependency('fmt')
+libfmt_dep = dependency('fmt', fallback : ['fmt', 'fmt_dep'])
 
 subdir('librwmem')
 subdir('rwmem')
