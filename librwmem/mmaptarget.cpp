@@ -11,8 +11,8 @@
 
 using namespace std;
 
-static const unsigned pagesize = sysconf(_SC_PAGESIZE);
-static const unsigned pagemask = pagesize - 1;
+static const uint64_t pagesize = sysconf(_SC_PAGESIZE);
+static const uint64_t pagemask = pagesize - 1;
 
 MMapTarget::MMapTarget(const string& filename)
 	: m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
@@ -44,7 +44,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endiannes
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length - mmap_offset + pagesize - 1) & ~pagemask;
 
-	//printf("mmap offset=%#" PRIx64 " length=%#" PRIx64 " mmap_offset=0x%jx mmap_len=0x%zx\n",
+	//fmt::print("mmap offset={:#x} length={:#x} mmap_offset={:#x} mmap_len={:#x}\n",
 	//       offset, length, mmap_offset, mmap_len);
 
 	struct stat st;
