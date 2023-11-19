@@ -7,7 +7,6 @@ class MMapTarget : public ITarget
 {
 public:
 	MMapTarget(const std::string& filename);
-	MMapTarget(const std::string& filename, Endianness data_endianness, uint64_t offset, uint64_t length);
 	~MMapTarget();
 
 	// addr_endianness, addr_size are ignored

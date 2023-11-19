@@ -92,8 +92,7 @@ PYBIND11_MODULE(pyrwmem, m)
 		.def("write", (void (ITarget::*)(uint64_t, uint8_t, uint64_t)) & ITarget::write);
 
 	py::class_<MMapTarget, ITarget>(m, "MMapTarget")
-		.def(py::init<const string&>())
-		.def(py::init<const string&, Endianness, uint64_t, uint64_t>());
+		.def(py::init<const string&>());
 
 	py::class_<I2CTarget, ITarget>(m, "I2CTarget")
 		.def(py::init<unsigned, uint16_t>());

@@ -22,12 +22,6 @@ MMapTarget::MMapTarget(const string& filename)
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '{}'", filename);
 }
 
-MMapTarget::MMapTarget(const string& filename, Endianness data_endianness, uint64_t offset, uint64_t length)
-	: MMapTarget(filename)
-{
-	map(offset, length, Endianness::Default, 0, data_endianness, 0);
-}
-
 MMapTarget::~MMapTarget()
 {
 	unmap();
