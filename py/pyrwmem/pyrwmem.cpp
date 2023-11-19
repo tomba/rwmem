@@ -83,6 +83,11 @@ PYBIND11_MODULE(pyrwmem, m)
 		.value("BigSwapped", Endianness::BigSwapped)
 		.value("LittleSwapped", Endianness::LittleSwapped);
 
+	py::enum_<MapMode>(m, "MapMode")
+		.value("Read", MapMode::Read)
+		.value("Write", MapMode::Write)
+		.value("ReadWrite", MapMode::ReadWrite);
+
 	py::class_<ITarget>(m, "ITarget")
 		.def("map", &ITarget::map)
 		.def("unmap", &ITarget::unmap)

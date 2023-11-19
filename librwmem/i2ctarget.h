@@ -11,7 +11,10 @@ public:
 	~I2CTarget();
 
 	// length is ignored
-	void map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size) override;
+	void map(uint64_t offset, uint64_t length,
+		 Endianness addr_endianness, uint8_t addr_size,
+		 Endianness data_endianness, uint8_t data_size,
+		 MapMode mode) override;
 	void unmap() override;
 
 	uint64_t read(uint64_t addr) const override { return read(addr, m_data_bytes); }

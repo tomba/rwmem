@@ -510,7 +510,9 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 
 	rwmem_vprint("mmap offset={:x} length={:x}\n", op_base, range);
 
-	mm->map(op_base, range, rwmem_opts.address_endianness, rwmem_opts.address_size, rwmem_opts.data_endianness, data_size);
+	mm->map(op_base, range, rwmem_opts.address_endianness, rwmem_opts.address_size,
+		rwmem_opts.data_endianness, data_size,
+	        op.value_valid ? MapMode::ReadWrite : MapMode::Read);
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;
@@ -559,7 +561,8 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 
 	rwmem_vprint("mmap offset={:x} length={:x}\n", rb_access_base, rbd->size());
 
-	mm->map(rb_access_base, rbd->size(), addr_endianness, addr_size, data_endianness, data_size);
+	mm->map(rb_access_base, rbd->size(), addr_endianness, addr_size, data_endianness, data_size,
+	        op.value_valid ? MapMode::ReadWrite : MapMode::Read);
 
 	RwmemFormatting formatting;
 	formatting.name_chars = 30;

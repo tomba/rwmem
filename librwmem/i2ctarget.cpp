@@ -24,7 +24,10 @@ I2CTarget::~I2CTarget()
 	unmap();
 }
 
-void I2CTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
+void I2CTarget::map(uint64_t offset, uint64_t length,
+		    Endianness addr_endianness, uint8_t addr_size,
+		    Endianness data_endianness, uint8_t data_size,
+		    MapMode mode)
 {
 	unmap();
 

@@ -25,11 +25,33 @@ MMapTarget::~MMapTarget()
 	unmap();
 }
 
-void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
+void MMapTarget::map(uint64_t offset, uint64_t length,
+		     Endianness addr_endianness, uint8_t addr_size,
+		     Endianness data_endianness, uint8_t data_size,
+		     MapMode mode)
 {
 	unmap();
 
-	m_fd = open(m_filename.c_str(), O_RDWR | O_SYNC);
+	int oflag;
+	int prot;
+
+	switch (mode) {
+	case MapMode::Read:
+		oflag = O_RDONLY;
+		prot = PROT_READ;
+		break;
+	case MapMode::Write:
+		oflag = O_WRONLY;
+		prot = PROT_WRITE;
+		break;
+	default:
+	case MapMode::ReadWrite:
+		oflag = O_RDWR;
+		prot = PROT_READ | PROT_WRITE;
+		break;
+	}
+
+	m_fd = open(m_filename.c_str(), oflag | O_SYNC);
 
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '{}'", m_filename);
 
@@ -50,7 +72,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endiannes
 		ERR_ON((size_t)st.st_size < offset + length, "Trying to access file past its end");
 
 	m_map_base = mmap(nullptr, mmap_len,
-			  PROT_READ | PROT_WRITE,
+			  prot,
 			  MAP_SHARED, m_fd, mmap_offset);
 
 	ERR_ON_ERRNO(m_map_base == MAP_FAILED, "failed to mmap");

@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -85,6 +86,7 @@ class RwmemNumericWriteTests(RwmemTestBase):
         self.tmpfile_name = self.tmpfile.name
 
         shutil.copy2("data.bin", self.tmpfile_name)
+        os.chmod(self.tmpfile_name, stat.S_IREAD | stat.S_IWRITE)
 
         self.rwmem_common_opts = ['--mmap=' + self.tmpfile_name]
 
