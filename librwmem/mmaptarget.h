@@ -20,6 +20,7 @@ public:
 	void write(uint64_t addr, uint8_t numbytes, uint64_t value) override;
 
 private:
+	std::string m_filename;
 	int m_fd;
 
 	uint64_t m_offset;

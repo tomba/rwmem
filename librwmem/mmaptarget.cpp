@@ -15,22 +15,23 @@ static const uint64_t pagesize = sysconf(_SC_PAGESIZE);
 static const uint64_t pagemask = pagesize - 1;
 
 MMapTarget::MMapTarget(const string& filename)
-	: m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
+	: m_filename(filename), m_fd(-1), m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
 {
-	m_fd = open(filename.c_str(), O_RDWR | O_SYNC);
 
-	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '{}'", filename);
 }
 
 MMapTarget::~MMapTarget()
 {
 	unmap();
-	close(m_fd);
 }
 
 void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
 {
 	unmap();
+
+	m_fd = open(m_filename.c_str(), O_RDWR | O_SYNC);
+
+	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '{}'", m_filename);
 
 	m_data_endianness = data_endianness;
 	m_data_size = data_size;
@@ -61,6 +62,12 @@ void MMapTarget::map(uint64_t offset, uint64_t length, Endianness addr_endiannes
 
 void MMapTarget::unmap()
 {
+	if (m_fd == -1)
+		return;
+
+	close(m_fd);
+	m_fd = -1;
+
 	if (m_map_base == MAP_FAILED)
 		return;
 

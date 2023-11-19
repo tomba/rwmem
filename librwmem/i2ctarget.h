@@ -7,12 +7,12 @@
 class I2CTarget : public ITarget
 {
 public:
-	I2CTarget(unsigned adapter_nr, uint16_t i2c_addr);
+	I2CTarget(uint16_t adapter_nr, uint16_t i2c_addr);
 	~I2CTarget();
 
 	// length is ignored
 	void map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size) override;
-	void unmap() override {}
+	void unmap() override;
 
 	uint64_t read(uint64_t addr) const override { return read(addr, m_data_bytes); }
 	void write(uint64_t addr, uint64_t value) override { write(addr, m_data_bytes, value); };
@@ -21,8 +21,9 @@ public:
 	void write(uint64_t addr, uint8_t numbytes, uint64_t value) override;
 
 private:
-	int m_fd;
+	uint16_t m_adapter_nr;
 	uint16_t m_i2c_addr;
+	int m_fd;
 
 	uint64_t m_offset;
 

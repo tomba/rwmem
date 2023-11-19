@@ -1,6 +1,7 @@
 #include "i2ctarget.h"
 #include "helpers.h"
 
+#include <fmt/format.h>
 #include <stdexcept>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,11 +13,22 @@
 
 using namespace std;
 
-I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr)
-	: m_i2c_addr(i2c_addr), m_offset(0)
+I2CTarget::I2CTarget(uint16_t adapter_nr, uint16_t i2c_addr)
+	: m_adapter_nr(adapter_nr), m_i2c_addr(i2c_addr), m_fd(-1), m_offset(0)
 {
-	string name("/dev/i2c-");
-	name += to_string(adapter_nr);
+
+}
+
+I2CTarget::~I2CTarget()
+{
+	unmap();
+}
+
+void I2CTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
+{
+	unmap();
+
+	string name = fmt::format("/dev/i2c-{}", m_adapter_nr);
 
 	m_fd = open(name.c_str(), O_RDWR);
 	ERR_ON_ERRNO(m_fd < 0, "Failed to open i2c device");
@@ -26,20 +38,22 @@ I2CTarget::I2CTarget(unsigned adapter_nr, uint16_t i2c_addr)
 	ERR_ON_ERRNO(r < 0, "failed to get i2c functions");
 
 	ERR_ON(!(i2c_funcs & I2C_FUNC_I2C), "no i2c functionality");
-}
 
-I2CTarget::~I2CTarget()
-{
-	close(m_fd);
-}
-
-void I2CTarget::map(uint64_t offset, uint64_t length, Endianness addr_endianness, uint8_t addr_size, Endianness data_endianness, uint8_t data_size)
-{
 	m_offset = offset;
 	m_address_endianness = addr_endianness;
 	m_address_bytes = addr_size;
 	m_data_endianness = data_endianness;
 	m_data_bytes = data_size;
+}
+
+void I2CTarget::unmap()
+{
+	if (m_fd == -1)
+		return;
+
+	close(m_fd);
+
+	m_fd = -1;
 }
 
 static uint32_t swap32(uint32_t v)
