@@ -31,19 +31,19 @@ class RwmemTests(unittest.TestCase):
         self.rwmem_common_opts = ['--mmap=data.bin']
 
         self.assertOutput(['0'],
-                          '0x00 = 0x0f7216c2 \n')
+                          '0x00 = 0x0f7216c2\n')
 
         self.assertOutput(['-s8', '0'],
-                          '0x00 = 0xc2 \n')
+                          '0x00 = 0xc2\n')
 
         self.assertOutput(['-s16', '0'],
-                          '0x00 = 0x16c2 \n')
+                          '0x00 = 0x16c2\n')
 
         self.assertOutput(['-s16', '0'],
-                          '0x00 = 0x16c2 \n')
+                          '0x00 = 0x16c2\n')
 
         self.assertOutput(['-s32', '0'],
-                          '0x00 = 0x0f7216c2 \n')
+                          '0x00 = 0x0f7216c2\n')
 
 
 if __name__ == '__main__':

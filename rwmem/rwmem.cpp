@@ -246,14 +246,14 @@ static void readwriteprint(const RwmemOp& op,
 
 		switch (rwmem_opts.number_print_mode) {
 		case NumberPrintMode::Dec:
-			rwmem_printq("= {:{}} ", oldval, formatting.value_chars);
+			rwmem_printq("= {:{}}", oldval, formatting.value_chars);
 			break;
 		default:
 		case NumberPrintMode::Hex:
-			rwmem_printq("= {:#0{}x} ", oldval, formatting.value_chars);
+			rwmem_printq("= {:#0{}x}", oldval, formatting.value_chars);
 			break;
 		case NumberPrintMode::Bin:
-			rwmem_printq("= {:#0{}b} ", oldval, formatting.value_chars);
+			rwmem_printq("= {:#0{}b}", oldval, formatting.value_chars);
 			break;
 		}
 
@@ -269,14 +269,14 @@ static void readwriteprint(const RwmemOp& op,
 
 		switch (rwmem_opts.number_print_mode) {
 		case NumberPrintMode::Dec:
-			rwmem_printq(":= {:{}} ", v, formatting.value_chars);
+			rwmem_printq(" := {:{}}", v, formatting.value_chars);
 			break;
 		default:
 		case NumberPrintMode::Hex:
-			rwmem_printq(":= {:#0{}x} ", v, formatting.value_chars);
+			rwmem_printq(" := {:#0{}x}", v, formatting.value_chars);
 			break;
 		case NumberPrintMode::Bin:
-			rwmem_printq(":= {:#0{}b} ", v, formatting.value_chars);
+			rwmem_printq(" := {:#0{}b}", v, formatting.value_chars);
 			break;
 		}
 
@@ -292,14 +292,14 @@ static void readwriteprint(const RwmemOp& op,
 
 			switch (rwmem_opts.number_print_mode) {
 			case NumberPrintMode::Dec:
-				rwmem_printq("-> {:{}}", newval, formatting.value_chars);
+				rwmem_printq(" -> {:{}}", newval, formatting.value_chars);
 				break;
 			default:
 			case NumberPrintMode::Hex:
-				rwmem_printq("-> {:#0{}x}", newval, formatting.value_chars);
+				rwmem_printq(" -> {:#0{}x}", newval, formatting.value_chars);
 				break;
 			case NumberPrintMode::Bin:
-				rwmem_printq("-> {:#0{}b}", newval, formatting.value_chars);
+				rwmem_printq(" -> {:#0{}b}", newval, formatting.value_chars);
 				break;
 			}
 		}
