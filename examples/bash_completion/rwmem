@@ -21,9 +21,16 @@ _rwmem()
 		return 0
 	fi
 
-	# TODO look for --regs from the cmdline and use that
+	RWMEM_OPTS=
 
-	COMPREPLY=( $(rwmem --list "$cur"*) )
+	case "$prev" in
+	--@(regs=*))
+		REG_FILE="${prev#*=}"
+		RWMEM_OPTS="$prev"
+		;;
+	esac
+
+	COMPREPLY=( $(rwmem $RWMEM_OPTS --list "$cur"*) )
 
 	# if single match, append ":" or "." or " ", depending on what we're completing
 	if [ ${#COMPREPLY[@]} -eq 1 ]; then
