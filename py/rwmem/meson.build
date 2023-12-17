@@ -25,7 +25,7 @@ pyrwmem_args = [ '-fvisibility=hidden' ]
 
 destdir = get_option('libdir') / 'python' + py3_dep.version() / 'site-packages/pyrwmem'
 
-pyrwmem = shared_module('pyrwmem',
+pyrwmem = shared_module('rwmem',
                       pyrwmem_sources,
                       install : true,
                       install_dir : destdir,

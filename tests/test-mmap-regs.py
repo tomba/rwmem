@@ -2,7 +2,7 @@
 
 import os
 import unittest
-import pyrwmem as rw
+import rwmem as rw
 
 class MmapTests(unittest.TestCase):
     def setUp(self):

@@ -1,4 +1,4 @@
-from .pyrwmem import *
+from .rwmem import *
 
 class MappedRegister:
     def __init__(self, map, reg, size, regblock):

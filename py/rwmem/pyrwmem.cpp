@@ -10,7 +10,7 @@ namespace py = pybind11;
 
 using namespace std;
 
-PYBIND11_MODULE(pyrwmem, m)
+PYBIND11_MODULE(rwmem, m)
 {
 	m.def("get_field_value", [](uint64_t r_val, uint8_t h, uint8_t l) {
 		uint64_t mask = GENMASK(h, l);

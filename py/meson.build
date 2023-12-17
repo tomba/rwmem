@@ -1,1 +1,1 @@
-subdir('pyrwmem')
+subdir('rwmem')

@@ -5,7 +5,7 @@ import unittest
 import tempfile
 import shutil
 import stat
-import pyrwmem as rw
+import rwmem as rw
 
 class MmapTests(unittest.TestCase):
     def setUp(self):

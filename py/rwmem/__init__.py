@@ -1,2 +1,2 @@
-from .pyrwmem import *
+from .rwmem import *
 from .mappedregister import *
