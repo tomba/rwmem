@@ -7,12 +7,15 @@ import subprocess
 import tempfile
 import unittest
 
+RWMEM_CMD_PATH = os.path.dirname(os.path.abspath(__file__)) + '/../build/rwmem/rwmem'
+DATA_BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/data.bin'
+
 class RwmemTestBase(unittest.TestCase):
     def setUp(self):
         if 'RWMEM_CMD' in os.environ:
             self.rwmem_cmd =  os.environ['RWMEM_CMD']
         else:
-            self.rwmem_cmd = '../build/rwmem/rwmem'
+            self.rwmem_cmd = RWMEM_CMD_PATH
 
         self.rwmem_common_opts = []
 
@@ -31,7 +34,7 @@ class RwmemNumericReadTests(RwmemTestBase):
     def setUp(self):
         super().setUp()
 
-        self.rwmem_common_opts = ['--mmap=data.bin']
+        self.rwmem_common_opts = ['--mmap=' + DATA_BIN_PATH]
 
     def test_numeric_reads_single(self):
         self.assertOutput(['0'],
@@ -85,7 +88,7 @@ class RwmemNumericWriteTests(RwmemTestBase):
         self.tmpfile = tempfile.NamedTemporaryFile(mode='w+b', suffix='.bin', delete=True)
         self.tmpfile_name = self.tmpfile.name
 
-        shutil.copy2("data.bin", self.tmpfile_name)
+        shutil.copy2(DATA_BIN_PATH, self.tmpfile_name)
         os.chmod(self.tmpfile_name, stat.S_IREAD | stat.S_IWRITE)
 
         self.rwmem_common_opts = ['--mmap=' + self.tmpfile_name]
