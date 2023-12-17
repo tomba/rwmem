@@ -38,6 +38,7 @@ pyrwmem = shared_module('pyrwmem',
 
 pyfiles = [
     '__init__.py',
+    'mappedregister.py',
 ]
 
 foreach file : pyfiles
