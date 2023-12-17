@@ -2,7 +2,8 @@
 
 import pyrwmem as rw
 
-map = rw.MMapTarget("py/tests/test.bin", rw.Endianness.Big, 0, 32)
+map = rw.MMapTarget("py/tests/test.bin")
+map.map(0, 32, rw.Endianness.Default, 4, rw.Endianness.Big, 4, rw.MapMode.Read)
 
 assert(map.read(0, 1) == 0x00)
 assert(map.read(1, 1) == 0x11)

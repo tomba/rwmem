@@ -14,14 +14,11 @@ public:
 	virtual ~ITarget() {}
 
 	virtual void map(uint64_t offset, uint64_t length,
-			 Endianness addr_endianness, uint8_t addr_size,
-			 Endianness data_endianness, uint8_t data_size,
-			 MapMode mode) = 0;
+			 Endianness default_addr_endianness = Endianness::Default, uint8_t default_addr_size = sizeof(void*),
+			 Endianness default_data_endianness = Endianness::Default, uint8_t default_data_size = 4,
+			 MapMode mode = MapMode::ReadWrite) = 0;
 	virtual void unmap() = 0;
 
-	virtual uint64_t read(uint64_t addr) const = 0;
-	virtual void write(uint64_t addr, uint64_t value) = 0;
-
-	virtual uint64_t read(uint64_t addr, uint8_t numbytes) const = 0;
-	virtual void write(uint64_t addr, uint8_t numbytes, uint64_t value) = 0;
+	virtual uint64_t read(uint64_t addr, uint8_t nbytes = 0, Endianness endianness = Endianness::Default) const = 0;
+	virtual void write(uint64_t addr, uint64_t value, uint8_t nbytes = 0, Endianness endianness = Endianness::Default) = 0;
 };

@@ -25,9 +25,9 @@ I2CTarget::~I2CTarget()
 }
 
 void I2CTarget::map(uint64_t offset, uint64_t length,
-		    Endianness addr_endianness, uint8_t addr_size,
-		    Endianness data_endianness, uint8_t data_size,
-		    MapMode mode)
+		 Endianness default_addr_endianness, uint8_t default_addr_size,
+		 Endianness default_data_endianness, uint8_t default_data_size,
+		 MapMode mode)
 {
 	unmap();
 
@@ -43,10 +43,10 @@ void I2CTarget::map(uint64_t offset, uint64_t length,
 	ERR_ON(!(i2c_funcs & I2C_FUNC_I2C), "no i2c functionality");
 
 	m_offset = offset;
-	m_address_endianness = addr_endianness;
-	m_address_bytes = addr_size;
-	m_data_endianness = data_endianness;
-	m_data_bytes = data_size;
+	m_address_endianness = default_addr_endianness;
+	m_address_bytes = default_addr_size;
+	m_data_endianness = default_data_endianness;
+	m_data_bytes = default_data_size;
 }
 
 void I2CTarget::unmap()
@@ -197,15 +197,18 @@ static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], End
 	}
 }
 
-uint64_t I2CTarget::read(uint64_t addr, uint8_t numbytes) const
+uint64_t I2CTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) const
 {
+	if (!nbytes)
+		nbytes = m_data_bytes;
+
+	if (endianness == Endianness::Default)
+		endianness = m_data_endianness;
+
 	addr += m_offset;
 
 	uint8_t addr_buf[8]{};
 	uint8_t data_buf[8]{};
-
-	if (!numbytes)
-		numbytes = m_data_bytes;
 
 	host_to_device(addr, m_address_bytes, addr_buf, m_address_endianness);
 
@@ -218,7 +221,7 @@ uint64_t I2CTarget::read(uint64_t addr, uint8_t numbytes) const
 
 	msgs[1].addr = m_i2c_addr;
 	msgs[1].flags = I2C_M_RD;
-	msgs[1].len = numbytes;
+	msgs[1].len = nbytes;
 	msgs[1].buf = data_buf;
 
 	struct i2c_rdwr_ioctl_data data;
@@ -228,27 +231,30 @@ uint64_t I2CTarget::read(uint64_t addr, uint8_t numbytes) const
 	int r = ioctl(m_fd, I2C_RDWR, &data);
 	ERR_ON_ERRNO(r < 0, "i2c transfer failed");
 
-	return device_to_host(data_buf, numbytes, m_data_endianness);
+	return device_to_host(data_buf, nbytes, endianness);
 }
 
-void I2CTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
+void I2CTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness endianness)
 {
+	if (!nbytes)
+		nbytes = m_data_bytes;
+
+	if (endianness == Endianness::Default)
+		endianness = m_data_endianness;
+
 	addr += m_offset;
 
 	uint8_t data_buf[12]{};
 
-	if (!numbytes)
-		numbytes = m_data_bytes;
-
 	host_to_device(addr, m_address_bytes, data_buf, m_address_endianness);
 
-	host_to_device(value, numbytes, data_buf + m_address_bytes, m_data_endianness);
+	host_to_device(value, nbytes, data_buf + m_address_bytes, endianness);
 
 	struct i2c_msg msgs[1]{};
 
 	msgs[0].addr = m_i2c_addr;
 	msgs[0].flags = 0;
-	msgs[0].len = m_address_bytes + numbytes;
+	msgs[0].len = m_address_bytes + nbytes;
 	msgs[0].buf = data_buf;
 
 	struct i2c_rdwr_ioctl_data data;

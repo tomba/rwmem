@@ -1,5 +1,6 @@
 #include "mmaptarget.h"
 
+#include <stdexcept>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -15,7 +16,8 @@ static const uint64_t pagesize = sysconf(_SC_PAGESIZE);
 static const uint64_t pagemask = pagesize - 1;
 
 MMapTarget::MMapTarget(const string& filename)
-	: m_filename(filename), m_fd(-1), m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
+	: m_filename(filename), m_fd(-1),
+	 m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
 {
 
 }
@@ -26,11 +28,16 @@ MMapTarget::~MMapTarget()
 }
 
 void MMapTarget::map(uint64_t offset, uint64_t length,
-		     Endianness addr_endianness, uint8_t addr_size,
-		     Endianness data_endianness, uint8_t data_size,
-		     MapMode mode)
+		 Endianness default_addr_endianness, uint8_t default_addr_size,
+		 Endianness default_data_endianness, uint8_t default_data_size,
+		 MapMode mode)
 {
 	unmap();
+
+	m_default_addr_endianness = default_addr_endianness;
+	m_default_addr_size = default_addr_size;
+	m_default_data_endianness = default_data_endianness;
+	m_default_data_size = default_data_size;
 
 	int oflag;
 	int prot;
@@ -55,9 +62,6 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 
 	ERR_ON_ERRNO(m_fd == -1, "Failed to open file '{}'", m_filename);
 
-	m_data_endianness = data_endianness;
-	m_data_size = data_size;
-
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length - mmap_offset + pagesize - 1) & ~pagemask;
 
@@ -78,6 +82,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 	ERR_ON_ERRNO(m_map_base == MAP_FAILED, "failed to mmap");
 
 	m_offset = offset;
+	m_len = length;
 	m_map_offset = mmap_offset;
 	m_map_len = mmap_len;
 }
@@ -99,39 +104,45 @@ void MMapTarget::unmap()
 	m_map_base = MAP_FAILED;
 }
 
-uint64_t MMapTarget::read(uint64_t addr, uint8_t numbytes) const
+uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) const
 {
-	switch (numbytes) {
+	if (!nbytes)
+		nbytes = m_default_data_size;
+
+	switch (nbytes) {
 	case 1:
 		return read8(addr);
 	case 2:
-		return read16(addr);
+		return read16(addr, endianness);
 	case 4:
-		return read32(addr);
+		return read32(addr, endianness);
 	case 8:
-		return read64(addr);
+		return read64(addr, endianness);
 	default:
-		FAIL("Illegal data regsize '{}'", numbytes);
+		FAIL("Illegal data regsize '{}'", nbytes);
 	}
 }
 
-void MMapTarget::write(uint64_t addr, uint8_t numbytes, uint64_t value)
+void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness endianness)
 {
-	switch (numbytes) {
+	if (!nbytes)
+		nbytes = m_default_data_size;
+
+	switch (nbytes) {
 	case 1:
 		write8(addr, value);
 		break;
 	case 2:
-		write16(addr, value);
+		write16(addr, value, endianness);
 		break;
 	case 4:
-		write32(addr, value);
+		write32(addr, value, endianness);
 		break;
 	case 8:
-		write64(addr, value);
+		write64(addr, value, endianness);
 		break;
 	default:
-		FAIL("Illegal data regsize '{}'", numbytes);
+		FAIL("Illegal data regsize '{}'", nbytes);
 	}
 }
 
@@ -145,49 +156,67 @@ void MMapTarget::write8(uint64_t addr, uint8_t value)
 	*addr8(addr) = value;
 }
 
-uint16_t MMapTarget::read16(uint64_t addr) const
+uint16_t MMapTarget::read16(uint64_t addr, Endianness endianness) const
 {
-	if (m_data_endianness == Endianness::Big)
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
+	if (endianness == Endianness::Big)
 		return be16toh(*addr16(addr));
 	else
 		return le16toh(*addr16(addr));
 }
 
-void MMapTarget::write16(uint64_t addr, uint16_t value)
+void MMapTarget::write16(uint64_t addr, uint16_t value, Endianness endianness)
 {
-	if (m_data_endianness == Endianness::Big)
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
+	if (endianness == Endianness::Big)
 		*addr16(addr) = htobe16(value);
 	else
 		*addr16(addr) = htole16(value);
 }
 
-uint32_t MMapTarget::read32(uint64_t addr) const
+uint32_t MMapTarget::read32(uint64_t addr, Endianness endianness) const
 {
-	if (m_data_endianness == Endianness::Big)
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
+	if (endianness == Endianness::Big)
 		return be32toh(*addr32(addr));
 	else
 		return le32toh(*addr32(addr));
 }
 
-void MMapTarget::write32(uint64_t addr, uint32_t value)
+void MMapTarget::write32(uint64_t addr, uint32_t value, Endianness endianness)
 {
-	if (m_data_endianness == Endianness::Big)
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
+	if (endianness == Endianness::Big)
 		*addr32(addr) = htobe32(value);
 	else
 		*addr32(addr) = htole32(value);
 }
 
-uint64_t MMapTarget::read64(uint64_t addr) const
+uint64_t MMapTarget::read64(uint64_t addr, Endianness endianness) const
 {
-	if (m_data_endianness == Endianness::Big)
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
+	if (endianness == Endianness::Big)
 		return be64toh(*addr64(addr));
 	else
 		return le64toh(*addr64(addr));
 }
 
-void MMapTarget::write64(uint64_t addr, uint64_t value)
+void MMapTarget::write64(uint64_t addr, uint64_t value, Endianness endianness)
 {
-	if (m_data_endianness == Endianness::Big)
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
+	if (endianness == Endianness::Big)
 		*addr64(addr) = htobe64(value);
 	else
 		*addr64(addr) = htole64(value);
@@ -195,30 +224,40 @@ void MMapTarget::write64(uint64_t addr, uint64_t value)
 
 void* MMapTarget::maddr(uint64_t addr) const
 {
-	addr += m_offset;
-
-	FAIL_IF(addr < m_map_offset, "address below map range");
-	FAIL_IF(addr >= m_map_offset + m_map_len, "address above map range");
+	if (addr < m_offset)
+		throw runtime_error("address below map range");
 
 	return (uint8_t*)m_map_base + (addr - m_map_offset);
 }
 
 volatile uint8_t* MMapTarget::addr8(uint64_t addr) const
 {
+	if (addr + 1 > m_offset + m_len)
+		throw runtime_error("address above map range");
+
 	return (volatile uint8_t*)maddr(addr);
 }
 
 volatile uint16_t* MMapTarget::addr16(uint64_t addr) const
 {
+	if (addr + 2 > m_offset + m_len)
+		throw runtime_error("address above map range");
+
 	return (volatile uint16_t*)maddr(addr);
 }
 
 volatile uint32_t* MMapTarget::addr32(uint64_t addr) const
 {
+	if (addr + 4 > m_offset + m_len)
+		throw runtime_error("address above map range");
+
 	return (volatile uint32_t*)maddr(addr);
 }
 
 volatile uint64_t* MMapTarget::addr64(uint64_t addr) const
 {
+	if (addr + 8 > m_offset + m_len)
+		throw runtime_error("address above map range");
+
 	return (volatile uint64_t*)maddr(addr);
 }

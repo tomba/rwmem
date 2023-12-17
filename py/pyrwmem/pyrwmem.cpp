@@ -1,3 +1,4 @@
+#include "helpers.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -91,10 +92,8 @@ PYBIND11_MODULE(pyrwmem, m)
 	py::class_<ITarget>(m, "ITarget")
 		.def("map", &ITarget::map)
 		.def("unmap", &ITarget::unmap)
-		.def("read", (uint64_t(ITarget::*)(uint64_t) const) & ITarget::read)
-		.def("write", (void (ITarget::*)(uint64_t, uint64_t)) & ITarget::write)
-		.def("read", (uint64_t(ITarget::*)(uint64_t, uint8_t) const) & ITarget::read)
-		.def("write", (void (ITarget::*)(uint64_t, uint8_t, uint64_t)) & ITarget::write);
+		.def("read", &ITarget::read, py::arg("addr"), py::arg("nbytes") = 0, py::arg("endianness") = Endianness::Default)
+		.def("write", &ITarget::write, py::arg("addr"), py::arg("value"), py::arg("nbytes") = 0, py::arg("endianness") = Endianness::Default);
 
 	py::class_<MMapTarget, ITarget>(m, "MMapTarget")
 		.def(py::init<const string&>());

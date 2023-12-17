@@ -216,7 +216,6 @@ static void readwriteprint(const RwmemOp& op,
 			   ITarget* mm,
 			   uint64_t op_addr,
 			   uint64_t paddr,
-			   unsigned width,
 			   const RegisterFileData* rfd,
 			   const RegisterBlockData* rbd,
 			   const RegisterData* rd,
@@ -242,7 +241,7 @@ static void readwriteprint(const RwmemOp& op,
 	oldval = userval = newval = 0;
 
 	if (rwmem_opts.write_mode != WriteMode::Write) {
-		oldval = mm->read(op_addr, width);
+		oldval = mm->read(paddr);
 
 		switch (rwmem_opts.number_print_mode) {
 		case NumberPrintMode::Dec:
@@ -282,13 +281,13 @@ static void readwriteprint(const RwmemOp& op,
 
 		fflush(stdout);
 
-		mm->write(op_addr, width, v);
+		mm->write(paddr, v);
 
 		newval = v;
 		userval = v;
 
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
-			newval = mm->read(op_addr, width);
+			newval = mm->read(paddr);
 
 			switch (rwmem_opts.number_print_mode) {
 			case NumberPrintMode::Dec:
@@ -526,7 +525,7 @@ static void do_op_numeric(const RwmemOp& op, ITarget* mm)
 		if (rwmem_opts.raw_output)
 			readprint_raw(mm, op_offset, data_size);
 		else
-			readwriteprint(op, mm, op_offset, op_base + op_offset, data_size, nullptr, nullptr, nullptr, formatting);
+			readwriteprint(op, mm, op_offset, op_base + op_offset, nullptr, nullptr, nullptr, formatting);
 
 		op_offset += data_size;
 	}
@@ -595,7 +594,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, rb_access_base + op_offset, data_size);
 			else
-				readwriteprint(op, mm, op_offset, rb_base + op_offset, data_size, rfd, rbd, rd, formatting);
+				readwriteprint(op, mm, op_offset, rb_base + op_offset, rfd, rbd, rd, formatting);
 
 			op_offset += data_size;
 		}
@@ -606,7 +605,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 			if (rwmem_opts.raw_output)
 				readprint_raw(mm, op_offset, data_size);
 			else
-				readwriteprint(op, mm, op_offset, rb_base + op_offset, data_size, rfd, rbd, rd, formatting);
+				readwriteprint(op, mm, op_offset, rb_base + op_offset, rfd, rbd, rd, formatting);
 		}
 	}
 }
