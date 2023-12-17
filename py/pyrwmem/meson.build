@@ -33,6 +33,15 @@ pyrwmem = shared_module('pyrwmem',
                       dependencies : pyrwmem_deps,
                       cpp_args : pyrwmem_args)
 
-# Copy __init__.py to build dir so that we can run without installing
-configure_file(input: '__init__.py', output: '__init__.py', copy: true,
-               install : true, install_dir : destdir)
+# Create symlinks from the build dir to the source dir so that we can use the
+# Python module directly from the build dir.
+
+pyfiles = [
+    '__init__.py',
+]
+
+foreach file : pyfiles
+    run_command('ln', '-fsrT', files(file),
+                meson.current_build_dir() / file,
+                check : true)
+endforeach
