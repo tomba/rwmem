@@ -26,6 +26,7 @@ private:
 	uint8_t m_default_addr_size;
 	Endianness m_default_data_endianness;
 	uint8_t m_default_data_size;
+	MapMode m_mode;
 
 	// User requested offset (from the beginning of the file) and length
 	uint64_t m_offset;

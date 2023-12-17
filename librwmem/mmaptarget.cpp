@@ -38,6 +38,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 	m_default_addr_size = default_addr_size;
 	m_default_data_endianness = default_data_endianness;
 	m_default_data_size = default_data_size;
+	m_mode = mode;
 
 	int oflag;
 	int prot;
@@ -125,6 +126,9 @@ uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) 
 
 void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness endianness)
 {
+	if (m_mode != MapMode::Write && m_mode != MapMode::ReadWrite)
+		throw runtime_error("Trying to write to a read-only mapping");
+
 	if (!nbytes)
 		nbytes = m_default_data_size;
 
@@ -225,7 +229,8 @@ void MMapTarget::write64(uint64_t addr, uint64_t value, Endianness endianness)
 void* MMapTarget::maddr(uint64_t addr) const
 {
 	if (addr < m_offset)
-		throw runtime_error("address below map range");
+		throw runtime_error(fmt::format("address {:#x} below map range {:#x}-{:#x}",
+		                                addr, m_offset, m_offset + m_len));
 
 	return (uint8_t*)m_map_base + (addr - m_map_offset);
 }
