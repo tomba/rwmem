@@ -632,12 +632,14 @@ static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch
 
 int main(int argc, char** argv)
 {
+#if HAS_INIH
 	try {
 		rwmem_ini.load(get_home() + "/.rwmem/rwmem.ini");
 	} catch (...) {
 	}
 
 	load_opts_from_ini_pre();
+#endif
 
 	parse_cmdline(argc, argv);
 
@@ -645,7 +647,9 @@ int main(int argc, char** argv)
 		rwmem_opts.target_type = TargetType::MMap;
 		rwmem_opts.mmap_target = "/dev/mem";
 
+#if HAS_INIH
 		detect_platform();
+#endif
 	}
 
 	unique_ptr<RegisterFile> regfile = nullptr;

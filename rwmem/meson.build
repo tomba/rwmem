@@ -1,15 +1,26 @@
-inih_dep = dependency('inih', fallback : ['inih', 'inih_dep'])
+
+inih_dep = dependency('inih', required : false)
 
 rwmem_sources = files([
     'cmdline.cpp',
-    'inifile.cpp',
-    'inireader.cpp',
     'opts.cpp',
     'rwmem.cpp',
 ])
 
+rwmem_deps = [ librwmem_dep, libfmt_dep ]
+
+rwmem_args = [ ]
+
+if inih_dep.found()
+    rwmem_sources += files([
+        'inifile.cpp',
+        'inireader.cpp',
+    ])
+    rwmem_deps += [ inih_dep ]
+    rwmem_args += [ '-DHAS_INIH' ]
+endif
+
 executable('rwmem', rwmem_sources,
-           dependencies : [ librwmem_dep, inih_dep, libfmt_dep ],
-           install : true,
-           cpp_args : '-DINI_ALLOW_MULTILINE=0',
-           c_args : '-DINI_ALLOW_MULTILINE=0')
+           dependencies : rwmem_deps,
+           cpp_args : rwmem_args,
+           install : true)

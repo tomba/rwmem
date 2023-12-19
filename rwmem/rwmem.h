@@ -108,10 +108,12 @@ extern RwmemOpts rwmem_opts;
 void parse_cmdline(int argc, char** argv);
 void parse_arg(std::string str, RwmemOptsArg* arg);
 
+#if HAS_INIH
 extern INIReader rwmem_ini;
 
 void load_opts_from_ini_pre();
 void detect_platform();
+#endif
 
 #define rwmem_vprint(format, ...)                     \
 	do {                                        \
