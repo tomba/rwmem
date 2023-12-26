@@ -83,7 +83,3 @@ class WriteMmapTests(unittest.TestCase):
 
         map.write(0, 0x12345678, 8)
         self.assertEqual(map.read(0, 8), 0x12345678)
-
-
-if __name__ == '__main__':
-    unittest.main()

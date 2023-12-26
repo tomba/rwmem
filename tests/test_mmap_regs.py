@@ -4,7 +4,7 @@ import os
 import unittest
 import rwmem as rw
 
-class MmapTests(unittest.TestCase):
+class MmapRegsTests(unittest.TestCase):
     def setUp(self):
         path = os.path.dirname(os.path.abspath(__file__)) + '/test.regs'
         self.rf = rw.RegisterFile(path)
@@ -38,7 +38,7 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(b1.reg3.reg31, 0x56)
         self.assertEqual(b1.reg3.reg32, 0x78)
 
-    def test(self):
+    def tests(self):
         self.__check()
 
         b1 = self.map
@@ -51,7 +51,3 @@ class MmapTests(unittest.TestCase):
         b1.reg3 = { "reg31": 0x56, "reg32": 0x78 }
 
         self.__check()
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -106,7 +106,3 @@ class RwmemNumericWriteTests(RwmemTestBase):
                            '0x14 (+0x4) = 0x85f114a9 := 0x00001234 -> 0x00001234\n' +
                            '0x18 (+0x8) = 0xa4edffdd := 0x00001234 -> 0x00001234\n' +
                            '0x1c (+0xc) = 0x2ecde8ff := 0x00001234 -> 0x00001234\n')
-
-
-if __name__ == '__main__':
-    unittest.main()
