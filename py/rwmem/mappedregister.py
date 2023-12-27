@@ -133,14 +133,14 @@ class MappedRegister:
             raise AttributeError('No field {0} found!'.format(name))
 
 class MappedRegisterBlock:
-    def __init__(self, file, regblock, offset = None):
+    def __init__(self, file, regblock, offset = None, mode = MapMode.ReadWrite):
         self._regblock = regblock
 
         offset = regblock.offset if not offset else offset
 
         self._map = MMapTarget(file)
         self._map.map(offset, self._regblock.size,
-                      Endianness.Default, 4, regblock.data_endianness, 4, MapMode.ReadWrite)
+                      Endianness.Default, 4, regblock.data_endianness, 4, mode)
 
         self._initialized = True
 
