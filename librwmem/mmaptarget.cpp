@@ -99,7 +99,7 @@ void MMapTarget::unmap()
 	if (m_map_base == MAP_FAILED)
 		return;
 
-	if (munmap(m_map_base, pagesize) == -1)
+	if (munmap(m_map_base, m_map_len) == -1)
 		ERR_ERRNO("failed to munmap");
 
 	m_map_base = MAP_FAILED;
