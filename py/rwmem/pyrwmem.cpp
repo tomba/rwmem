@@ -92,6 +92,7 @@ PYBIND11_MODULE(rwmem, m)
 	py::class_<ITarget>(m, "ITarget")
 		.def("map", &ITarget::map)
 		.def("unmap", &ITarget::unmap)
+		.def("sync", &ITarget::sync)
 		.def("read", &ITarget::read, py::arg("addr"), py::arg("nbytes") = 0, py::arg("endianness") = Endianness::Default)
 		.def("write", &ITarget::write, py::arg("addr"), py::arg("value"), py::arg("nbytes") = 0, py::arg("endianness") = Endianness::Default);
 

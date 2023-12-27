@@ -14,6 +14,7 @@ public:
 		 Endianness default_data_endianness, uint8_t default_data_size,
 		 MapMode mode) override;
 	void unmap() override;
+	void sync() override;
 
 	uint64_t read(uint64_t addr, uint8_t nbytes, Endianness endianness) const override;
 	void write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness endianness) override;

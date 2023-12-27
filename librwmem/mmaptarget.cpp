@@ -105,6 +105,15 @@ void MMapTarget::unmap()
 	m_map_base = MAP_FAILED;
 }
 
+void MMapTarget::sync()
+{
+	if (m_map_base == MAP_FAILED)
+		return;
+
+	int ret = msync(m_map_base, m_map_len, MS_SYNC);
+	ERR_ON_ERRNO(ret != 0, "failed to msync()");
+}
+
 uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) const
 {
 	if (!nbytes)

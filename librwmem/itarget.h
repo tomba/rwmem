@@ -18,6 +18,7 @@ public:
 			 Endianness default_data_endianness = Endianness::Default, uint8_t default_data_size = 4,
 			 MapMode mode = MapMode::ReadWrite) = 0;
 	virtual void unmap() = 0;
+	virtual void sync() = 0;
 
 	virtual uint64_t read(uint64_t addr, uint8_t nbytes = 0, Endianness endianness = Endianness::Default) const = 0;
 	virtual void write(uint64_t addr, uint64_t value, uint8_t nbytes = 0, Endianness endianness = Endianness::Default) = 0;

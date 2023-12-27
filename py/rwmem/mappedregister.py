@@ -144,6 +144,9 @@ class MappedRegisterBlock:
 
         self._initialized = True
 
+    def sync(self):
+        self._map.sync()
+
     def __getitem__(self, idx):
         r = self._regblock[idx]
 
