@@ -26,8 +26,6 @@ private:
 	uint16_t m_i2c_addr;
 	int m_fd;
 
-	uint64_t m_offset;
-
 	uint8_t m_address_bytes;
 	Endianness m_address_endianness;
 	uint8_t m_data_bytes;

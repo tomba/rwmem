@@ -14,7 +14,7 @@
 using namespace std;
 
 I2CTarget::I2CTarget(uint16_t adapter_nr, uint16_t i2c_addr)
-	: m_adapter_nr(adapter_nr), m_i2c_addr(i2c_addr), m_fd(-1), m_offset(0)
+	: m_adapter_nr(adapter_nr), m_i2c_addr(i2c_addr), m_fd(-1)
 {
 
 }
@@ -42,7 +42,6 @@ void I2CTarget::map(uint64_t offset, uint64_t length,
 
 	ERR_ON(!(i2c_funcs & I2C_FUNC_I2C), "no i2c functionality");
 
-	m_offset = offset;
 	m_address_endianness = default_addr_endianness;
 	m_address_bytes = default_addr_size;
 	m_data_endianness = default_data_endianness;
@@ -205,8 +204,6 @@ uint64_t I2CTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) c
 	if (endianness == Endianness::Default)
 		endianness = m_data_endianness;
 
-	addr += m_offset;
-
 	uint8_t addr_buf[8]{};
 	uint8_t data_buf[8]{};
 
@@ -241,8 +238,6 @@ void I2CTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness 
 
 	if (endianness == Endianness::Default)
 		endianness = m_data_endianness;
-
-	addr += m_offset;
 
 	uint8_t data_buf[12]{};
 
