@@ -27,4 +27,3 @@ libfmt_dep = dependency('fmt', fallback : ['fmt', 'fmt_dep'])
 
 subdir('librwmem')
 subdir('rwmem')
-subdir('py')
