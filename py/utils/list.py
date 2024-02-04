@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import pyrwmem as rw
+import rwmem as rw
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -19,4 +19,4 @@ for rb in rf:
             print("  {} {:#x}".format(r.name, r.offset))
             if not args.no_fields:
                 for f in r:
-                    print("    {} {}:{}".format(f.name, f.low, f.high))
+                    print("    {} {}:{}".format(f.name, f.high, f.low))
