@@ -33,11 +33,13 @@ class MmapRegsTests(unittest.TestCase):
         self.assertEqual(m.reg1.reg11, 0xf00d)
         self.assertEqual(m.reg1.reg12, 0xbaad)
 
+        self.assertEqual(m.reg2.value, 0xabbaaabb)
         self.assertEqual(m.reg2.reg21, 0xab)
         self.assertEqual(m.reg2.reg22, 0xba)
         self.assertEqual(m.reg2.reg23, 0xaa)
         self.assertEqual(m.reg2.reg24, 0xbb)
 
+        self.assertEqual(m.reg3.value, 0x00560078)
         self.assertEqual(m.reg3.reg31, 0x56)
         self.assertEqual(m.reg3.reg32, 0x78)
 
