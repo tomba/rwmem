@@ -1,18 +1,21 @@
 #!/usr/bin/python3
 
+import difflib
 import os
 import shutil
 import stat
 import tempfile
 import unittest
+
 import rwmem as rw
 
 BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.bin'
 
 class MmapTests(unittest.TestCase):
     def setUp(self):
-        self.map = rw.MMapTarget(BIN_PATH)
-        self.map.map(0, 32, rw.Endianness.Default, 4, rw.Endianness.Big, 4, rw.MapMode.Read)
+        self.map = rw.MMapTarget(BIN_PATH, 0, 32,
+                                 rw.Endianness.Big, 4,
+                                 rw.MapMode.Read)
 
     def tests(self):
         map = self.map
@@ -64,8 +67,9 @@ class WriteMmapTests(unittest.TestCase):
         shutil.copy2(BIN_PATH, self.tmpfile_path)
         os.chmod(self.tmpfile_path, stat.S_IREAD | stat.S_IWRITE)
 
-        self.map = rw.MMapTarget(self.tmpfile_path)
-        self.map.map(0, 32, rw.Endianness.Default, 4, rw.Endianness.Big, 4, rw.MapMode.ReadWrite)
+        self.map = rw.MMapTarget(self.tmpfile_path, 0, 32,
+                                 rw.Endianness.Big, 4,
+                                 rw.MapMode.ReadWrite)
 
     def tests(self):
         map = self.map
@@ -74,9 +78,6 @@ class WriteMmapTests(unittest.TestCase):
         map.write(0, 0x8899aabbccddeeff, 8)
         self.assertEqual(map.read(0, 8), 0x8899aabbccddeeff)
 
-        map.sync();
-
-        import difflib
         with (open(BIN_PATH, 'rb') as f1,
               open(self.tmpfile_path, 'rb') as f2):
             x = f1.read()
