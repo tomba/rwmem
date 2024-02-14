@@ -7,29 +7,39 @@ import rwmem.gen as gen
 
 OVR_REGS = [
     ( 'ATTRIBUTES_0', 0x20, [
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
         ( 'CHANNELIN', 4, 1 ),
         ( 'ENABLE', 0, 0 ),
     ] ),
     ( 'ATTRIBUTES_1', 0x24, [
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
         ( 'CHANNELIN', 4, 1 ),
         ( 'ENABLE', 0, 0 ),
     ] ),
     ( 'ATTRIBUTES_2', 0x28, [
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
         ( 'CHANNELIN', 4, 1 ),
         ( 'ENABLE', 0, 0 ),
     ] ),
     ( 'ATTRIBUTES_3', 0x2c, [
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
         ( 'CHANNELIN', 4, 1 ),
         ( 'ENABLE', 0, 0 ),
     ] ),
+
+    ( 'ATTRIBUTES2_0', 0x34, [
+        ( 'POSY', 29, 16 ),
+        ( 'POSX', 13, 0 ),
+    ] ),
+    ( 'ATTRIBUTES2_1', 0x38, [
+        ( 'POSY', 29, 16 ),
+        ( 'POSX', 13, 0 ),
+    ] ),
+    ( 'ATTRIBUTES2_2', 0x3c, [
+        ( 'POSY', 29, 16 ),
+        ( 'POSX', 13, 0 ),
+    ] ),
+    ( 'ATTRIBUTES2_3', 0x40, [
+        ( 'POSY', 29, 16 ),
+        ( 'POSX', 13, 0 ),
+    ] ),
+
 ]
 
 VP_REGS = [
@@ -104,47 +114,58 @@ def print_rf(rf: rw.RegisterFile):
             for f in r.values():
                 print('    {} {}:{}'.format(f.name, f.low, f.high))
 
-print_rf(rf)
+#print_rf(rf)
 
 print("==")
 
 mrf = rw.MappedRegisterFile(rf)
 
-for vp_idx in range(1, 5):
-    vp_name = f'VP{vp_idx}'
-    if not vp_name in mrf:
-        break
-    vp = mrf[vp_name]
+def pr_old():
+    for vp_idx in range(1, 5):
+        vp_name = f'VP{vp_idx}'
+        if not vp_name in mrf:
+            break
+        vp = mrf[vp_name]
 
-    print(f'{vp_name} enable={vp.CONTROL.ENABLE}')
+        print(f'{vp_name} enable={vp.CONTROL.ENABLE}')
 
-    ovr_name = f'OVR{vp_idx}'
-    if not ovr_name in mrf:
-        break
-    ovr = mrf[ovr_name]
+        ovr_name = f'OVR{vp_idx}'
+        if not ovr_name in mrf:
+            break
+        ovr = mrf[ovr_name]
 
-    print(f'  {ovr_name}')
+        print(f'  {ovr_name}')
 
-    for ovr_attr_idx in range(0, 4):
-        ovr_attrs_name = f'ATTRIBUTES_{ovr_attr_idx}'
-        reg = ovr[ovr_attrs_name]
-        print(f'    {ovr_attrs_name} enable={reg.ENABLE} channelin={reg.CHANNELIN} posx={reg.POSX} posy={reg.POSY}')
+        for ovr_attr_idx in range(0, 4):
+            ovr_attrs_name = f'ATTRIBUTES_{ovr_attr_idx}'
+            reg = ovr[ovr_attrs_name]
+            print(f'    {ovr_attrs_name} enable={reg.ENABLE} channelin={reg.CHANNELIN} posx={reg.POSX} posy={reg.POSY}')
 
 print("==")
 
-for rb in mrf.values():
-    print(rb._regblock.name)
+def pr():
+    for rb in mrf.values():
+        print(rb._regblock.name)
 
-    for r in rb.values():
-        print(f'  {r._reg.name}:', end='')
+        for r in rb.values():
+            print(f'  {r._reg.name}:', end='')
 
-        for fname, fval in r.get_fields().items():
-            field_info = r._reg[fname]
+            for fname, fval in r.get_fields().items():
+                field_info = r._reg[fname]
 
-            print(f' {fname}=', end='')
-            if field_info.high == field_info.low:
-                print(f'{fval}', end='')
-            else:
-                print(f'{fval:#x}', end='')
+                print(f' {fname}=', end='')
+                if field_info.high == field_info.low:
+                    print(f'{fval}', end='')
+                else:
+                    print(f'{fval:#x}', end='')
 
-        print()
+            print()
+
+pr()
+
+import time
+
+mrf.OVR2.ATTRIBUTES_0.CHANNELIN=0
+time.sleep(1)
+mrf.OVR2.ATTRIBUTES_1.CHANNELIN=3
+#mrf.VP2.CONTROL.GOBIT=1
