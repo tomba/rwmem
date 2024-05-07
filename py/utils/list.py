@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
-import rwmem as rw
 import argparse
+import rwmem as rw
+import tabulate
+tabulate.PRESERVE_WHITESPACE = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument("regfile")
@@ -10,13 +12,29 @@ parser.add_argument("--no-fields", action="store_true")
 args = parser.parse_args()
 
 rf = rw.RegisterFile(args.regfile)
-print("{}: blocks {}, regs {}, fields {}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
+print("RegisterFile {}: blocks {}, regs {}, fields {}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
+print()
+
+table = []
+
+rf:rw.RegisterFile
 
 for name,rb in rf.items():
-    print("{} {:#x} {:#x}".format(rb.name, rb.offset, rb.size))
+    name:str
+    rb:rw.RegisterBlock
+
+    table.append(( name, hex(rb.offset), hex(rb.size),
+                  f'{rb.data_size}/{rb.data_endianness.name}',
+                  f'{rb.addr_size}/{rb.addr_endianness.name}',
+                  ))
+
     if not args.no_regs:
         for name,r in rb.items():
-            print("  {} {:#x}".format(r.name, r.offset))
+            table.append(( '    ' + r.name, hex(r.offset), hex(rb.data_size) ))
+
             if not args.no_fields:
-                for f in r:
-                    print("    {} {}:{}".format(f.name, f.high, f.low))
+                for name,f in r.items():
+                    table.append(( '        ' + f.name, f'{f.high}:{f.low}', f.high - f.low + 1 ))
+
+
+print(tabulate.tabulate(table, ['Name', 'Offset', 'Size', 'Data', 'Addr'], colalign=('left', 'right', 'right')))
