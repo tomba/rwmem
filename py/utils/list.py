@@ -12,10 +12,10 @@ args = parser.parse_args()
 rf = rw.RegisterFile(args.regfile)
 print("{}: blocks {}, regs {}, fields {}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
 
-for rb in rf:
+for name,rb in rf.items():
     print("{} {:#x} {:#x}".format(rb.name, rb.offset, rb.size))
     if not args.no_regs:
-        for r in rb:
+        for name,r in rb.items():
             print("  {} {:#x}".format(r.name, r.offset))
             if not args.no_fields:
                 for f in r:
