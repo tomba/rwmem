@@ -14,10 +14,13 @@ class UnpackedField:
 
 
 class UnpackedRegister:
-    def __init__(self, name, offset, fields) -> None:
+    def __init__(self, name, offset, fields=None) -> None:
         self.name = name
         self.offset = offset
-        self.fields = [f if isinstance(f, UnpackedField) else UnpackedField(*f) for f in fields]
+        if fields:
+            self.fields = [f if isinstance(f, UnpackedField) else UnpackedField(*f) for f in fields]
+        else:
+            self.fields = []
 
         self.name_offset = -1
         self.fields_offset = -1
@@ -74,6 +77,10 @@ class UnpackedRegFile:
         num_regs = 0
         num_fields = 0
 
+        # Python 3.7 elevates this implementation detail to a language specification,
+        # so it is now mandatory that dict preserves order in all Python implementations
+        # compatible with that version or newer
+
         strs = { '': 0 }
         str_idx = 1
 
@@ -86,6 +93,8 @@ class UnpackedRegFile:
                 str_idx += len(str) + 1
 
             return strs[str]
+
+        self.name_offset = get_str_idx(self.name)
 
         for block in blocks:
             block.regs = sorted(block.regs, key=lambda x: x.offset)
@@ -109,7 +118,7 @@ class UnpackedRegFile:
 
         # Write out the data
 
-        out.write(UnpackedRegFile.pack_regfile(get_str_idx(self.name), num_blocks, num_regs, num_fields))
+        out.write(UnpackedRegFile.pack_regfile(self.name_offset, num_blocks, num_regs, num_fields))
 
         # First all the blocks
 
@@ -143,6 +152,10 @@ class UnpackedRegFile:
 
         # At the end, write out all the strings
 
-        for str, idx in sorted(strs.items(), key=lambda x: x[1]):
+        first_pos = out.tell()
+
+        for str, idx in strs.items():
+            assert idx == out.tell() - first_pos
+
             out.write(bytes(str, 'ascii'))
             out.write(b'\0')
