@@ -1,0 +1,30 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ "master", "test" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint tabulate
+
+    - name: Test with unittest
+      run: |
+        PYTHONPATH=py/ python3 -m unittest discover -v py/tests
+
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py')
