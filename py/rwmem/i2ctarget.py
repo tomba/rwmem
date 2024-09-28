@@ -90,7 +90,7 @@ class I2CTarget:
             raise RuntimeError()
 
         if addr + data_size > self.offset + self.length:
-            raise RuntimeError()
+            raise RuntimeError(f'register {addr:#x} end {addr + data_size:#x} over block end {self.offset + self.length:#x}')
 
         addr_bo = self._endianness_to_bo(addr_endianness)
         data_bo = self._endianness_to_bo(data_endianness)

@@ -42,7 +42,7 @@ class UnpackedRegBlock:
 
 
 class UnpackedRegFile:
-    def __init__(self, name, blocks) -> None:
+    def __init__(self, name: str, blocks) -> None:
         self.name = name
         self.blocks = [b if isinstance(b, UnpackedRegBlock) else UnpackedRegBlock(*b) for b in blocks]
 
