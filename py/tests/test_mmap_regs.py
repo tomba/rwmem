@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# pylint can't handle the dynamic fields we use
+# pylint: skip-file
+
 import os
 import shutil
 import stat

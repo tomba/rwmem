@@ -267,7 +267,7 @@ class RegisterFile(collections.abc.Mapping):
         v = cp.value
         if not v:
             raise RuntimeError()
-        return v.decode('ascii')
+        return v.decode('ascii') # pylint: disable=no-member
 
     def __getitem__(self, key: str):
         if key not in self._regblock_infos:
