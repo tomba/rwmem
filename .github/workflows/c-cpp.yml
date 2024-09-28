@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "master", "test" ]
   pull_request:
-    branches: [ "master", "test" ]
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -12,10 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+
     - name: install deps
       run: sudo apt install -y meson ninja-build libfmt-dev
+
     - name: configure
       run: meson setup -Dwerror=true -Db_lto=true build
+
     - name: build
       run: ninja -v -C build
+
+    - name: Test rwmem command
+      run: |
+        python3 -m unittest discover -v tests
