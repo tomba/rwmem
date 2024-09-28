@@ -65,24 +65,12 @@ cpu = 'arm'
 endian = 'little'
 ```
 
-## Build options
-
-You can use meson options to configure the build. E.g.
-
-```
-meson build -Dpyrwmem=disabled
-```
-
-Use `meson configure build` to see all the configuration options and their current values.
-
-See `meson_options.txt` for rwmem specific options.
-
 ### Build a static rwmem
 
 You can build a static rwmem executable e.g. with:
 
 ```
-meson setup -Dfmt:cpp_std=c++20 -Dbuildtype=minsize -Db_lto=true -Dwrap_mode=forcefallback -Dpyrwmem=disabled -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
+meson setup -Dfmt:cpp_std=c++20 -Dbuildtype=minsize -Db_lto=true -Dwrap_mode=forcefallback -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
 ninja -C build
 ```
 
