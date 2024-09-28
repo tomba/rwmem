@@ -1,3 +1,4 @@
 #!/bin/sh
 
-PYTHONPATH=./build/py/ python3 -m unittest $*
+python3 -m unittest $*
+PYTHONPATH=py python3 -m unittest discover py/tests
