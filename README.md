@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/tomba/rwmem/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/tomba/rwmem/actions/workflows/c-cpp.yml)
+[![Build Status](https://github.com/tomba/rwmem/actions/workflows/py-ci.yml/badge.svg)](https://github.com/tomba/rwmem/actions/workflows/py-ci.yml)
 
 # rwmem - A small tool to read & write device registers
 
