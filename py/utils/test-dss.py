@@ -127,7 +127,7 @@ def pr_old():
             break
         vp = mrf[vp_name]
 
-        print(f'{vp_name} enable={vp.CONTROL.ENABLE}')
+        print(f'{vp_name} enable={vp['CONTROL']['ENABLE']}')
 
         ovr_name = f'OVR{vp_idx}'
         if not ovr_name in mrf:
@@ -139,7 +139,7 @@ def pr_old():
         for ovr_attr_idx in range(0, 4):
             ovr_attrs_name = f'ATTRIBUTES_{ovr_attr_idx}'
             reg = ovr[ovr_attrs_name]
-            print(f'    {ovr_attrs_name} enable={reg.ENABLE} channelin={reg.CHANNELIN} posx={reg.POSX} posy={reg.POSY}')
+            print(f'    {ovr_attrs_name} enable={reg['ENABLE']} channelin={reg['CHANNELIN']} posx={reg['POSX']} posy={reg['POSY']}')
 
 print("==")
 
@@ -165,7 +165,7 @@ pr()
 
 import time
 
-mrf.OVR2.ATTRIBUTES_0.CHANNELIN=0
+mrf['OVR2']['ATTRIBUTES_0']['CHANNELIN']=0
 time.sleep(1)
-mrf.OVR2.ATTRIBUTES_1.CHANNELIN=3
+mrf['OVR2']['ATTRIBUTES_1']['CHANNELIN']=3
 #mrf.VP2.CONTROL.GOBIT=1

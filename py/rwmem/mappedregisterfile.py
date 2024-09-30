@@ -8,15 +8,12 @@ import rwmem.mmaptarget
 __all__ = [ 'MappedRegister', 'MappedRegisterBlock', 'MappedRegisterFile' ]
 
 class MappedRegister:
-    __initialized = False
-
     def __init__(self, map, reg: rwmem.Register, size, block_offset):
         self._map = map
         self._size = size
         self._reg = reg
         self._frozen = None
         self._block_offset = block_offset
-        self.__initialized = True
 
     def freeze(self):
         if not self._frozen is None:
@@ -134,26 +131,8 @@ class MappedRegister:
     def __contains__(self, key):
         return key in self._reg
 
-    def __getattr__(self, key):
-        if key in self._reg:
-            return self.get_field_value(key)
-        else:
-            raise AttributeError('No field {0} found!'.format(key))
-
-    def __setattr__(self, key, value):
-        if not self.__initialized or key in dir(self):
-            super().__setattr__(key, value)
-            return
-
-        if key not in self._reg:
-            raise AttributeError('No field {0} found!'.format(key))
-
-        self.set_field_value(key, value)
-
 
 class MappedRegisterBlock(collections.abc.Mapping):
-    __initialized = False
-
     def __init__(self, file, regblock: rwmem.RegisterBlock,
                  offset: int | None = None,
                  mode = rwmem.MapMode.ReadWrite):
@@ -166,8 +145,6 @@ class MappedRegisterBlock(collections.abc.Mapping):
                                      mode)
 
         self._registers: dict[str, MappedRegister | None] = dict.fromkeys(regblock.keys())
-
-        self.__initialized = True
 
     def __enter__(self):
         return self
@@ -197,31 +174,11 @@ class MappedRegisterBlock(collections.abc.Mapping):
     def __len__(self):
         return len(self._registers)
 
-    def __getattr__(self, key):
-        if key in self:
-            return self[key]
-        else:
-            raise AttributeError(f'No MappedRegister {key} found!')
-
-    def __setitem__(self, key, val):
-        reg = self.__getitem__(key)
-        reg.set_value(val)
-
-    def __setattr__(self, key, value):
-        if not self.__initialized or key == '_map':
-            super().__setattr__(key, value)
-            return
-
-        self.__setitem__(key, value)
-
 
 class MappedRegisterFile(collections.abc.Mapping):
-    __initialized = False
-
     def __init__(self, rf: rwmem.RegisterFile) -> None:
         self._rf = rf
         self._regblocks: dict[str, MappedRegisterBlock | None] = dict.fromkeys(rf.keys())
-        self.__initialized = True
 
     def __getitem__(self, key: str):
         if key not in self._regblocks:
@@ -244,18 +201,3 @@ class MappedRegisterFile(collections.abc.Mapping):
 
     def __len__(self):
         return len(self._regblocks)
-
-    def __getattr__(self, key):
-        if key in self:
-            return self[key]
-        else:
-            raise AttributeError(f'No MappedRegisterBlock {key} found!')
-
-    def __setitem__(self, key, val):
-        raise TypeError()
-
-    def __setattr__(self, key, value):
-        if self.__initialized:
-            raise TypeError()
-
-        super().__setattr__(key, value)
