@@ -151,6 +151,8 @@ class MappedRegisterBlock(collections.abc.Mapping):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._map.close()
+        del self._regblock
+        self._registers.clear()
 
     def __getitem__(self, key: str):
         if key not in self._registers:

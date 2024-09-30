@@ -10,12 +10,12 @@ import rwmem as rw
 REGS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.regs'
 BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.bin'
 
-#class ContextManagerTests(unittest.TestCase):
-#    def test(self):
-#        with rw.RegisterFile(REGS_PATH) as rf:
-#            with rw.MappedRegisterBlock(BIN_PATH, rf['BLOCK1'],
-#                                        mode=rw.MapMode.Read) as map:
-#                self.assertEqual(map['REG1'].value, 0xf00dbaad)
+class ContextManagerTests(unittest.TestCase):
+    def test(self):
+        with rw.RegisterFile(REGS_PATH) as rf:
+            with rw.MappedRegisterBlock(BIN_PATH, rf['BLOCK1'],
+                                        mode=rw.MapMode.Read) as map:
+                self.assertEqual(map['REG1'].value, 0xf00dbaad)
 
 class MmapRegsTests(unittest.TestCase):
     def setUp(self):

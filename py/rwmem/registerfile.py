@@ -209,13 +209,17 @@ class RegisterFile(collections.abc.Mapping):
                 self._map = mmap.mmap(self.fd, 0, mmap.MAP_SHARED, access=mmap.ACCESS_COPY)
             finally:
                 os.close(self.fd)
+
+            self._mmap = self._map
         elif isinstance(source, bytes):
             # XXX ctypes requires a writeable buffer...
             self._map = bytearray(source)
+            self._mmap = None
         else:
             self.fd = source.fileno()
             # ctypes requires a writeable mmap, so we use ACCESS_COPY
             self._map = mmap.mmap(self.fd, 0, mmap.MAP_SHARED, access=mmap.ACCESS_COPY)
+            self._mmap = self._map
 
         self.rfd = RegisterFileData.from_buffer(self._map)
 
@@ -243,15 +247,17 @@ class RegisterFile(collections.abc.Mapping):
         self._regblock_infos: dict[str, RegisterBlock | None] = dict.fromkeys(rb_names)
 
     def close(self):
-        if self.fd:
-            self._map.close()
+        if self._mmap:
+            self._mmap.close()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        if self.fd:
-            self._map.close()
+        del self.rfd
+        self._regblock_infos.clear()
+        if self._mmap:
+            self._mmap.close()
 
     @property
     def num_blocks(self) -> int:

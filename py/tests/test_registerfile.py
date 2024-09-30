@@ -6,10 +6,10 @@ import rwmem as rw
 
 REGS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.regs'
 
-#class ContextManagerTests(unittest.TestCase):
-#    def test(self):
-#        with rw.RegisterFile(REGS_PATH) as rf:
-#            pass
+class ContextManagerTests(unittest.TestCase):
+    def test(self):
+        with rw.RegisterFile(REGS_PATH) as rf:
+            pass
 
 class MmapRegsTests(unittest.TestCase):
     def setUp(self):
