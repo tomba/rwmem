@@ -242,6 +242,17 @@ class RegisterFile(collections.abc.Mapping):
 
         self._regblock_infos: dict[str, RegisterBlock | None] = dict.fromkeys(rb_names)
 
+    def close(self):
+        if self.fd:
+            self._map.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if self.fd:
+            self._map.close()
+
     @property
     def num_blocks(self) -> int:
         return self.rfd.num_blocks

@@ -11,6 +11,13 @@ import rwmem as rw
 
 BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.bin'
 
+class ContextManagerTests(unittest.TestCase):
+    def test(self):
+        with rw.MMapTarget(BIN_PATH, 0, 32,
+                           rw.Endianness.Big, 4,
+                           rw.MapMode.Read) as map:
+            self.assertEqual(map.read(8, 4), 0xf00dbaad)
+
 class MmapTests(unittest.TestCase):
     def setUp(self):
         self.map = rw.MMapTarget(BIN_PATH, 0, 32,
