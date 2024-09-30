@@ -169,6 +169,12 @@ class MappedRegisterBlock(collections.abc.Mapping):
 
         self.__initialized = True
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._map.close()
+
     def __getitem__(self, key: str):
         if key not in self._registers:
             raise KeyError(f'MappedRegister "{key}" not found')
@@ -202,7 +208,7 @@ class MappedRegisterBlock(collections.abc.Mapping):
         reg.set_value(val)
 
     def __setattr__(self, key, value):
-        if not self.__initialized:
+        if not self.__initialized or key == '_map':
             super().__setattr__(key, value)
             return
 

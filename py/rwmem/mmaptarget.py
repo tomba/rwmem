@@ -60,7 +60,17 @@ class MMapTarget:
 
     @staticmethod
     def cleanup(m):
+        # It is ok to call close() multiple times
         m.close()
+
+    def close(self):
+        self._map.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._map.close()
 
     def _endianness_to_bo(self, endianness: Endianness):
         if endianness == Endianness.Default:
