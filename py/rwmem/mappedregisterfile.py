@@ -10,22 +10,22 @@ __all__ = [ 'MappedRegister', 'MappedRegisterBlock', 'MappedRegisterFile' ]
 class MappedRegister:
     __initialized = False
 
-    def __init__(self, map, reg: rwmem.Register, size, regblock):
+    def __init__(self, map, reg: rwmem.Register, size, block_offset):
         self._map = map
         self._size = size
         self._reg = reg
         self._frozen = None
-        self.regblock = regblock
+        self._block_offset = block_offset
         self.__initialized = True
 
     def freeze(self):
         if not self._frozen is None:
             raise RuntimeError('Register already frozen')
 
-        self._frozen = self._map.read(self.regblock.offset + self._reg.offset, data_size=self._size)
+        self._frozen = self._map.read(self._block_offset + self._reg.offset, data_size=self._size)
 
     def unfreeze(self):
-        self._map.write(self.regblock.offset + self._reg.offset, self._frozen, data_size=self._size)
+        self._map.write(self._block_offset + self._reg.offset, self._frozen, data_size=self._size)
         self._frozen = None
 
     def get_fields(self):
@@ -41,7 +41,7 @@ class MappedRegister:
 
     def get_value(self) -> int:
         if self._frozen is None:
-            return self._map.read(self.regblock.offset + self._reg.offset, data_size=self._size)
+            return self._map.read(self._block_offset + self._reg.offset, data_size=self._size)
         else:
             return self._frozen
 
@@ -53,7 +53,7 @@ class MappedRegister:
             self.unfreeze()
         else:
             if self._frozen is None:
-                self._map.write(self.regblock.offset + self._reg.offset, val, data_size=self._size)
+                self._map.write(self._block_offset + self._reg.offset, val, data_size=self._size)
             else:
                 self._frozen = val
 
@@ -159,9 +159,9 @@ class MappedRegisterBlock(collections.abc.Mapping):
                  mode = rwmem.MapMode.ReadWrite):
         self._regblock = regblock
 
-        offset = regblock.offset if not offset else offset
+        self._offset = regblock.offset if offset is None else offset
 
-        self._map = rwmem.mmaptarget.MMapTarget(file, offset, self._regblock.size,
+        self._map = rwmem.mmaptarget.MMapTarget(file, self._offset, self._regblock.size,
                                      regblock.data_endianness, regblock.data_size,
                                      mode)
 
@@ -179,7 +179,7 @@ class MappedRegisterBlock(collections.abc.Mapping):
 
         r = self._regblock.get(key)
         if r:
-            mr = MappedRegister(self._map, r, self._regblock.data_size, self._regblock)
+            mr = MappedRegister(self._map, r, self._regblock.data_size, self._offset)
             self._registers[r.name] = mr
             return mr
 
