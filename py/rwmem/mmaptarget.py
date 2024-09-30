@@ -71,26 +71,30 @@ class MMapTarget:
 
         raise NotImplementedError()
 
+    def _check_access(self, addr: int,
+                      data_size,  addr_size, addr_endianness):
+        if addr_size != 0:
+            raise RuntimeError('Address size must be 0')
+
+        if addr_endianness != Endianness.Default:
+            raise RuntimeError('Address endianness must be Default')
+
+        if addr < self.offset:
+            raise RuntimeError(f'Access outside mmap area: {addr} < {self.offset}')
+
+        if addr + data_size > self.offset + self.length:
+            raise RuntimeError(f'Access outside mmap area: {addr + data_size} > {self.offset + self.length}')
+
     def read(self, addr: int,
              data_size: int = 0, data_endianness: Endianness = Endianness.Default,
              addr_size: int = 0, addr_endianness: Endianness = Endianness.Default) -> int:
         if self.mode == MapMode.Write:
             raise RuntimeError()
 
-        if addr_size != 0:
-            raise RuntimeError()
-
-        if addr_endianness != Endianness.Default:
-            raise RuntimeError()
-
         if data_size == 0:
             data_size = self.data_size
 
-        if addr < self.offset:
-            raise RuntimeError()
-
-        if addr + data_size > self.offset + self.length:
-            raise RuntimeError()
+        self._check_access(addr, data_size, addr_size, addr_endianness)
 
         bo = self._endianness_to_bo(data_endianness)
 
@@ -112,20 +116,10 @@ class MMapTarget:
         if self.mode == MapMode.Read:
             raise RuntimeError()
 
-        if addr_size != 0:
-            raise RuntimeError()
-
-        if addr_endianness != Endianness.Default:
-            raise RuntimeError()
-
         if data_size == 0:
             data_size = self.data_size
 
-        if addr < self.offset:
-            raise RuntimeError()
-
-        if addr + data_size > self.offset + self.length:
-            raise RuntimeError()
+        self._check_access(addr, data_size, addr_size, addr_endianness)
 
         bo = self._endianness_to_bo(data_endianness)
 
