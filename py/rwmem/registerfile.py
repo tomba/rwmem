@@ -4,6 +4,7 @@ import ctypes
 import mmap
 import os
 import collections.abc
+from typing import BinaryIO
 
 from .enums import Endianness
 
@@ -197,7 +198,7 @@ class RegisterFile(collections.abc.Mapping):
     RWMEM_MAGIC = 0x00e11554
     RWMEM_VERSION = 2
 
-    def __init__(self, source: str | bytes) -> None:
+    def __init__(self, source: str | bytes | BinaryIO) -> None:
         if isinstance(source, str):
             filename = source
 
@@ -212,7 +213,9 @@ class RegisterFile(collections.abc.Mapping):
             # XXX ctypes requires a writeable buffer...
             self._map = bytearray(source)
         else:
-            raise RuntimeError()
+            self.fd = source.fileno()
+            # ctypes requires a writeable mmap, so we use ACCESS_COPY
+            self._map = mmap.mmap(self.fd, 0, mmap.MAP_SHARED, access=mmap.ACCESS_COPY)
 
         self.rfd = RegisterFileData.from_buffer(self._map)
 

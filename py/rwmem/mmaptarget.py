@@ -4,17 +4,17 @@ import mmap
 import os
 import sys
 import weakref
+from typing import BinaryIO
 
 from .enums import Endianness, MapMode
 
 __all__ = [ 'MMapTarget', ]
 
 class MMapTarget:
-    def __init__(self, filename: str,
+    def __init__(self, file: str | BinaryIO,
                  offset: int, length: int,
                  data_endianness: Endianness, data_size: int,
                  mode: MapMode = MapMode.ReadWrite) -> None:
-        self.filename = filename
         self.offset = offset
         self.length = length
 
@@ -33,8 +33,12 @@ class MMapTarget:
             oflag = os.O_RDWR
             prot = mmap.PROT_READ | mmap.PROT_WRITE
 
-        # XXX It is not clear if os.O_SYNC affects mmap. Do we need msync()?
-        fd = os.open(self.filename, oflag | os.O_SYNC)
+        if isinstance(file, str):
+            # XXX It is not clear if os.O_SYNC affects mmap. Do we need msync()?
+            fd = os.open(file, oflag | os.O_SYNC)
+        else:
+            # mmap will (apparently?) close its fd, so duplicate it first
+            fd = os.dup(file.fileno())
 
         try:
             pagesize = mmap.ALLOCATIONGRANULARITY
