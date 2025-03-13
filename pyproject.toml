@@ -1,0 +1,51 @@
+[build-system]
+requires = ['setuptools >= 61.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'rwmem'
+version = '0.1'
+dependencies = []
+requires-python = '>=3.8'
+authors = [
+  { name = 'Tomi Valkeinen', email = 'tomi.valkeinen@ideasonboard.com' },
+]
+maintainers = [
+  { name = 'Tomi Valkeinen', email = 'tomi.valkeinen@ideasonboard.com' },
+]
+description = 'rwmem'
+readme = 'README.md'
+license = { file = 'LICENSE.md' }
+keywords = ['linux', 'rwmem', 'memory']
+classifiers = [
+  'Programming Language :: Python',
+  'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
+  'Development Status :: 4 - Beta',
+  'Operating System :: POSIX :: Linux',
+]
+
+[project.urls]
+Homepage = 'https://github.com/tomba/rwmem'
+Repository = 'https://github.com/tomba/rwmem.git'
+'Bug Tracker' = 'https://github.com/tomba/rwmem/issues'
+
+[tool.setuptools]
+packages = ["rwmem"]
+package-dir = {"" = "py"}
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ['E', 'W', 'F', 'FA', 'Q', 'UP', 'PLE', 'PLW']
+ignore = ['E741', 'E501', 'Q001', 'UP032']  # TODO: fix E501
+
+[tool.ruff.lint.per-file-ignores]
+'__init__.py' = ['F401', 'F403']
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = 'single'
+multiline-quotes = 'single'
+
+[tool.ruff.format]
+quote-style = 'single'
