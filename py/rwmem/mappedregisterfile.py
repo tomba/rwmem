@@ -16,7 +16,7 @@ class MappedRegister:
         self._block_offset = block_offset
 
     def freeze(self):
-        if not self._frozen is None:
+        if self._frozen is not None:
             raise RuntimeError('Register already frozen')
 
         self._frozen = self._map.read(self._block_offset + self._reg.offset, data_size=self._size)
