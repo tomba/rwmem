@@ -4,7 +4,6 @@
 #include <endian.h>
 #include <string>
 
-#include "helpers.h"
 #include "endianness.h"
 
 const uint32_t RWMEM_MAGIC = 0x00e11554;

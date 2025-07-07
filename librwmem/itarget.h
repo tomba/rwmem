@@ -1,6 +1,7 @@
 #pragma once
 
-#include "helpers.h"
+#include <cstdint>
+
 #include "endianness.h"
 
 enum class MapMode {

@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <string.h>
 #include <fmt/format.h>
 
 #define unlikely(x) __builtin_expect(!!(x), 0)

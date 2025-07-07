@@ -1,8 +1,6 @@
 #pragma once
 
-#include <string>
 #include "itarget.h"
-#include "helpers.h"
 
 class I2CTarget : public ITarget
 {
