@@ -23,7 +23,7 @@ class UnpackedRegister:
             self.fields = []
 
         self.name_offset = -1
-        self.fields_offset = -1
+        self.first_field_index = -1
 
 
 class UnpackedRegBlock:
@@ -38,7 +38,7 @@ class UnpackedRegBlock:
         self.data_size = data_size
 
         self.name_offset = -1
-        self.regs_offset = -1
+        self.first_reg_index = -1
 
 
 class UnpackedRegFile:
@@ -54,16 +54,16 @@ class UnpackedRegFile:
         return struct.pack(fmt_regfile, RWMEM_MAGIC, RWMEM_VERSION, name_offset, num_blocks, num_regs, num_fields)
 
     @staticmethod
-    def pack_block(name_offset, block_offset, block_size, num_regs, regs_offset,
+    def pack_block(name_offset, block_offset, block_size, num_regs, first_reg_index,
                    addr_e, addr_s, data_e, data_s):
         fmt_block = '>IQQIIBBBB'
-        return struct.pack(fmt_block, name_offset, block_offset, block_size, num_regs, regs_offset,
+        return struct.pack(fmt_block, name_offset, block_offset, block_size, num_regs, first_reg_index,
                            addr_e.value, addr_s, data_e.value, data_s)
 
     @staticmethod
-    def pack_register(name_offset, reg_offset, num_fields, fields_offset):
+    def pack_register(name_offset, reg_offset, num_fields, first_field_index):
         fmt_reg = '>IQII'
-        return struct.pack(fmt_reg, name_offset, reg_offset, num_fields, fields_offset)
+        return struct.pack(fmt_reg, name_offset, reg_offset, num_fields, first_field_index)
 
     @staticmethod
     def pack_field(name_offset, high, low):
@@ -98,7 +98,7 @@ class UnpackedRegFile:
 
         for block in blocks:
             block.regs = sorted(block.regs, key=lambda x: x.offset)
-            block.regs_offset = num_regs
+            block.first_reg_index = num_regs
             num_regs += len(block.regs)
 
             block.name_offset = get_str_idx(block.name)
@@ -109,7 +109,7 @@ class UnpackedRegFile:
 
             for reg in block.regs:
                 reg.fields = sorted(reg.fields, key=lambda x: x.high, reverse=True)
-                reg.fields_offset = num_fields
+                reg.first_field_index = num_fields
                 num_fields += len(reg.fields)
                 reg.name_offset = get_str_idx(reg.name)
 
@@ -129,7 +129,7 @@ class UnpackedRegFile:
             data_s = block.data_size
 
             out.write(UnpackedRegFile.pack_block(block.name_offset, block.offset, block.size,
-                                 len(block.regs), block.regs_offset,
+                                 len(block.regs), block.first_reg_index,
                                  addr_e, addr_s, data_e, data_s))
 
         # Then all the registers
@@ -137,7 +137,7 @@ class UnpackedRegFile:
         for block in blocks:
             for reg in block.regs:
                 out.write(UnpackedRegFile.pack_register(reg.name_offset, reg.offset,
-                                        len(reg.fields), reg.fields_offset))
+                                        len(reg.fields), reg.first_field_index))
 
         # And then all the fields
 

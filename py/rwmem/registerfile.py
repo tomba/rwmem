@@ -17,7 +17,7 @@ class RegisterFileData(ctypes.BigEndianStructure):
                 ('version', ctypes.c_uint32),
                 ('name_offset', ctypes.c_uint32),
                 ('num_blocks', ctypes.c_uint32),
-                ('num_registers', ctypes.c_uint32),
+                ('num_regs', ctypes.c_uint32),
                 ('num_fields', ctypes.c_uint32),
                ]
 
@@ -28,8 +28,8 @@ class RegisterBlockData(ctypes.BigEndianStructure):
                 ('name_offset', ctypes.c_uint32),
                 ('offset', ctypes.c_uint64),
                 ('size', ctypes.c_uint64),
-                ('num_registers', ctypes.c_uint32),
-                ('regs_offset', ctypes.c_uint32),
+                ('num_regs', ctypes.c_uint32),
+                ('first_reg_index', ctypes.c_uint32),
                 ('addr_endianness', ctypes.c_uint8),
                 ('addr_size', ctypes.c_uint8),
                 ('data_endianness', ctypes.c_uint8),
@@ -43,7 +43,7 @@ class RegisterData(ctypes.BigEndianStructure):
                 ('name_offset', ctypes.c_uint32),
                 ('offset', ctypes.c_uint64),
                 ('num_fields', ctypes.c_uint32),
-                ('fields_offset', ctypes.c_uint32),
+                ('first_field_index', ctypes.c_uint32),
                ]
 
 
@@ -80,7 +80,7 @@ class Register(collections.abc.Mapping):
         field_names = []
 
         for idx in range(self.rd.num_fields):
-            offset = self.rf._get_field_offset(self.rd.fields_offset + idx)
+            offset = self.rf._get_field_offset(self.rd.first_field_index + idx)
             fd = FieldData.from_buffer(self.rf._map, offset)
             name = self.rf._get_str(fd.name_offset)
             field_names.append(name)
@@ -104,7 +104,7 @@ class Register(collections.abc.Mapping):
             return rbi
 
         for idx in range(self.rd.num_fields):
-            offset = self.rf._get_field_offset(self.rd.fields_offset + idx)
+            offset = self.rf._get_field_offset(self.rd.first_field_index + idx)
             fd = FieldData.from_buffer(self.rf._map, offset)
             name = self.rf._get_str(fd.name_offset)
 
@@ -130,8 +130,8 @@ class RegisterBlock(collections.abc.Mapping):
 
         reg_names = []
 
-        for idx in range(self.rbd.num_registers):
-            offset = self.rf._get_register_offset(self.rbd.regs_offset + idx)
+        for idx in range(self.rbd.num_regs):
+            offset = self.rf._get_register_offset(self.rbd.first_reg_index + idx)
             rd = RegisterData.from_buffer(self.rf._map, offset)
             name = self.rf._get_str(rd.name_offset)
             reg_names.append(name)
@@ -140,7 +140,7 @@ class RegisterBlock(collections.abc.Mapping):
 
     @property
     def num_registers(self) -> int:
-        return self.rbd.num_registers
+        return self.rbd.num_regs
 
     @property
     def addr_endianness(self):
@@ -174,8 +174,8 @@ class RegisterBlock(collections.abc.Mapping):
         if rbi:
             return rbi
 
-        for idx in range(self.rbd.num_registers):
-            offset = self.rf._get_register_offset(self.rbd.regs_offset + idx)
+        for idx in range(self.rbd.num_regs):
+            offset = self.rf._get_register_offset(self.rbd.first_reg_index + idx)
             rd = RegisterData.from_buffer(self.rf._map, offset)
             name = self.rf._get_str(rd.name_offset)
 
@@ -231,7 +231,7 @@ class RegisterFile(collections.abc.Mapping):
 
         self.blocks_offset = ctypes.sizeof(RegisterFileData)
         self.registers_offset = self.blocks_offset + ctypes.sizeof(RegisterBlockData) * self.rfd.num_blocks
-        self.fields_offset = self.registers_offset + ctypes.sizeof(RegisterData) * self.rfd.num_registers
+        self.fields_offset = self.registers_offset + ctypes.sizeof(RegisterData) * self.rfd.num_regs
         self.strings_offset = self.fields_offset + ctypes.sizeof(FieldData) * self.rfd.num_fields
 
         self.name = self._get_str(self.rfd.name_offset)
@@ -265,7 +265,7 @@ class RegisterFile(collections.abc.Mapping):
 
     @property
     def num_regs(self) -> int:
-        return self.rfd.num_registers
+        return self.rfd.num_regs
 
     @property
     def num_fields(self) -> int:
