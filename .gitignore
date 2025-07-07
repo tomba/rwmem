@@ -1,3 +1,4 @@
+.cache
 build
 *.txt.user
 *.swp
