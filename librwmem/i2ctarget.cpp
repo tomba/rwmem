@@ -1,8 +1,8 @@
 #include "i2ctarget.h"
-#include "helpers.h"
 
 #include <fmt/format.h>
 #include <stdexcept>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -34,13 +34,16 @@ void I2CTarget::map(uint64_t offset, uint64_t length,
 	string name = fmt::format("/dev/i2c-{}", m_adapter_nr);
 
 	m_fd = open(name.c_str(), O_RDWR);
-	ERR_ON_ERRNO(m_fd < 0, "Failed to open i2c device");
+	if (m_fd < 0)
+		throw runtime_error(fmt::format("Failed to open i2c device: {}", strerror(errno)));
 
 	unsigned long i2c_funcs;
 	int r = ioctl(m_fd, I2C_FUNCS, &i2c_funcs);
-	ERR_ON_ERRNO(r < 0, "failed to get i2c functions");
+	if (r < 0)
+		throw runtime_error(fmt::format("failed to get i2c functions: {}", strerror(errno)));
 
-	ERR_ON(!(i2c_funcs & I2C_FUNC_I2C), "no i2c functionality");
+	if (!(i2c_funcs & I2C_FUNC_I2C))
+		throw runtime_error("no i2c functionality");
 
 	m_address_endianness = default_addr_endianness;
 	m_address_bytes = default_addr_size;
@@ -118,7 +121,7 @@ static uint64_t device_to_host(uint8_t buf[], unsigned numbytes, Endianness endi
 		}
 	}
 	default:
-		abort();
+		throw invalid_argument(fmt::format("Invalid number of bytes: {}", numbytes));
 	}
 }
 
@@ -192,7 +195,7 @@ static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], End
 		break;
 	}
 	default:
-		abort();
+		throw invalid_argument(fmt::format("Invalid number of bytes: {}", numbytes));
 	}
 }
 
@@ -226,7 +229,8 @@ uint64_t I2CTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) c
 	data.nmsgs = 2;
 
 	int r = ioctl(m_fd, I2C_RDWR, &data);
-	ERR_ON_ERRNO(r < 0, "i2c transfer failed");
+	if (r < 0)
+		throw runtime_error(fmt::format("i2c transfer failed: {}", strerror(errno)));
 
 	return device_to_host(data_buf, nbytes, endianness);
 }
@@ -257,5 +261,6 @@ void I2CTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness 
 	data.nmsgs = 1;
 
 	int r = ioctl(m_fd, I2C_RDWR, &data);
-	ERR_ON_ERRNO(r < 0, "i2c transfer failed");
+	if (r < 0)
+		throw runtime_error(fmt::format("i2c transfer failed: {}", strerror(errno)));
 }

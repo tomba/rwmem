@@ -8,9 +8,9 @@
 #include <sys/mman.h>
 #include <cinttypes>
 #include <exception>
+#include <fmt/format.h>
 
 #include "regs.h"
-#include "helpers.h"
 
 using namespace std;
 
@@ -77,13 +77,15 @@ unique_ptr<Register> RegisterBlock::get_register(const string& name) const
 RegisterFile::RegisterFile(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
-	ERR_ON_ERRNO(fd < 0, "Open regfile '{}' failed", filename);
+	if (fd < 0)
+		throw runtime_error(fmt::format("Open regfile '{}' failed: {}", filename, strerror(errno)));
 
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
 	void* data = mmap(nullptr, len, PROT_READ, MAP_PRIVATE, fd, 0);
-	ERR_ON_ERRNO(data == MAP_FAILED, "mmap regfile failed");
+	if (data == MAP_FAILED)
+		throw runtime_error(fmt::format("mmap regfile failed: {}", strerror(errno)));
 
 	m_rfd = (RegisterFileData*)data;
 	m_size = len;
