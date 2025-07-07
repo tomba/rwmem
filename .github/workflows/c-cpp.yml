@@ -14,8 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: update apt
+      run: sudo apt update -y
+
     - name: install deps
-      run: sudo apt install -y meson ninja-build libfmt-dev
+      run: sudo apt install -y meson ninja-build libfmt-dev libgtest-dev
 
     - name: configure
       run: meson setup -Dwerror=true -Db_lto=true build
