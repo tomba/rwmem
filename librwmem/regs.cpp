@@ -24,7 +24,7 @@ Field Register::at(uint32_t idx) const
 	if (idx >= m_rd->num_fields())
 		throw out_of_range("field idx too high");
 
-	const FieldData* fd = m_rd->at(m_rfd, idx);
+	const FieldData* fd = m_rd->field_at(m_rfd, idx);
 	return Field(m_rfd, fd);
 }
 
@@ -41,7 +41,7 @@ unique_ptr<Field> Register::find_field(const string& name) const
 unique_ptr<Field> Register::find_field(uint8_t high, uint8_t low) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
-		const FieldData* fd = m_rd->at(m_rfd, i);
+		const FieldData* fd = m_rd->field_at(m_rfd, i);
 
 		if (low == fd->low() && high == fd->high())
 			return make_unique<Field>(m_rfd, fd);
@@ -60,7 +60,7 @@ Register RegisterBlock::at(uint32_t idx) const
 	if (idx >= m_rbd->num_regs())
 		throw out_of_range("register idx too high");
 
-	const RegisterData* rd = m_rbd->at(m_rfd, idx);
+	const RegisterData* rd = m_rbd->register_at(m_rfd, idx);
 	return Register(m_rfd, m_rbd, rd);
 }
 
@@ -105,7 +105,7 @@ RegisterBlock RegisterFile::at(uint32_t idx) const
 	if (idx >= m_rfd->num_blocks())
 		throw out_of_range("register block idx too high");
 
-	const RegisterBlockData* rbd = m_rfd->at(idx);
+	const RegisterBlockData* rbd = m_rfd->block_at(idx);
 	return RegisterBlock(m_rfd, rbd);
 }
 

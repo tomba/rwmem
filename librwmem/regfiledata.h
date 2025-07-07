@@ -108,7 +108,7 @@ struct __attribute__((packed)) RegisterFileData {
 	/// Name of the RegisterFile
 	const char* name() const { return strings() + name_offset(); }
 	/// Pointer to the 'idx' RegisterBlockData
-	const RegisterBlockData* at(uint32_t idx) const;
+	const RegisterBlockData* block_at(uint32_t idx) const;
 	/// Find RegisterBlockData with the given name
 	const RegisterBlockData* find_block(const std::string& name) const;
 
@@ -136,7 +136,7 @@ private:
  * - offset (8 bytes): Base address of this register block
  * - size (8 bytes): Size of address space covered by this block
  * - num_registers (4 bytes): Count of registers in this block
- * - regs_offset (4 bytes): Index of first register in global register array
+ * - first_reg_index (4 bytes): Index of first register in global register array
  * - addr_endianness (1 byte): Endianness for address encoding (I2C)
  * - addr_size (1 byte): Address size in bytes (I2C)
  * - data_endianness (1 byte): Endianness for data encoding
@@ -150,9 +150,9 @@ struct __attribute__((packed)) RegisterBlockData {
 	/// Size of this RegisterBlock in bytes
 	uint64_t size() const { return be64toh(m_size); }
 	/// Number of Registers in this RegisterBlock
-	uint32_t num_regs() const { return be32toh(m_num_registers); }
+	uint32_t num_regs() const { return be32toh(m_num_regs); }
 	/// Offset of the first register in this RegisterBlock
-	uint32_t regs_offset() const { return be32toh(m_regs_offset); }
+	uint32_t first_reg_index() const { return be32toh(m_first_reg_index); }
 	/// Endianness of the address (for i2c)
 	Endianness addr_endianness() const { return (Endianness)m_addr_endianness; }
 	/// Size of the address in bytes (for i2c)
@@ -163,7 +163,7 @@ struct __attribute__((packed)) RegisterBlockData {
 	uint8_t data_size() const { return m_data_size; }
 
 	const char* name(const RegisterFileData* rfd) const { return rfd->strings() + name_offset(); }
-	const RegisterData* at(const RegisterFileData* rfd, uint32_t idx) const;
+	const RegisterData* register_at(const RegisterFileData* rfd, uint32_t idx) const;
 	const RegisterData* find_register(const RegisterFileData* rfd, const std::string& name) const;
 	const RegisterData* find_register(const RegisterFileData* rfd, uint64_t offset) const;
 
@@ -171,8 +171,8 @@ private:
 	uint32_t m_name_offset;
 	uint64_t m_offset;
 	uint64_t m_size;
-	uint32_t m_num_registers;
-	uint32_t m_regs_offset;
+	uint32_t m_num_regs;
+	uint32_t m_first_reg_index;
 
 	uint8_t m_addr_endianness;
 	uint8_t m_addr_size;
@@ -190,17 +190,17 @@ private:
  * - name_offset (4 bytes): Offset to register name in string pool
  * - offset (8 bytes): Address offset relative to containing RegisterBlock
  * - num_fields (4 bytes): Count of bitfield definitions for this register
- * - fields_offset (4 bytes): Index of first field in global fields array
+ * - first_field_index (4 bytes): Index of first field in global fields array
  */
 struct __attribute__((packed)) RegisterData {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
 
 	uint32_t num_fields() const { return be32toh(m_num_fields); }
-	uint32_t fields_offset() const { return be32toh(m_fields_offset); }
+	uint32_t first_field_index() const { return be32toh(m_first_field_index); }
 
 	const char* name(const RegisterFileData* rfd) const { return rfd->strings() + name_offset(); }
-	const FieldData* at(const RegisterFileData* rfd, uint32_t idx) const;
+	const FieldData* field_at(const RegisterFileData* rfd, uint32_t idx) const;
 	const FieldData* find_field(const RegisterFileData* rfd, const std::string& name) const;
 	const FieldData* find_field(const RegisterFileData* rfd, uint8_t high, uint8_t low) const;
 
@@ -209,7 +209,7 @@ private:
 	uint64_t m_offset;
 
 	uint32_t m_num_fields;
-	uint32_t m_fields_offset;
+	uint32_t m_first_field_index;
 };
 
 /**

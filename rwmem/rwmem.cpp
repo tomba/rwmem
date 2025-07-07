@@ -35,7 +35,7 @@ static vector<const RegisterData*> match_registers(const RegisterFileData* rfd, 
 	vector<const RegisterData*> matches;
 
 	for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
-		const RegisterData* rd = rbd->at(rfd, ridx);
+		const RegisterData* rd = rbd->register_at(rfd, ridx);
 
 		if (fnmatch(pattern.c_str(), rd->name(rfd), FNM_CASEFOLD) != 0)
 			continue;
@@ -69,7 +69,7 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 	vector<RegMatch> matches;
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
-		const RegisterBlockData* rbd = rfd->at(bidx);
+		const RegisterBlockData* rbd = rfd->block_at(bidx);
 
 		if (fnmatch(rb_pat.c_str(), rbd->name(rfd), FNM_CASEFOLD) != 0)
 			continue;
@@ -83,7 +83,7 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 		}
 
 		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
-			const RegisterData* rd = rbd->at(rfd, ridx);
+			const RegisterData* rd = rbd->register_at(rfd, ridx);
 
 			if (fnmatch(r_pat.c_str(), rd->name(rfd), FNM_CASEFOLD) != 0)
 				continue;
@@ -96,7 +96,7 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 			}
 
 			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
-				const FieldData* fd = rd->at(rfd, fidx);
+				const FieldData* fd = rd->field_at(rfd, fidx);
 
 				if (fnmatch(f_pat.c_str(), fd->name(rfd), FNM_CASEFOLD) != 0)
 					continue;
@@ -116,14 +116,14 @@ static void print_regfile_all(const RegisterFileData* rfd)
 		   rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
-		const RegisterBlockData* rbd = rfd->at(bidx);
+		const RegisterBlockData* rbd = rfd->block_at(bidx);
 
 		fmt::print("  {}: {:#x} {:#x}, regs {}, endianness: {}/{}\n",
 			   rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
 			   (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
 
 		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
-			const RegisterData* rd = rbd->at(rfd, ridx);
+			const RegisterData* rd = rbd->register_at(rfd, ridx);
 
 			fmt::print("    {}: {:#x}, fields {}\n",
 				   rd->name(rfd), rd->offset(), rd->num_fields());
@@ -132,7 +132,7 @@ static void print_regfile_all(const RegisterFileData* rfd)
 				continue;
 
 			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
-				const FieldData* fd = rd->at(rfd, fidx);
+				const FieldData* fd = rd->field_at(rfd, fidx);
 
 				fmt::print("      {}: {}:{}\n",
 					   fd->name(rfd), fd->high(), fd->low());
@@ -317,7 +317,7 @@ static void readwriteprint(const RwmemOp& op,
 				    newval, userval, oldval, op, formatting);
 		} else {
 			for (unsigned i = 0; i < rd->num_fields(); ++i) {
-				const FieldData* fd = rd->at(rfd, i);
+				const FieldData* fd = rd->field_at(rfd, i);
 
 				if (fd->high() >= op.low && fd->low() <= op.high)
 					print_field(fd->high(), fd->low(), rfd, fd,
@@ -373,12 +373,12 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 				ERR_ON(op.rds.empty(), "Failed to find register");
 				rd = op.rds[0];
 			} else {
-				rd = rbd->at(rfd, 0);
+				rd = rbd->register_at(rfd, 0);
 				ERR_ON(!rd, "Failed to figure out first register");
 			}
 		} else if (strs.size() == 1) {
 			for (uint32_t bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
-				const RegisterBlockData* rbd = rfd->at(bidx);
+				const RegisterBlockData* rbd = rfd->block_at(bidx);
 				const auto rds = match_registers(rfd, rbd, strs[0]);
 				if (!rds.empty()) {
 					op.rbd = rbd;

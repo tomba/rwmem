@@ -23,7 +23,7 @@ const char* RegisterFileData::strings() const
 	return (const char*)(&fields()[num_fields()]);
 }
 
-const RegisterBlockData* RegisterFileData::at(uint32_t idx) const
+const RegisterBlockData* RegisterFileData::block_at(uint32_t idx) const
 {
 	return &blocks()[idx];
 }
@@ -31,7 +31,7 @@ const RegisterBlockData* RegisterFileData::at(uint32_t idx) const
 const RegisterBlockData* RegisterFileData::find_block(const string& name) const
 {
 	for (unsigned i = 0; i < num_blocks(); ++i) {
-		const RegisterBlockData* rbd = at(i);
+		const RegisterBlockData* rbd = block_at(i);
 
 		if (strcasecmp(rbd->name(this), name.c_str()) == 0)
 			return rbd;
@@ -43,7 +43,7 @@ const RegisterBlockData* RegisterFileData::find_block(const string& name) const
 const RegisterData* RegisterFileData::find_register(const string& name, const RegisterBlockData** rbd) const
 {
 	for (unsigned i = 0; i < num_blocks(); ++i) {
-		*rbd = at(i);
+		*rbd = block_at(i);
 
 		const RegisterData* rd = (*rbd)->find_register(this, name);
 		if (!rd)
@@ -59,7 +59,7 @@ const RegisterData* RegisterFileData::find_register(const string& name, const Re
 const RegisterData* RegisterFileData::find_register(uint64_t offset, const RegisterBlockData** rbd) const
 {
 	for (unsigned bidx = 0; bidx < num_blocks(); ++bidx) {
-		*rbd = at(bidx);
+		*rbd = block_at(bidx);
 
 		if (offset < (*rbd)->offset())
 			continue;
@@ -68,7 +68,7 @@ const RegisterData* RegisterFileData::find_register(uint64_t offset, const Regis
 			continue;
 
 		for (unsigned ridx = 0; ridx < (*rbd)->num_regs(); ++ridx) {
-			const RegisterData* rd = (*rbd)->at(this, ridx);
+			const RegisterData* rd = (*rbd)->register_at(this, ridx);
 
 			if (rd->offset() == offset - (*rbd)->offset())
 				return rd;
@@ -78,15 +78,15 @@ const RegisterData* RegisterFileData::find_register(uint64_t offset, const Regis
 	return nullptr;
 }
 
-const RegisterData* RegisterBlockData::at(const RegisterFileData* rfd, uint32_t idx) const
+const RegisterData* RegisterBlockData::register_at(const RegisterFileData* rfd, uint32_t idx) const
 {
-	return &rfd->registers()[regs_offset() + idx];
+	return &rfd->registers()[first_reg_index() + idx];
 }
 
 const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, const string& name) const
 {
 	for (unsigned i = 0; i < num_regs(); ++i) {
-		const RegisterData* rd = &rfd->registers()[regs_offset() + i];
+		const RegisterData* rd = &rfd->registers()[first_reg_index() + i];
 
 		if (strcasecmp(rd->name(rfd), name.c_str()) == 0)
 			return rd;
@@ -98,7 +98,7 @@ const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd
 const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, uint64_t offset) const
 {
 	for (unsigned i = 0; i < num_regs(); ++i) {
-		const RegisterData* rd = &rfd->registers()[regs_offset() + i];
+		const RegisterData* rd = &rfd->registers()[first_reg_index() + i];
 
 		if (rd->offset() == offset)
 			return rd;
@@ -107,15 +107,15 @@ const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd
 	return nullptr;
 }
 
-const FieldData* RegisterData::at(const RegisterFileData* rfd, uint32_t idx) const
+const FieldData* RegisterData::field_at(const RegisterFileData* rfd, uint32_t idx) const
 {
-	return &rfd->fields()[fields_offset() + idx];
+	return &rfd->fields()[first_field_index() + idx];
 }
 
 const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const string& name) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
-		const FieldData* fd = &rfd->fields()[fields_offset() + i];
+		const FieldData* fd = &rfd->fields()[first_field_index() + i];
 
 		if (strcasecmp(fd->name(rfd), name.c_str()) == 0)
 			return fd;
@@ -127,7 +127,7 @@ const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const str
 const FieldData* RegisterData::find_field(const RegisterFileData* rfd, uint8_t high, uint8_t low) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
-		const FieldData* fd = &rfd->fields()[fields_offset() + i];
+		const FieldData* fd = &rfd->fields()[first_field_index() + i];
 
 		if (fd->high() == high && fd->low() == low)
 			return fd;
