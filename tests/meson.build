@@ -15,4 +15,13 @@ test_regfiledata = executable('test_regfiledata',
     dependencies : [libfmt_dep, gtest_dep],
 )
 
+test_mmaptarget = executable('test_mmaptarget',
+    'test_mmaptarget.cpp',
+    include_directories : include_directories('..'),
+    link_with : [librwmem],
+    dependencies : [libfmt_dep, gtest_dep],
+    cpp_args : ['-DTEST_DATA_DIR="' + meson.current_source_dir() + '"'],
+)
+
 test('regfiledata', test_regfiledata)
+test('mmaptarget', test_mmaptarget)
