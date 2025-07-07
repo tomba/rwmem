@@ -13,4 +13,4 @@ target = rw.I2CTarget(i2c_adapter, i2c_addr, 0, 0x100, rw.Endianness.Big, i2c_ad
 
 for i in range(256):
     v = target.read(i, 1)
-    print("{:3} = {:02x} {}".format(i, v, chr(v)))
+    print('{:3} = {:02x} {}'.format(i, v, chr(v)))

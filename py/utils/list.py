@@ -6,13 +6,13 @@ import tabulate
 tabulate.PRESERVE_WHITESPACE = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("regfile")
-parser.add_argument("--no-regs", action="store_true")
-parser.add_argument("--no-fields", action="store_true")
+parser.add_argument('regfile')
+parser.add_argument('--no-regs', action='store_true')
+parser.add_argument('--no-fields', action='store_true')
 args = parser.parse_args()
 
 rf = rw.RegisterFile(args.regfile)
-print("RegisterFile {}: blocks {}, regs {}, fields {}".format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
+print('RegisterFile {}: blocks {}, regs {}, fields {}'.format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
 print()
 
 table = []

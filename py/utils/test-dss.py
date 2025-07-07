@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import io
+import time
 
 import rwmem as rw
 import rwmem.gen as gen
@@ -49,9 +50,9 @@ VP_REGS = [
     ] ),
 ]
 
-plat = "J7"
+plat = 'J7'
 
-if plat == "AM625":
+if plat == 'AM625':
     urf = gen.UnpackedRegFile(
         'DSS', [
             ( 'VP1', 0x3020a000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
@@ -60,7 +61,7 @@ if plat == "AM625":
             ( 'OVR1', 0x30207000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
         ]
     )
-elif plat == "J7":
+elif plat == 'J7':
     urf = gen.UnpackedRegFile(
         'DSS', [
             ( 'VP1', 0x04a80000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
@@ -116,21 +117,21 @@ def print_rf(rf: rw.RegisterFile):
 
 #print_rf(rf)
 
-print("==")
+print('==')
 
 mrf = rw.MappedRegisterFile(rf)
 
 def pr_old():
     for vp_idx in range(1, 5):
         vp_name = f'VP{vp_idx}'
-        if not vp_name in mrf:
+        if vp_name not in mrf:
             break
         vp = mrf[vp_name]
 
         print(f'{vp_name} enable={vp["CONTROL"]["ENABLE"]}')
 
         ovr_name = f'OVR{vp_idx}'
-        if not ovr_name in mrf:
+        if ovr_name not in mrf:
             break
         ovr = mrf[ovr_name]
 
@@ -141,7 +142,7 @@ def pr_old():
             reg = ovr[ovr_attrs_name]
             print(f'    {ovr_attrs_name} enable={reg["ENABLE"]} channelin={reg["CHANNELIN"]} posx={reg["POSX"]} posy={reg["POSY"]}')
 
-print("==")
+print('==')
 
 def pr():
     for rb in mrf.values():
@@ -162,8 +163,6 @@ def pr():
             print()
 
 pr()
-
-import time
 
 mrf['OVR2']['ATTRIBUTES_0']['CHANNELIN']=0
 time.sleep(1)

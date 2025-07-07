@@ -67,7 +67,7 @@ class WriteMmapRegsTests(unittest.TestCase):
         m['REG1'].set_value(0x12345678)
         m['REG1'][0:7] = 0xda
         m['REG1'][15:8] = 0x01
-        m['REG1']['REG11'] = 0xbade;
+        m['REG1']['REG11'] = 0xbade
 
         self.assertEqual(m['REG1'].value, 0xbade01da)
         self.assertEqual(m._map.read(8, 4), 0xbade01da)
@@ -80,7 +80,7 @@ class WriteMmapRegsTests(unittest.TestCase):
         m['REG1'].set_value(0x12345678)
         m['REG1'][0:7] = 0xda
         m['REG1'][15:8] = 0x01
-        m['REG1']['REG11'] = 0xbade;
+        m['REG1']['REG11'] = 0xbade
 
         self.assertEqual(m['REG1'].value, 0xbade01da)
         self.assertEqual(m._map.read(8, 4), 0xbade01da)

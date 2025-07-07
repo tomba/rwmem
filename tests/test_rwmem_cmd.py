@@ -24,7 +24,7 @@ class RwmemTestBase(unittest.TestCase):
 
         res = subprocess.run([self.rwmem_cmd, *opts],
                              capture_output=True,
-                             encoding='ASCII')
+                             encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
         self.assertEqual(res.stdout, expected, res)
