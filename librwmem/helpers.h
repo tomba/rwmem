@@ -76,13 +76,4 @@ int fls(uint64_t num);
 
 bool file_exists(const std::string& name);
 
-// Note: values stored in the register file
-enum class Endianness {
-	Default = 0,
-	Big = 1,
-	Little = 2,
-	BigSwapped = 3, // Big endian, 16/32 bit words swapped
-	LittleSwapped = 4, // Little endian, 16/32 bit words swapped
-};
-
 std::string get_home();

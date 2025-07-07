@@ -1,6 +1,7 @@
 #pragma once
 
 #include "helpers.h"
+#include "endianness.h"
 
 enum class MapMode {
 	Read,
