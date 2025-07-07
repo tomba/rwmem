@@ -6,6 +6,59 @@
 
 #include "endianness.h"
 
+/*
+ * Binary Register File Format
+ * ===========================
+ *
+ * This file defines the binary format for rwmem register description files.
+ * The format is designed to be memory-mappable and efficient for lookups.
+ *
+ * File Structure:
+ * ---------------
+ * The binary file is laid out as a single contiguous block of memory with
+ * the following structure:
+ *
+ * +------------------+
+ * | RegisterFileData | <- File header with counts and metadata
+ * +------------------+
+ * | RegisterBlockData| <- Array of register blocks
+ * | RegisterBlockData|
+ * | ...              |
+ * +------------------+
+ * | RegisterData     | <- Array of all registers from all blocks
+ * | RegisterData     |
+ * | ...              |
+ * +------------------+
+ * | FieldData        | <- Array of all fields from all registers
+ * | FieldData        |
+ * | ...              |
+ * +------------------+
+ * | String Pool      | <- Null-terminated strings referenced by offsets
+ * | "block1\0"       |
+ * | "register1\0"    |
+ * | "field1\0"       |
+ * | ...              |
+ * +------------------+
+ *
+ * Key Design Principles:
+ * - All multi-byte integers are stored in big-endian format
+ * - Structures are packed to ensure consistent layout across platforms
+ * - String references use offsets into the string pool for space efficiency
+ * - Arrays are contiguous and indexed by offset/count pairs
+ * - The entire file can be memory-mapped for direct access
+ *
+ * Hierarchy:
+ * - RegisterFile contains multiple RegisterBlocks
+ * - RegisterBlock contains multiple Registers
+ * - Register contains multiple Fields (bitfield definitions)
+ *
+ * Access Pattern:
+ * 1. Memory-map the file
+ * 2. Cast the start to RegisterFileData*
+ * 3. Use pointer arithmetic to access arrays and strings
+ * 4. All offsets are relative to the start of the file
+ */
+
 const uint32_t RWMEM_MAGIC = 0x00e11554;
 const uint32_t RWMEM_VERSION = 2;
 
@@ -14,6 +67,21 @@ struct __attribute__((packed)) RegisterBlockData;
 struct __attribute__((packed)) RegisterData;
 struct __attribute__((packed)) FieldData;
 
+/**
+ * RegisterFileData - File header and root structure
+ *
+ * This is the first structure in the binary file and serves as the file header.
+ * It contains magic number, version, and counts for all data structures in the file.
+ * All arrays in the file are accessed through this structure using pointer arithmetic.
+ *
+ * Layout (24 bytes):
+ * - magic (4 bytes): File format identifier (0x00e11554)
+ * - version (4 bytes): Format version number
+ * - name_offset (4 bytes): Offset to file name in string pool
+ * - num_blocks (4 bytes): Count of RegisterBlockData structures
+ * - num_regs (4 bytes): Total count of RegisterData structures
+ * - num_fields (4 bytes): Total count of FieldData structures
+ */
 struct __attribute__((packed)) RegisterFileData {
 	/// rwmem database magic number
 	uint32_t magic() const { return be32toh(m_magic); }
@@ -56,6 +124,24 @@ private:
 	uint32_t m_num_fields;
 };
 
+/**
+ * RegisterBlockData - Describes a contiguous block of registers
+ *
+ * Represents a logical group of registers that share common properties like
+ * address space, endianness, and data size. Used for both memory-mapped and
+ * I2C register access patterns.
+ *
+ * Layout (36 bytes):
+ * - name_offset (4 bytes): Offset to block name in string pool
+ * - offset (8 bytes): Base address of this register block
+ * - size (8 bytes): Size of address space covered by this block
+ * - num_registers (4 bytes): Count of registers in this block
+ * - regs_offset (4 bytes): Index of first register in global register array
+ * - addr_endianness (1 byte): Endianness for address encoding (I2C)
+ * - addr_size (1 byte): Address size in bytes (I2C)
+ * - data_endianness (1 byte): Endianness for data encoding
+ * - data_size (1 byte): Data size in bytes
+ */
 struct __attribute__((packed)) RegisterBlockData {
 	/// Offset of the RegisterBlock name
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
@@ -94,6 +180,18 @@ private:
 	uint8_t m_data_size;
 };
 
+/**
+ * RegisterData - Describes a single register within a register block
+ *
+ * Represents an individual register with its address offset (relative to the
+ * containing RegisterBlock) and associated bitfield definitions.
+ *
+ * Layout (20 bytes):
+ * - name_offset (4 bytes): Offset to register name in string pool
+ * - offset (8 bytes): Address offset relative to containing RegisterBlock
+ * - num_fields (4 bytes): Count of bitfield definitions for this register
+ * - fields_offset (4 bytes): Index of first field in global fields array
+ */
 struct __attribute__((packed)) RegisterData {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint64_t offset() const { return be64toh(m_offset); }
@@ -114,6 +212,17 @@ private:
 	uint32_t m_fields_offset;
 };
 
+/**
+ * FieldData - Describes a bitfield within a register
+ *
+ * Represents a named bitfield or bit range within a register, defined by
+ * high and low bit positions (inclusive range).
+ *
+ * Layout (6 bytes):
+ * - name_offset (4 bytes): Offset to field name in string pool
+ * - high (1 byte): High bit position (MSB of field)
+ * - low (1 byte): Low bit position (LSB of field)
+ */
 struct __attribute__((packed)) FieldData {
 	uint32_t name_offset() const { return be32toh(m_name_offset); }
 	uint8_t low() const { return m_low; }
