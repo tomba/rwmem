@@ -1,5 +1,4 @@
 librwmem_sources = files([
-    'helpers.cpp',
     'i2ctarget.cpp',
     'mmaptarget.cpp',
     'regfiledata.cpp',

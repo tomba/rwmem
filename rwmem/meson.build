@@ -3,6 +3,7 @@ inih_dep = dependency('inih', required : false)
 
 rwmem_sources = files([
     'cmdline.cpp',
+    'helpers.cpp',
     'opts.cpp',
     'rwmem.cpp',
 ])
