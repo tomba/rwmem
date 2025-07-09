@@ -21,7 +21,7 @@ if inih_dep.found()
     rwmem_args += [ '-DHAS_INIH' ]
 endif
 
-executable('rwmem', rwmem_sources,
-           dependencies : rwmem_deps,
-           cpp_args : rwmem_args,
-           install : true)
+rwmem_exe = executable('rwmem', rwmem_sources,
+                       dependencies : rwmem_deps,
+                       cpp_args : rwmem_args,
+                       install : true)

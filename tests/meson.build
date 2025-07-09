@@ -25,3 +25,12 @@ test_mmaptarget = executable('test_mmaptarget',
 
 test('regfiledata', test_regfiledata)
 test('mmaptarget', test_mmaptarget)
+
+# Python tests
+python3 = find_program('python3')
+
+test('rwmem_cmd_tests', python3,
+    args : ['-m', 'unittest', 'discover', '-v', meson.current_source_dir()],
+    env : {'RWMEM_CMD': rwmem_exe.full_path()},
+    depends : [rwmem_exe]
+)
