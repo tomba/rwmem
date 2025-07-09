@@ -92,19 +92,17 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 
 void MMapTarget::unmap()
 {
-	if (m_fd == -1)
-		return;
+	if (m_map_base != MAP_FAILED) {
+		if (munmap(m_map_base, m_map_len) == -1)
+			fmt::print(stderr, "Warning: failed to munmap: {}\n", strerror(errno));
 
-	close(m_fd);
-	m_fd = -1;
+		m_map_base = MAP_FAILED;
+	}
 
-	if (m_map_base == MAP_FAILED)
-		return;
-
-	if (munmap(m_map_base, m_map_len) == -1)
-		fmt::print(stderr, "Warning: failed to munmap: {}\n", strerror(errno));
-
-	m_map_base = MAP_FAILED;
+	if (m_fd != -1) {
+		close(m_fd);
+		m_fd = -1;
+	}
 }
 
 void MMapTarget::sync()
