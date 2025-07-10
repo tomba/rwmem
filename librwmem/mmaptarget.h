@@ -39,10 +39,6 @@ private:
 	uint64_t m_map_offset;
 	uint64_t m_map_len;
 
+	void validate_access(uint64_t addr, uint8_t nbytes) const;
 	void* maddr(uint64_t addr) const;
-
-	volatile uint8_t* addr8(uint64_t addr) const;
-	volatile uint16_t* addr16(uint64_t addr) const;
-	volatile uint32_t* addr32(uint64_t addr) const;
-	volatile uint64_t* addr64(uint64_t addr) const;
 };

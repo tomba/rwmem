@@ -14,6 +14,18 @@ using namespace std;
 static const uint64_t pagesize = sysconf(_SC_PAGESIZE);
 static const uint64_t pagemask = pagesize - 1;
 
+template<typename T>
+static T ioread(void* addr)
+{
+	return *(volatile T*)addr;
+}
+
+template<typename T>
+static void iowrite(void* addr, T value)
+{
+	*(volatile T*)addr = value;
+}
+
 MMapTarget::MMapTarget(const string& filename)
 	: m_filename(filename), m_fd(-1),
 	 m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
@@ -123,15 +135,19 @@ uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) 
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
+	validate_access(addr, nbytes);
+
+	void* base_addr = maddr(addr);
+
 	switch (nbytes) {
 	case 1:
-		return *addr8(addr);
+		return ioread<uint8_t>(base_addr);
 	case 2:
-		return to_host<uint16_t>(*addr16(addr), endianness);
+		return to_host(ioread<uint16_t>(base_addr), endianness);
 	case 4:
-		return to_host<uint32_t>(*addr32(addr), endianness);
+		return to_host(ioread<uint32_t>(base_addr), endianness);
 	case 8:
-		return to_host<uint64_t>(*addr64(addr), endianness);
+		return to_host(ioread<uint64_t>(base_addr), endianness);
 	default:
 		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
 	}
@@ -148,18 +164,22 @@ void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
+	validate_access(addr, nbytes);
+
+	void* base_addr = maddr(addr);
+
 	switch (nbytes) {
 	case 1:
-		*addr8(addr) = (uint8_t)value;
+		iowrite<uint8_t>(base_addr, (uint8_t)value);
 		break;
 	case 2:
-		*addr16(addr) = from_host<uint16_t>(value, endianness);
+		iowrite<uint16_t>(base_addr, from_host((uint16_t)value, endianness));
 		break;
 	case 4:
-		*addr32(addr) = from_host<uint32_t>(value, endianness);
+		iowrite<uint32_t>(base_addr, from_host((uint32_t)value, endianness));
 		break;
 	case 8:
-		*addr64(addr) = from_host<uint64_t>(value, endianness);
+		iowrite<uint64_t>(base_addr, from_host(value, endianness));
 		break;
 	default:
 		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
@@ -167,43 +187,17 @@ void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness
 }
 
 
-void* MMapTarget::maddr(uint64_t addr) const
+void MMapTarget::validate_access(uint64_t addr, uint8_t nbytes) const
 {
 	if (addr < m_offset)
 		throw runtime_error(fmt::format("address {:#x} below map range {:#x}-{:#x}",
 		                                addr, m_offset, m_offset + m_len));
 
+	if (addr + nbytes > m_offset + m_len)
+		throw runtime_error("address above map range");
+}
+
+void* MMapTarget::maddr(uint64_t addr) const
+{
 	return (uint8_t*)m_map_base + (addr - m_map_offset);
-}
-
-volatile uint8_t* MMapTarget::addr8(uint64_t addr) const
-{
-	if (addr + 1 > m_offset + m_len)
-		throw runtime_error("address above map range");
-
-	return (volatile uint8_t*)maddr(addr);
-}
-
-volatile uint16_t* MMapTarget::addr16(uint64_t addr) const
-{
-	if (addr + 2 > m_offset + m_len)
-		throw runtime_error("address above map range");
-
-	return (volatile uint16_t*)maddr(addr);
-}
-
-volatile uint32_t* MMapTarget::addr32(uint64_t addr) const
-{
-	if (addr + 4 > m_offset + m_len)
-		throw runtime_error("address above map range");
-
-	return (volatile uint32_t*)maddr(addr);
-}
-
-volatile uint64_t* MMapTarget::addr64(uint64_t addr) const
-{
-	if (addr + 8 > m_offset + m_len)
-		throw runtime_error("address above map range");
-
-	return (volatile uint64_t*)maddr(addr);
 }
