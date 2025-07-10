@@ -63,52 +63,88 @@ void I2CTarget::unmap()
 
 static uint64_t device_to_host(uint8_t buf[], unsigned numbytes, Endianness endianness)
 {
-	switch (numbytes) {
-	case 1:
-		return buf[0];
-	case 2: {
-		uint16_t v = *((uint16_t*)buf);
-		return to_host(v, endianness);
-	}
-	case 4: {
-		uint32_t v = *((uint32_t*)buf);
-		return to_host(v, endianness);
-	}
-	case 8: {
-		uint64_t v = *((uint64_t*)buf);
-		return to_host(v, endianness);
-	}
-	default:
+	if (numbytes == 0 || numbytes > 8)
 		throw invalid_argument(fmt::format("Invalid number of bytes: {}", numbytes));
+
+	if (numbytes == 1)
+		return buf[0];
+
+	// For standard sizes, use typed access for potential efficiency
+	if (numbytes == 2 || numbytes == 4 || numbytes == 8) {
+		switch (numbytes) {
+		case 2: {
+			uint16_t v = *((uint16_t*)buf);
+			return to_host(v, endianness);
+		}
+		case 4: {
+			uint32_t v = *((uint32_t*)buf);
+			return to_host(v, endianness);
+		}
+		case 8: {
+			uint64_t v = *((uint64_t*)buf);
+			return to_host(v, endianness);
+		}
+		}
 	}
+
+	// For arbitrary sizes, use byte-oriented access
+	uint64_t result = 0;
+	if (endianness == Endianness::Little) {
+		for (unsigned i = 0; i < numbytes; i++) {
+			result |= ((uint64_t)buf[i]) << (i * 8);
+		}
+	} else {
+		for (unsigned i = 0; i < numbytes; i++) {
+			result = (result << 8) | buf[i];
+		}
+	}
+	return result;
 }
 
 static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], Endianness endianness)
 {
-	switch (numbytes) {
-	case 1:
-		buf[0] = value & 0xff;
-		break;
-	case 2: {
-		uint16_t v = (uint16_t)value;
-		uint16_t* p = (uint16_t*)buf;
-		*p = from_host(v, endianness);
-		break;
-	}
-	case 4: {
-		uint32_t v = (uint32_t)value;
-		uint32_t* p = (uint32_t*)buf;
-		*p = from_host(v, endianness);
-		break;
-	}
-	case 8: {
-		uint64_t v = (uint64_t)value;
-		uint64_t* p = (uint64_t*)buf;
-		*p = from_host(v, endianness);
-		break;
-	}
-	default:
+	if (numbytes == 0 || numbytes > 8)
 		throw invalid_argument(fmt::format("Invalid number of bytes: {}", numbytes));
+
+	if (numbytes == 1) {
+		buf[0] = value & 0xff;
+		return;
+	}
+
+	// For standard sizes, use typed access for potential efficiency
+	if (numbytes == 2 || numbytes == 4 || numbytes == 8) {
+		switch (numbytes) {
+		case 2: {
+			uint16_t v = (uint16_t)value;
+			uint16_t* p = (uint16_t*)buf;
+			*p = from_host(v, endianness);
+			break;
+		}
+		case 4: {
+			uint32_t v = (uint32_t)value;
+			uint32_t* p = (uint32_t*)buf;
+			*p = from_host(v, endianness);
+			break;
+		}
+		case 8: {
+			uint64_t v = (uint64_t)value;
+			uint64_t* p = (uint64_t*)buf;
+			*p = from_host(v, endianness);
+			break;
+		}
+		}
+		return;
+	}
+
+	// For arbitrary sizes, use byte-oriented access
+	if (endianness == Endianness::Little) {
+		for (unsigned i = 0; i < numbytes; i++) {
+			buf[i] = (value >> (i * 8)) & 0xff;
+		}
+	} else {
+		for (unsigned i = 0; i < numbytes; i++) {
+			buf[i] = (value >> ((numbytes - 1 - i) * 8)) & 0xff;
+		}
 	}
 }
 

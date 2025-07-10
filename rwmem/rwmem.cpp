@@ -26,7 +26,6 @@
 #include "i2ctarget.h"
 
 #include <fnmatch.h>
-#include <limits>
 
 using namespace std;
 
@@ -482,18 +481,10 @@ static uint32_t print_chars_needed(uint32_t numbytes, NumberPrintMode mode)
 	case NumberPrintMode::Hex:
 		return numbytes * 2 + 2; // for hex: 2 chars per byte and "0x"
 	case NumberPrintMode::Dec:
-		switch (numbytes) {
-		case 1:
-			return std::numeric_limits<uint8_t>::digits10 + 1;
-		case 2:
-			return std::numeric_limits<uint16_t>::digits10 + 1;
-		case 4:
-			return std::numeric_limits<uint32_t>::digits10 + 1;
-		case 8:
-			return std::numeric_limits<uint64_t>::digits10 + 1;
-		default:
-			FAIL("Bad num bytes");
-		}
+		// For N bytes, max value is 2^(N*8) - 1
+		// Number of decimal digits needed is floor(log10(2^(N*8) - 1)) + 1
+		// Which is approximately N * 8 * log10(2) + 1 = N * 2.408 + 1
+		return (unsigned)(numbytes * 8 * 0.30103) + 2; // log10(2) ≈ 0.30103, +2 for safety
 	case NumberPrintMode::Bin:
 		return numbytes * 8 + 2; // for bin: 8 chars per byte and "0b"
 	}

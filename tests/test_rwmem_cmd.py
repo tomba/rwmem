@@ -55,6 +55,12 @@ class RwmemNumericReadTests(RwmemTestBase):
         self.assertOutput(['-s32', '0'],
                           '0x00 = 0x0f7216c2\n')
 
+        self.assertOutput(['-s24', '0'],
+                          '0x00 = 0x7216c2\n')
+
+        self.assertOutput(['-s24be', '0'],
+                          '0x00 = 0xc21672\n')
+
     def test_numeric_reads_ranges(self):
         self.assertOutput(['0x0-0x10'],
                           '0x00 = 0x0f7216c2\n' +
@@ -100,9 +106,16 @@ class RwmemNumericWriteTests(RwmemTestBase):
         self.assertOutput(['0xa0=0'],
                           '0xa0 (+0x0) = 0xc4f32790 := 0x00000000 -> 0x00000000\n')
 
+        self.assertOutput(['-s24', '0xb0=0x123456'],
+                          '0xb0 (+0x0) = 0x62ce25 := 0x123456 -> 0x123456\n')
+
     def test_numeric_writes_ranges(self):
         self.assertOutput(['0x10+0x10=0x1234'],
                            '0x10 (+0x0) = 0xfbf9f1c4 := 0x00001234 -> 0x00001234\n' +
                            '0x14 (+0x4) = 0x85f114a9 := 0x00001234 -> 0x00001234\n' +
                            '0x18 (+0x8) = 0xa4edffdd := 0x00001234 -> 0x00001234\n' +
                            '0x1c (+0xc) = 0x2ecde8ff := 0x00001234 -> 0x00001234\n')
+
+
+if __name__ == '__main__':
+    unittest.main()

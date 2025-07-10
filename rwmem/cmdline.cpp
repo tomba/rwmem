@@ -120,8 +120,8 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 		return;
 	}
 
-	ERR_ON(num != 8 && num != 16 && num != 32 && num != 64,
-	       "Invalid size '{}'", num);
+	ERR_ON(num == 0 || num > 64 || (num % 8) != 0,
+	       "Invalid size '{}' (must be 8-64 bits, multiple of 8)", num);
 
 	string_view ending(ptr, end);
 

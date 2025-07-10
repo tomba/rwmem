@@ -26,6 +26,39 @@ static void iowrite(void* addr, T value)
 	*(volatile T*)addr = value;
 }
 
+static uint64_t read_bytes(void* base_addr, uint8_t nbytes, Endianness endianness)
+{
+	volatile uint8_t* addr = (volatile uint8_t*)base_addr;
+	uint64_t result = 0;
+
+	if (endianness == Endianness::Little) {
+		for (int i = 0; i < nbytes; i++) {
+			result |= ((uint64_t)addr[i]) << (i * 8);
+		}
+	} else {
+		for (int i = 0; i < nbytes; i++) {
+			result = (result << 8) | addr[i];
+		}
+	}
+
+	return result;
+}
+
+static void write_bytes(void* base_addr, uint64_t value, uint8_t nbytes, Endianness endianness)
+{
+	volatile uint8_t* addr = (volatile uint8_t*)base_addr;
+
+	if (endianness == Endianness::Little) {
+		for (int i = 0; i < nbytes; i++) {
+			addr[i] = (value >> (i * 8)) & 0xff;
+		}
+	} else {
+		for (int i = 0; i < nbytes; i++) {
+			addr[i] = (value >> ((nbytes - 1 - i) * 8)) & 0xff;
+		}
+	}
+}
+
 MMapTarget::MMapTarget(const string& filename)
 	: m_filename(filename), m_fd(-1),
 	 m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
@@ -148,6 +181,11 @@ uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) 
 		return to_host(ioread<uint32_t>(base_addr), endianness);
 	case 8:
 		return to_host(ioread<uint64_t>(base_addr), endianness);
+	case 3:
+	case 5:
+	case 6:
+	case 7:
+		return read_bytes(base_addr, nbytes, endianness);
 	default:
 		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
 	}
@@ -181,11 +219,16 @@ void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness
 	case 8:
 		iowrite<uint64_t>(base_addr, from_host(value, endianness));
 		break;
+	case 3:
+	case 5:
+	case 6:
+	case 7:
+		write_bytes(base_addr, value, nbytes, endianness);
+		break;
 	default:
 		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
 	}
 }
-
 
 void MMapTarget::validate_access(uint64_t addr, uint8_t nbytes) const
 {

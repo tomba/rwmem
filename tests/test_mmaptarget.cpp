@@ -317,6 +317,146 @@ TEST_F(MMapTargetTest, DestructorCleanup) {
                                Endianness::Little, 4, MapMode::Read));
 }
 
+TEST_F(MMapTargetTest, Read24Bit) {
+    MMapTarget target(test_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::Read);
+
+    // Test 24-bit reads - little endian (first 3 bytes of 0x0f7216c2)
+    uint64_t value = target.read(0, 3, Endianness::Little);
+    EXPECT_EQ(value, 0x7216c2);  // Lower 24 bits of 0x0f7216c2
+
+    // Test 24-bit reads - big endian
+    value = target.read(0, 3, Endianness::Big);
+    EXPECT_EQ(value, 0xc21672);  // Byte-swapped
+}
+
+TEST_F(MMapTargetTest, Read40Bit) {
+    MMapTarget target(test_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::Read);
+
+    // Test 40-bit reads - little endian
+    // Reading 5 bytes: 0xc2, 0x16, 0x72, 0x0f, 0x7b (first byte of next value)
+    uint64_t value = target.read(0, 5, Endianness::Little);
+    EXPECT_EQ(value, 0x7b0f7216c2ULL);  // 5 bytes in little endian order
+
+    // Test 40-bit reads - big endian
+    value = target.read(0, 5, Endianness::Big);
+    EXPECT_EQ(value, 0xc216720f7bULL);  // Same bytes in big endian order
+}
+
+TEST_F(MMapTargetTest, Read48Bit) {
+    MMapTarget target(test_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::Read);
+
+    // Test 48-bit reads - little endian
+    // Reading 6 bytes: 0xc2, 0x16, 0x72, 0x0f, 0x7b, 0xd3 (first 2 bytes of next value)
+    uint64_t value = target.read(0, 6, Endianness::Little);
+    EXPECT_EQ(value, 0xd37b0f7216c2ULL);  // 6 bytes in little endian order
+
+    // Test 48-bit reads - big endian
+    value = target.read(0, 6, Endianness::Big);
+    EXPECT_EQ(value, 0xc216720f7bd3ULL);  // Same bytes in big endian order
+}
+
+TEST_F(MMapTargetTest, Read56Bit) {
+    MMapTarget target(test_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::Read);
+
+    // Test 56-bit reads - little endian
+    // Reading 7 bytes: 0xc2, 0x16, 0x72, 0x0f, 0x7b, 0xd3, 0x12 (first 3 bytes of next value)
+    uint64_t value = target.read(0, 7, Endianness::Little);
+    EXPECT_EQ(value, 0x12d37b0f7216c2ULL);  // 7 bytes in little endian order
+
+    // Test 56-bit reads - big endian
+    value = target.read(0, 7, Endianness::Big);
+    EXPECT_EQ(value, 0xc216720f7bd312ULL);  // Same bytes in big endian order
+}
+
+TEST_F(MMapTargetTest, Write24Bit) {
+    MMapTarget target(writable_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::ReadWrite);
+
+    // Test 24-bit writes - little endian
+    target.write(100, 0xABCDEF, 3, Endianness::Little);
+    uint64_t value = target.read(100, 3, Endianness::Little);
+    EXPECT_EQ(value, 0xABCDEF);
+
+    // Test 24-bit writes - big endian
+    target.write(104, 0x123456, 3, Endianness::Big);
+    value = target.read(104, 3, Endianness::Big);
+    EXPECT_EQ(value, 0x123456);
+}
+
+TEST_F(MMapTargetTest, Write40Bit) {
+    MMapTarget target(writable_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::ReadWrite);
+
+    // Test 40-bit writes - little endian
+    target.write(100, 0x123456789A, 5, Endianness::Little);
+    uint64_t value = target.read(100, 5, Endianness::Little);
+    EXPECT_EQ(value, 0x123456789A);
+
+    // Test 40-bit writes - big endian
+    target.write(106, 0xABCDEF0123, 5, Endianness::Big);
+    value = target.read(106, 5, Endianness::Big);
+    EXPECT_EQ(value, 0xABCDEF0123);
+}
+
+TEST_F(MMapTargetTest, Write48Bit) {
+    MMapTarget target(writable_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::ReadWrite);
+
+    // Test 48-bit writes - little endian
+    target.write(100, 0x123456789ABC, 6, Endianness::Little);
+    uint64_t value = target.read(100, 6, Endianness::Little);
+    EXPECT_EQ(value, 0x123456789ABC);
+
+    // Test 48-bit writes - big endian
+    target.write(107, 0xABCDEF012345, 6, Endianness::Big);
+    value = target.read(107, 6, Endianness::Big);
+    EXPECT_EQ(value, 0xABCDEF012345);
+}
+
+TEST_F(MMapTargetTest, Write56Bit) {
+    MMapTarget target(writable_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::ReadWrite);
+
+    // Test 56-bit writes - little endian
+    target.write(100, 0x123456789ABCDE, 7, Endianness::Little);
+    uint64_t value = target.read(100, 7, Endianness::Little);
+    EXPECT_EQ(value, 0x123456789ABCDE);
+
+    // Test 56-bit writes - big endian
+    target.write(108, 0xABCDEF01234567, 7, Endianness::Big);
+    value = target.read(108, 7, Endianness::Big);
+    EXPECT_EQ(value, 0xABCDEF01234567);
+}
+
+TEST_F(MMapTargetTest, ArbitrarySizeEndianness) {
+    MMapTarget target(writable_filename);
+    target.map(0, 1024, Endianness::Little, 4,
+               Endianness::Little, 4, MapMode::ReadWrite);
+
+    // Test that byte-oriented access handles endianness correctly
+    // Write a known pattern in little endian
+    target.write(100, 0x12345678, 4, Endianness::Little);
+
+    // Read as 3 bytes in different endiannesses
+    uint64_t le_value = target.read(100, 3, Endianness::Little);
+    uint64_t be_value = target.read(100, 3, Endianness::Big);
+
+    EXPECT_EQ(le_value, 0x345678);  // Lower 3 bytes, little endian
+    EXPECT_EQ(be_value, 0x785634);  // Same bytes, big endian order
+}
+
 TEST_F(MMapTargetTest, KnownDataValidation) {
     MMapTarget target(test_filename);
     target.map(0, 32, Endianness::Little, 4,

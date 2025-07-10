@@ -6,7 +6,7 @@ import unittest
 
 RWMEM_CMD_PATH = os.path.dirname(os.path.abspath(__file__)) + '/../build/rwmem/rwmem'
 
-DRM_PATH = '/sys/devices/pci0000:00/0000:00:02.0/drm/card0/card0-DP-2'
+DRM_PATH = '/sys/devices/pci0000:00/0000:00:02.0/drm/card1/card1-DP-2'
 
 class RwmemTestI2C(unittest.TestCase):
     def setUp(self):
@@ -42,6 +42,9 @@ class RwmemTestI2C(unittest.TestCase):
     def get_edid_u16(self, addr):
         return '0x{:04x}'.format(int.from_bytes(self.edid[addr:addr+2], 'little', signed=False))
 
+    def get_edid_u24(self, addr):
+        return '0x{:06x}'.format(int.from_bytes(self.edid[addr:addr+3], 'little', signed=False))
+
     def get_edid_u32(self, addr):
         return '0x{:08x}'.format(int.from_bytes(self.edid[addr:addr+4], 'little', signed=False))
 
@@ -58,5 +61,12 @@ class RwmemTestI2C(unittest.TestCase):
         self.assertOutput(['-s16le', '0x10'],
                           f'0x10 (+0x0) = {self.get_edid_u16(0x10)}\n')
 
+        self.assertOutput(['-s24le', '0x10'],
+                          f'0x10 (+0x0) = {self.get_edid_u24(0x10)}\n')
+
         self.assertOutput(['-s32le', '0x10'],
                           f'0x10 (+0x0) = {self.get_edid_u32(0x10)}\n')
+
+
+if __name__ == '__main__':
+    unittest.main()
