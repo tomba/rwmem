@@ -49,7 +49,22 @@ int main() {
            .add_field("STATUS", 27, 24)
            .add_field("VALUE", 23, 0);
 
-    // Block 4: 64-bit registers at offset 0x40
+    // Block 4: 24-bit registers at offset 0x30
+    builder.add_block("TbyteRegs", 0x30, 0x40,
+                     Endianness::Little, 4,  // address: little endian, 4 bytes
+                     Endianness::Little, 3); // data: little endian, 3 bytes
+
+    builder.add_register("TBYTE0", 0x30)
+           .add_field("HIGH8", 23, 16)
+           .add_field("MID8", 15, 8)
+           .add_field("LOW8", 7, 0);
+
+    builder.add_register("RGB", 0x33)
+           .add_field("RED", 23, 16)
+           .add_field("GREEN", 15, 8)
+           .add_field("BLUE", 7, 0);
+
+    // Block 5: 64-bit registers at offset 0x40
     builder.add_block("QwordRegs", 0x40, 0x60,
                      Endianness::Little, 4,  // address: little endian, 4 bytes
                      Endianness::Little, 8); // data: little endian, 8 bytes

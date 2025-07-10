@@ -130,7 +130,7 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
                            capture_output=True, encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
-        self.assertIn('TestChip: total 4/9/18', res.stdout)
+        self.assertIn('TestChip: total 5/11/24', res.stdout)
         self.assertIn('ByteRegs:', res.stdout)
         self.assertIn('WordRegs:', res.stdout)
         self.assertIn('DwordRegs:', res.stdout)
@@ -161,6 +161,20 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
                           '  BITS23_16                      23:16 = 0x000000a3 \n' +
                           '  BITS15_8                       15:8  = 0x000000ab \n' +
                           '  BITS7_0                         7:0  = 0x0000009b \n')
+
+    def test_regdb_tbyte_register(self):
+        # Test 24-bit register access
+        self.assertOutput(['TbyteRegs.TBYTE0'],
+                          'TbyteRegs.TBYTE0               0x00000060 (+0x30) = 0x6d36fd\n' +
+                          '  HIGH8                          23:16 = 0x00006d \n' +
+                          '  MID8                           15:8  = 0x000036 \n' +
+                          '  LOW8                            7:0  = 0x0000fd \n')
+
+        self.assertOutput(['TbyteRegs.RGB'],
+                          'TbyteRegs.RGB                  0x00000063 (+0x33) = 0x78a20f\n' +
+                          '  RED                            23:16 = 0x000078 \n' +
+                          '  GREEN                          15:8  = 0x0000a2 \n' +
+                          '  BLUE                            7:0  = 0x00000f \n')
 
     def test_regdb_qword_register(self):
         # Test 64-bit register access
