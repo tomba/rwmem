@@ -175,10 +175,7 @@ uint16_t MMapTarget::read16(uint64_t addr, Endianness endianness) const
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
-	if (endianness == Endianness::Big)
-		return be16toh(*addr16(addr));
-	else
-		return le16toh(*addr16(addr));
+	return to_host(*addr16(addr), endianness);
 }
 
 void MMapTarget::write16(uint64_t addr, uint16_t value, Endianness endianness)
@@ -186,10 +183,7 @@ void MMapTarget::write16(uint64_t addr, uint16_t value, Endianness endianness)
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
-	if (endianness == Endianness::Big)
-		*addr16(addr) = htobe16(value);
-	else
-		*addr16(addr) = htole16(value);
+	*addr16(addr) = from_host(value, endianness);
 }
 
 uint32_t MMapTarget::read32(uint64_t addr, Endianness endianness) const
@@ -197,10 +191,7 @@ uint32_t MMapTarget::read32(uint64_t addr, Endianness endianness) const
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
-	if (endianness == Endianness::Big)
-		return be32toh(*addr32(addr));
-	else
-		return le32toh(*addr32(addr));
+	return to_host(*addr32(addr), endianness);
 }
 
 void MMapTarget::write32(uint64_t addr, uint32_t value, Endianness endianness)
@@ -208,10 +199,7 @@ void MMapTarget::write32(uint64_t addr, uint32_t value, Endianness endianness)
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
-	if (endianness == Endianness::Big)
-		*addr32(addr) = htobe32(value);
-	else
-		*addr32(addr) = htole32(value);
+	*addr32(addr) = from_host(value, endianness);
 }
 
 uint64_t MMapTarget::read64(uint64_t addr, Endianness endianness) const
@@ -219,10 +207,7 @@ uint64_t MMapTarget::read64(uint64_t addr, Endianness endianness) const
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
-	if (endianness == Endianness::Big)
-		return be64toh(*addr64(addr));
-	else
-		return le64toh(*addr64(addr));
+	return to_host(*addr64(addr), endianness);
 }
 
 void MMapTarget::write64(uint64_t addr, uint64_t value, Endianness endianness)
@@ -230,10 +215,7 @@ void MMapTarget::write64(uint64_t addr, uint64_t value, Endianness endianness)
 	if (endianness == Endianness::Default)
 		endianness = m_default_data_endianness;
 
-	if (endianness == Endianness::Big)
-		*addr64(addr) = htobe64(value);
-	else
-		*addr64(addr) = htole64(value);
+	*addr64(addr) = from_host(value, endianness);
 }
 
 void* MMapTarget::maddr(uint64_t addr) const
