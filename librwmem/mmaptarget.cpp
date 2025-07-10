@@ -120,15 +120,18 @@ uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) 
 	if (!nbytes)
 		nbytes = m_default_data_size;
 
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
 	switch (nbytes) {
 	case 1:
-		return read8(addr);
+		return *addr8(addr);
 	case 2:
-		return read16(addr, endianness);
+		return to_host<uint16_t>(*addr16(addr), endianness);
 	case 4:
-		return read32(addr, endianness);
+		return to_host<uint32_t>(*addr32(addr), endianness);
 	case 8:
-		return read64(addr, endianness);
+		return to_host<uint64_t>(*addr64(addr), endianness);
 	default:
 		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
 	}
@@ -142,81 +145,27 @@ void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness
 	if (!nbytes)
 		nbytes = m_default_data_size;
 
+	if (endianness == Endianness::Default)
+		endianness = m_default_data_endianness;
+
 	switch (nbytes) {
 	case 1:
-		write8(addr, value);
+		*addr8(addr) = (uint8_t)value;
 		break;
 	case 2:
-		write16(addr, value, endianness);
+		*addr16(addr) = from_host<uint16_t>(value, endianness);
 		break;
 	case 4:
-		write32(addr, value, endianness);
+		*addr32(addr) = from_host<uint32_t>(value, endianness);
 		break;
 	case 8:
-		write64(addr, value, endianness);
+		*addr64(addr) = from_host<uint64_t>(value, endianness);
 		break;
 	default:
 		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
 	}
 }
 
-uint8_t MMapTarget::read8(uint64_t addr) const
-{
-	return *addr8(addr);
-}
-
-void MMapTarget::write8(uint64_t addr, uint8_t value)
-{
-	*addr8(addr) = value;
-}
-
-uint16_t MMapTarget::read16(uint64_t addr, Endianness endianness) const
-{
-	if (endianness == Endianness::Default)
-		endianness = m_default_data_endianness;
-
-	return to_host(*addr16(addr), endianness);
-}
-
-void MMapTarget::write16(uint64_t addr, uint16_t value, Endianness endianness)
-{
-	if (endianness == Endianness::Default)
-		endianness = m_default_data_endianness;
-
-	*addr16(addr) = from_host(value, endianness);
-}
-
-uint32_t MMapTarget::read32(uint64_t addr, Endianness endianness) const
-{
-	if (endianness == Endianness::Default)
-		endianness = m_default_data_endianness;
-
-	return to_host(*addr32(addr), endianness);
-}
-
-void MMapTarget::write32(uint64_t addr, uint32_t value, Endianness endianness)
-{
-	if (endianness == Endianness::Default)
-		endianness = m_default_data_endianness;
-
-	*addr32(addr) = from_host(value, endianness);
-}
-
-uint64_t MMapTarget::read64(uint64_t addr, Endianness endianness) const
-{
-	if (endianness == Endianness::Default)
-		endianness = m_default_data_endianness;
-
-	return to_host(*addr64(addr), endianness);
-}
-
-void MMapTarget::write64(uint64_t addr, uint64_t value, Endianness endianness)
-{
-	if (endianness == Endianness::Default)
-		endianness = m_default_data_endianness;
-
-	*addr64(addr) = from_host(value, endianness);
-}
 
 void* MMapTarget::maddr(uint64_t addr) const
 {
