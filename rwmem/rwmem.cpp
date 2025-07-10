@@ -450,7 +450,11 @@ static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
 	} else {
 		op.custom_field = false;
 		op.low = 0;
-		op.high = rwmem_opts.data_size * 8 - 1;
+		if (op.rbd) {
+			op.high = op.rbd->data_size() * 8 - 1;
+		} else {
+			op.high = rwmem_opts.data_size * 8 - 1;
+		}
 	}
 
 	/* Parse value */
