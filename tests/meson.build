@@ -8,6 +8,14 @@ test_data_generator_lib = static_library('test_data_generator',
     dependencies : [libfmt_dep],
 )
 
+generate_test_regdb = executable('generate_test_regdb',
+    'generate_test_regdb.cpp',
+    include_directories : include_directories('..'),
+    link_with : [test_data_generator_lib],
+    dependencies : [libfmt_dep],
+    build_by_default : false,
+)
+
 test_regfiledata = executable('test_regfiledata',
     'test_regfiledata.cpp',
     include_directories : include_directories('..'),
