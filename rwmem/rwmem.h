@@ -1,17 +1,13 @@
-#ifndef __RWMEM_H__
-#define __RWMEM_H__
+#pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
-#include <inttypes.h>
-#include <stdbool.h>
-
-#include "regs.h"
-#include "inireader.h"
-#include "helpers.h"
+#include <cstdint>
 
 #include <fmt/format.h>
+
+#include "regfiledata.h"
+#include "inireader.h"
 
 enum class WriteMode {
 	Write,
@@ -126,5 +122,3 @@ void detect_platform();
 		if (rwmem_opts.print_mode != PrintMode::Quiet) \
 			fmt::print(format, ##__VA_ARGS__);                    \
 	} while (0)
-
-#endif /* __RWMEM_H__ */

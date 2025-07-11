@@ -6,8 +6,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <cinttypes>
-#include <exception>
 #include <fmt/format.h>
 
 #include "regs.h"

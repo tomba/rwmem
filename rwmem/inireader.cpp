@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <string>
 #include <exception>
-#include <stdexcept>
 
 #include "ini.h"
 #include "inireader.h"
