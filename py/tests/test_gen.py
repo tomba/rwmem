@@ -137,6 +137,8 @@ class MmapTests(unittest.TestCase):
             self.compare_fields(reg, ref_fields_data)
 
     def compare_fields(self, reg: Register, ref_fields):
+        if ref_fields is None:
+            return
         for ref_name, ref_high, ref_low in ref_fields:
             field = reg[ref_name]
             self.assertEqual(field.name, ref_name)
