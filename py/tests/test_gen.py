@@ -126,13 +126,15 @@ class MmapTests(unittest.TestCase):
     def compare_registers(self, block: RegisterBlock, ref_regs):
         for ref_name, ref_offset, *ref_fields in ref_regs:
             if ref_fields:
-                ref_fields = ref_fields[0]
+                ref_fields_data = ref_fields[0]
+            else:
+                ref_fields_data = None
 
             reg = block[ref_name]
             self.assertEqual(reg.name, ref_name)
             self.assertEqual(reg.offset, ref_offset)
 
-            self.compare_fields(reg, ref_fields)
+            self.compare_fields(reg, ref_fields_data)
 
     def compare_fields(self, reg: Register, ref_fields):
         for ref_name, ref_high, ref_low in ref_fields:

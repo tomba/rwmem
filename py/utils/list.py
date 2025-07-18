@@ -29,11 +29,11 @@ for name,rb in rf.items():
                   ))
 
     if not args.no_regs:
-        for name,r in rb.items():
+        for reg_name, r in rb.items():
             table.append(( '    ' + r.name, hex(r.offset), hex(rb.data_size) ))
 
             if not args.no_fields:
-                for name,f in r.items():
+                for field_name, f in r.items():
                     table.append(( '        ' + f.name, f'{f.high}:{f.low}', f.high - f.low + 1 ))
 
 
