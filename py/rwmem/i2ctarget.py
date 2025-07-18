@@ -69,16 +69,20 @@ class I2CTarget:
         raise NotImplementedError()
 
     def read(self, addr: int,
-             data_size: int = 0, data_endianness: Endianness = Endianness.Default,
-             addr_size: int = 0, addr_endianness: Endianness = Endianness.Default) -> int:
+             data_size: int | None = None, data_endianness: Endianness = Endianness.Default,
+             addr_size: int | None = None, addr_endianness: Endianness = Endianness.Default) -> int:
         if self.mode == MapMode.Write:
             raise RuntimeError()
 
-        if addr_size == 0:
+        if addr_size is None:
             addr_size = self.addr_size
+        elif addr_size <= 0:
+            raise ValueError(f'Address size must be positive, got {addr_size}')
 
-        if data_size == 0:
+        if data_size is None:
             data_size = self.data_size
+        elif data_size <= 0:
+            raise ValueError(f'Data size must be positive, got {data_size}')
 
         if addr_endianness == Endianness.Default:
             addr_endianness = self.addr_endianness
@@ -129,16 +133,20 @@ class I2CTarget:
         return ret
 
     def write(self, addr: int, value: int,
-              data_size: int = 0, data_endianness: Endianness = Endianness.Default,
-              addr_size: int = 0, addr_endianness: Endianness = Endianness.Default):
+              data_size: int | None = None, data_endianness: Endianness = Endianness.Default,
+              addr_size: int | None = None, addr_endianness: Endianness = Endianness.Default):
         if self.mode == MapMode.Read:
             raise RuntimeError()
 
-        if addr_size == 0:
+        if addr_size is None:
             addr_size = self.addr_size
+        elif addr_size <= 0:
+            raise ValueError(f'Address size must be positive, got {addr_size}')
 
-        if data_size == 0:
+        if data_size is None:
             data_size = self.data_size
+        elif data_size <= 0:
+            raise ValueError(f'Data size must be positive, got {data_size}')
 
         if addr_endianness == Endianness.Default:
             addr_endianness = self.addr_endianness

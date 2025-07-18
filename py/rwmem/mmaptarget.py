@@ -93,7 +93,7 @@ class MMapTarget:
 
     def _check_access(self, addr: int,
                       data_size,  addr_size, addr_endianness):
-        if addr_size != 0:
+        if addr_size is not None and addr_size != 0:
             raise RuntimeError('Address size must be 0')
 
         if addr_endianness != Endianness.Default:
@@ -106,13 +106,15 @@ class MMapTarget:
             raise RuntimeError(f'Access outside mmap area: {addr + data_size} > {self.offset + self.length}')
 
     def read(self, addr: int,
-             data_size: int = 0, data_endianness: Endianness = Endianness.Default,
-             addr_size: int = 0, addr_endianness: Endianness = Endianness.Default) -> int:
+             data_size: int | None = None, data_endianness: Endianness = Endianness.Default,
+             addr_size: int | None = None, addr_endianness: Endianness = Endianness.Default) -> int:
         if self.mode == MapMode.Write:
             raise RuntimeError()
 
-        if data_size == 0:
+        if data_size is None:
             data_size = self.data_size
+        elif data_size <= 0:
+            raise ValueError(f'Data size must be positive, got {data_size}')
 
         self._check_access(addr, data_size, addr_size, addr_endianness)
 
@@ -131,13 +133,15 @@ class MMapTarget:
         return ret
 
     def write(self, addr: int, value: int,
-              data_size: int = 0, data_endianness: Endianness = Endianness.Default,
-              addr_size: int = 0, addr_endianness: Endianness = Endianness.Default):
+              data_size: int | None = None, data_endianness: Endianness = Endianness.Default,
+              addr_size: int | None = None, addr_endianness: Endianness = Endianness.Default):
         if self.mode == MapMode.Read:
             raise RuntimeError()
 
-        if data_size == 0:
+        if data_size is None:
             data_size = self.data_size
+        elif data_size <= 0:
+            raise ValueError(f'Data size must be positive, got {data_size}')
 
         self._check_access(addr, data_size, addr_size, addr_endianness)
 
