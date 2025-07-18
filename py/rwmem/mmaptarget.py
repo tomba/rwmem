@@ -15,6 +15,12 @@ class MMapTarget:
                  offset: int, length: int,
                  data_endianness: Endianness, data_size: int,
                  mode: MapMode = MapMode.ReadWrite) -> None:
+
+        if length <= 0:
+            raise ValueError(f'Length must be positive, got {length}')
+        if data_size <= 0:
+            raise ValueError(f'Data size must be positive, got {data_size}')
+
         self.offset = offset
         self.length = length
 
