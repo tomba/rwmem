@@ -11,7 +11,6 @@ enum class Endianness {
 	LittleSwapped = 4, // Little endian, 16/32 bit words swapped
 };
 
-
 template<typename T>
 static T byteswap(T value)
 {
@@ -61,7 +60,6 @@ static T htole(T value)
 	else
 		return value;
 }
-
 
 template<typename T>
 static T wordswap(T value)

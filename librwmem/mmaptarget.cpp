@@ -61,9 +61,8 @@ static void write_bytes(void* base_addr, uint64_t value, uint8_t nbytes, Endiann
 
 MMapTarget::MMapTarget(const string& filename)
 	: m_filename(filename), m_fd(-1),
-	 m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
+	  m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
 {
-
 }
 
 MMapTarget::~MMapTarget()
@@ -72,9 +71,9 @@ MMapTarget::~MMapTarget()
 }
 
 void MMapTarget::map(uint64_t offset, uint64_t length,
-		 Endianness default_addr_endianness, uint8_t default_addr_size,
-		 Endianness default_data_endianness, uint8_t default_data_size,
-		 MapMode mode)
+		     Endianness default_addr_endianness, uint8_t default_addr_size,
+		     Endianness default_data_endianness, uint8_t default_data_size,
+		     MapMode mode)
 {
 	unmap();
 
@@ -234,7 +233,7 @@ void MMapTarget::validate_access(uint64_t addr, uint8_t nbytes) const
 {
 	if (addr < m_offset)
 		throw runtime_error(fmt::format("address {:#x} below map range {:#x}-{:#x}",
-		                                addr, m_offset, m_offset + m_len));
+						addr, m_offset, m_offset + m_len));
 
 	if (addr + nbytes > m_offset + m_len)
 		throw runtime_error("address above map range");

@@ -16,7 +16,6 @@ using namespace std;
 I2CTarget::I2CTarget(uint16_t adapter_nr, uint16_t i2c_addr)
 	: m_adapter_nr(adapter_nr), m_i2c_addr(i2c_addr), m_fd(-1)
 {
-
 }
 
 I2CTarget::~I2CTarget()
@@ -25,9 +24,9 @@ I2CTarget::~I2CTarget()
 }
 
 void I2CTarget::map(uint64_t offset, uint64_t length,
-		 Endianness default_addr_endianness, uint8_t default_addr_size,
-		 Endianness default_data_endianness, uint8_t default_data_size,
-		 MapMode mode)
+		    Endianness default_addr_endianness, uint8_t default_addr_size,
+		    Endianness default_data_endianness, uint8_t default_data_size,
+		    MapMode mode)
 {
 	unmap();
 

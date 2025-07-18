@@ -72,7 +72,7 @@ bool file_exists(const string& name)
 
 std::string get_home()
 {
-	char *p = getenv("HOME");
+	char* p = getenv("HOME");
 	if (!p)
 		throw runtime_error("Failed to get home directory");
 

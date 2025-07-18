@@ -113,7 +113,7 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 	auto end = s.end();
 	uint32_t num;
 
-	auto [ptr, ec] { std::from_chars(start, end, num) };
+	auto [ptr, ec]{ std::from_chars(start, end, num) };
 
 	if (ec != std::errc()) {
 		ERR("Failed to parse size '{}'\n", s);
