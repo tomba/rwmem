@@ -12,7 +12,7 @@ pyrwmem tests in py/tests/.
 """
 
 import os
-import struct
+import random
 import sys
 
 # Add parent directory to path to import rwmem modules
@@ -25,38 +25,20 @@ import rwmem.gen as gen
 def generate_test_bin(output_path: str):
     """Generate test.bin binary data file.
 
-    Creates a 32-byte binary file with:
-    - Sequential pattern: 00 11 22 33 44 55 66 77
-    - Test register values at specific offsets:
-      - REG1 @ 8:  0xf00dbaad
-      - REG2 @ 12: 0xabbaaabb
-      - REG3 @ 16: 0x00560078
-    - Additional test data to fill 32 bytes
+    Creates a 768-byte binary file with random data for comprehensive testing:
+    - Address space: 0x000-0x2FF (768 bytes total)
+    - Three 256-byte blocks: SENSOR_A (0x000), SENSOR_B (0x100), MEMORY_CTRL (0x200)
+    - Uses fixed random seed for reproducible test data
     """
-    # Create 32-byte binary data
-    data = bytearray(32)
+    # Use fixed seed for reproducible test data
+    random.seed(42)
 
-    # Fill first 8 bytes with sequential pattern
-    for i in range(8):
-        data[i] = i * 0x11
+    # Create 768-byte binary data (3 blocks × 256 bytes each)
+    data = bytearray(768)
 
-    # REG1 @ offset 8: 0xf00dbaad (big endian)
-    struct.pack_into('>I', data, 8, 0xf00dbaad)
-
-    # REG2 @ offset 12: 0xabbaaabb (big endian)
-    struct.pack_into('>I', data, 12, 0xabbaaabb)
-
-    # REG3 @ offset 16: 0x00560078 (big endian)
-    struct.pack_into('>I', data, 16, 0x00560078)
-
-    # Fill remaining bytes with additional test pattern
-    # Bytes 20-23: 00 11 22 33
-    # Bytes 24-27: 44 55 66 77
-    # Bytes 28-31: de ad be ef
-    for i in range(4):
-        data[20 + i] = i * 0x11
-        data[24 + i] = (i + 4) * 0x11
-    struct.pack_into('>I', data, 28, 0xdeadbeef)
+    # Fill with random data
+    for i in range(len(data)):
+        data[i] = random.randint(0, 255)
 
     # Write binary data to file
     with open(output_path, 'wb') as f:
@@ -68,58 +50,203 @@ def generate_test_bin(output_path: str):
 def generate_test_regs(output_path: str):
     """Generate test.regdb register database file.
 
-    Creates a register database with:
-    - TEST register file containing BLOCK1
-    - BLOCK1 with REG1, REG2, REG3 registers
-    - Each register has sub-fields matching test expectations
+    Creates a comprehensive v3 register database with:
+    - TEST_V3 register file with three blocks
+    - SENSOR_A block: 9 registers covering all data sizes 1-8 bytes
+    - SENSOR_B block: identical to SENSOR_A for register deduplication testing
+    - MEMORY_CTRL block: demonstrates field sharing across different registers
+    - Full v3 feature coverage: descriptions, reset values, sharing
     """
 
-    # Define register fields
-    reg1_fields = [
-        ('REG11', 31, 16),  # Upper 16 bits: 0xf00d
-        ('REG12', 15, 0),   # Lower 16 bits: 0xbaad
+    # Shared field definitions for deduplication testing
+    error_field = gen.UnpackedField('ERROR', 2, 1, 'Error status bits')
+    mode_field = gen.UnpackedField('MODE', 7, 3, 'Operating mode')
+    threshold_field = gen.UnpackedField('THRESHOLD', 23, 16, 'Threshold value')
+    gain_field = gen.UnpackedField('GAIN', 15, 8, 'Gain setting')
+    offset_field = gen.UnpackedField('OFFSET', 7, 0, 'Offset value')
+    data_field = gen.UnpackedField('DATA', 31, 0, 'Data value')
+
+    # SENSOR_A block registers - covering all data sizes 1-8 bytes
+    sensor_a_regs = [
+        # 1-byte register
+        gen.UnpackedRegister('STATUS_REG', 0x00, [
+            gen.UnpackedField('READY', 0, 0, 'Ready flag'),
+            error_field,  # Shared field
+            mode_field,   # Shared field
+        ], 'Device status register', reset_value=0x80, data_size=1),
+
+        # 1-byte register (shares fields with STATUS_REG)
+        gen.UnpackedRegister('CONTROL_REG', 0x01, [
+            gen.UnpackedField('ENABLE', 0, 0, 'Enable flag'),
+            error_field,  # Shared field
+            mode_field,   # Shared field
+        ], 'Device control register', reset_value=0x00, data_size=1),
+
+        # 2-byte register
+        gen.UnpackedRegister('DATA_REG', 0x02, [
+            gen.UnpackedField('VALUE', 15, 0, '16-bit data value'),
+        ], 'Data register', reset_value=0x1234, data_size=2),
+
+        # 3-byte register (shares fields with MEMORY_CTRL CONFIG_REG)
+        gen.UnpackedRegister('CONFIG_REG', 0x04, [
+            threshold_field,  # Shared field
+            gain_field,       # Shared field
+            offset_field,     # Shared field
+        ], 'Configuration register', reset_value=0x123456, data_size=3),
+
+        # 4-byte register
+        gen.UnpackedRegister('COUNTER_REG', 0x08, [
+            gen.UnpackedField('COUNT', 31, 0, 'Counter value'),
+        ], 'Counter register', reset_value=0x00000000, data_size=4),
+
+        # 5-byte register
+        gen.UnpackedRegister('BIG_REG', 0x0C, [
+            gen.UnpackedField('BIG_DATA', 39, 0, '40-bit data value'),
+        ], 'Big data register', reset_value=0x123456789A, data_size=5),
+
+        # 6-byte register
+        gen.UnpackedRegister('HUGE_REG', 0x14, [
+            gen.UnpackedField('HUGE_DATA', 47, 0, '48-bit data value'),
+        ], 'Huge data register', reset_value=0x123456789ABC, data_size=6),
+
+        # 7-byte register
+        gen.UnpackedRegister('GIANT_REG', 0x1C, [
+            gen.UnpackedField('GIANT_DATA', 55, 0, '56-bit data value'),
+        ], 'Giant data register', reset_value=0x123456789ABCDE, data_size=7),
+
+        # 8-byte register
+        gen.UnpackedRegister('MAX_REG', 0x24, [
+            gen.UnpackedField('MAX_DATA', 63, 0, '64-bit data value'),
+        ], 'Maximum size register', reset_value=0x123456789ABCDEF0, data_size=8),
     ]
 
-    reg2_fields = [
-        ('REG21', 31, 24),  # Byte 3: 0xab
-        ('REG22', 23, 16),  # Byte 2: 0xba
-        ('REG23', 15, 8),   # Byte 1: 0xaa
-        ('REG24', 7, 0),    # Byte 0: 0xbb
+    # SENSOR_A block: I2C-style, little endian, 1-byte addressing, 4-byte default data
+    sensor_a_block = gen.UnpackedRegBlock(
+        name='SENSOR_A',
+        offset=0x000,
+        size=0x100,  # 256 bytes
+        regs=sensor_a_regs,
+        addr_endianness=rw.Endianness.Little,
+        addr_size=1,
+        data_endianness=rw.Endianness.Little,
+        data_size=4,
+        description='Sensor A device registers (I2C-style)'
+    )
+
+    # SENSOR_B block: identical to SENSOR_A for register deduplication testing
+    sensor_b_regs = [
+        # Create identical registers but at different offsets for SENSOR_B
+        gen.UnpackedRegister('STATUS_REG', 0x00, [
+            gen.UnpackedField('READY', 0, 0, 'Ready flag'),
+            error_field,  # Shared field
+            mode_field,   # Shared field
+        ], 'Device status register', reset_value=0x80, data_size=1),
+
+        gen.UnpackedRegister('CONTROL_REG', 0x01, [
+            gen.UnpackedField('ENABLE', 0, 0, 'Enable flag'),
+            error_field,  # Shared field
+            mode_field,   # Shared field
+        ], 'Device control register', reset_value=0x00, data_size=1),
+
+        gen.UnpackedRegister('DATA_REG', 0x02, [
+            gen.UnpackedField('VALUE', 15, 0, '16-bit data value'),
+        ], 'Data register', reset_value=0x1234, data_size=2),
+
+        gen.UnpackedRegister('CONFIG_REG', 0x04, [
+            threshold_field,  # Shared field
+            gain_field,       # Shared field
+            offset_field,     # Shared field
+        ], 'Configuration register', reset_value=0x123456, data_size=3),
+
+        gen.UnpackedRegister('COUNTER_REG', 0x08, [
+            gen.UnpackedField('COUNT', 31, 0, 'Counter value'),
+        ], 'Counter register', reset_value=0x00000000, data_size=4),
+
+        gen.UnpackedRegister('BIG_REG', 0x0C, [
+            gen.UnpackedField('BIG_DATA', 39, 0, '40-bit data value'),
+        ], 'Big data register', reset_value=0x123456789A, data_size=5),
+
+        gen.UnpackedRegister('HUGE_REG', 0x14, [
+            gen.UnpackedField('HUGE_DATA', 47, 0, '48-bit data value'),
+        ], 'Huge data register', reset_value=0x123456789ABC, data_size=6),
+
+        gen.UnpackedRegister('GIANT_REG', 0x1C, [
+            gen.UnpackedField('GIANT_DATA', 55, 0, '56-bit data value'),
+        ], 'Giant data register', reset_value=0x123456789ABCDE, data_size=7),
+
+        gen.UnpackedRegister('MAX_REG', 0x24, [
+            gen.UnpackedField('MAX_DATA', 63, 0, '64-bit data value'),
+        ], 'Maximum size register', reset_value=0x123456789ABCDEF0, data_size=8),
     ]
 
-    reg3_fields = [
-        ('REG31', 23, 16),  # Byte 2: 0x56
-        ('REG32', 7, 0),    # Byte 0: 0x78
+    sensor_b_block = gen.UnpackedRegBlock(
+        name='SENSOR_B',
+        offset=0x100,
+        size=0x100,  # 256 bytes
+        regs=sensor_b_regs,
+        addr_endianness=rw.Endianness.Little,
+        addr_size=1,
+        data_endianness=rw.Endianness.Little,
+        data_size=4,
+        description='Sensor B device registers (identical to SENSOR_A)'
+    )
+
+    # MEMORY_CTRL block: memory-mapped style with field sharing
+    memory_ctrl_regs = [
+        # 8-byte register
+        gen.UnpackedRegister('ADDR_REG', 0x00, [
+            gen.UnpackedField('ADDRESS', 63, 0, 'Memory address'),
+        ], 'Address register', reset_value=0x0000000000000000, data_size=8),
+
+        # 3-byte register (shares fields with SENSOR CONFIG_REG)
+        gen.UnpackedRegister('CONFIG_REG', 0x08, [
+            threshold_field,  # Shared field
+            gain_field,       # Shared field
+            offset_field,     # Shared field
+        ], 'Memory controller configuration', reset_value=0xABCDEF, data_size=3),
+
+        # 4-byte register (shares ERROR field)
+        gen.UnpackedRegister('STATUS_REG', 0x0C, [
+            gen.UnpackedField('BUSY', 0, 0, 'Memory busy flag'),
+            error_field,  # Shared field
+            gen.UnpackedField('READY', 31, 31, 'Memory ready flag'),
+        ], 'Memory controller status', reset_value=0x80000000, data_size=4),
+
+        # 4-byte register (shares layout with DATA_HI_REG)
+        gen.UnpackedRegister('DATA_LO_REG', 0x10, [
+            data_field,  # Shared field
+        ], 'Lower 32-bit data', reset_value=0x12345678, data_size=4),
+
+        # 4-byte register (shares layout with DATA_LO_REG)
+        gen.UnpackedRegister('DATA_HI_REG', 0x14, [
+            data_field,  # Shared field
+        ], 'Upper 32-bit data', reset_value=0x9ABCDEF0, data_size=4),
     ]
 
-    # Define registers with their offsets and fields
-    block1_regs = [
-        gen.UnpackedRegister('REG1', 8, reg1_fields),
-        gen.UnpackedRegister('REG2', 12, reg2_fields),
-        gen.UnpackedRegister('REG3', 16, reg3_fields),
-    ]
-
-    # Define register block
-    # BLOCK1: offset 0, size 32, big endian, 4-byte addresses and data
-    block1 = gen.UnpackedRegBlock(
-        name='BLOCK1',
-        offset=0,
-        size=32,
-        regs=block1_regs,
+    memory_ctrl_block = gen.UnpackedRegBlock(
+        name='MEMORY_CTRL',
+        offset=0x200,
+        size=0x100,  # 256 bytes
+        regs=memory_ctrl_regs,
         addr_endianness=rw.Endianness.Big,
         addr_size=4,
         data_endianness=rw.Endianness.Big,
-        data_size=4
+        data_size=4,
+        description='Memory controller registers (memory-mapped style)'
     )
 
-    # Create register file
-    regfile = gen.UnpackedRegFile('TEST', [block1])
+    # Create comprehensive v3 register file
+    regfile = gen.UnpackedRegFile(
+        'TEST_V3',
+        [sensor_a_block, sensor_b_block, memory_ctrl_block],
+        'Comprehensive v3 test register database'
+    )
 
     # Pack and write to file
     with open(output_path, 'wb') as f:
         regfile.pack_to(f)
 
-    print(f'Generated {output_path}')
+    print(f'Generated {output_path} (v3 format with comprehensive features)')
 
 
 def main():
@@ -153,7 +280,10 @@ def main():
         hex_part = ' '.join(f'{b:02x}' for b in chunk)
         print(f'{offset} {hex_part}')
 
-    print(f'\n{regs_path} contains TEST register file with BLOCK1')
+    print(f'\n{regs_path} contains TEST_V3 register file with three blocks:')
+    print('  - SENSOR_A: 9 registers covering all data sizes 1-8 bytes')
+    print('  - SENSOR_B: identical to SENSOR_A (register deduplication)')
+    print('  - MEMORY_CTRL: field sharing demonstration')
 
 
 if __name__ == '__main__':
