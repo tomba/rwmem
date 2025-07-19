@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import gc
 import mmap
 import os
 import collections.abc
@@ -38,11 +39,20 @@ class Field:
     def low(self) -> int:
         return self.fd.low
 
+    @property
+    def description(self) -> str | None:
+        """Get field description, or None if not provided."""
+        if self.fd.description_offset == 0:
+            return None
+        return self.rf._get_str(self.fd.description_offset)
+
+
 
 class Register(collections.abc.Mapping):
-    def __init__(self, rf: RegisterFile, rd: RegisterData) -> None:
+    def __init__(self, rf: RegisterFile, rd: RegisterData, parent_block: RegisterBlock) -> None:
         self.rf = rf
         self.rd = rd
+        self.parent_block = parent_block
         self.name = rf._get_str(rd.name_offset)
 
         field_names = []
@@ -68,6 +78,47 @@ class Register(collections.abc.Mapping):
     @property
     def offset(self) -> int:
         return self.rd.offset
+
+    @property
+    def description(self) -> str | None:
+        """Get register description, or None if not provided."""
+        if self.rd.description_offset == 0:
+            return None
+        return self.rf._get_str(self.rd.description_offset)
+
+    @property
+    def reset_value(self) -> int:
+        """Get register reset value."""
+        return self.rd.reset_value
+
+
+    @property
+    def effective_addr_endianness(self) -> Endianness:
+        """Get effective address endianness (register-specific or inherited from block)."""
+        if self.rd.addr_endianness == 0:  # Inherit from block
+            return self.parent_block.addr_endianness
+        return Endianness(self.rd.addr_endianness)
+
+    @property
+    def effective_addr_size(self) -> int:
+        """Get effective address size (register-specific or inherited from block)."""
+        if self.rd.addr_size == 0:  # Inherit from block
+            return self.parent_block.addr_size
+        return self.rd.addr_size
+
+    @property
+    def effective_data_endianness(self) -> Endianness:
+        """Get effective data endianness (register-specific or inherited from block)."""
+        if self.rd.data_endianness == 0:  # Inherit from block
+            return self.parent_block.data_endianness
+        return Endianness(self.rd.data_endianness)
+
+    @property
+    def effective_data_size(self) -> int:
+        """Get effective data size (register-specific or inherited from block)."""
+        if self.rd.data_size == 0:  # Inherit from block
+            return self.parent_block.data_size
+        return self.rd.data_size
 
     def __getitem__(self, key: str):
         if key not in self._field_infos:
@@ -152,6 +203,13 @@ class RegisterBlock(collections.abc.Mapping):
     def size(self) -> int:
         return self.rbd.size
 
+    @property
+    def description(self) -> str | None:
+        """Get block description, or None if not provided."""
+        if self.rbd.description_offset == 0:
+            return None
+        return self.rf._get_str(self.rbd.description_offset)
+
     def __getitem__(self, key: str):
         if key not in self._reg_infos:
             raise KeyError(f'Register "{key}" not found')
@@ -172,7 +230,7 @@ class RegisterBlock(collections.abc.Mapping):
             name = self.rf._get_str(rd.name_offset)
 
             if key == name:
-                r = Register(self.rf, rd)
+                r = Register(self.rf, rd, self)
                 self._reg_infos[key] = r
                 return r
 
@@ -250,6 +308,8 @@ class RegisterFile(collections.abc.Mapping):
     def __exit__(self, exc_type, exc_value, exc_tb):
         del self.rfd
         self._regblock_infos.clear()
+        # Force garbage collection to clean up circular references in ctypes structures
+        gc.collect()
         if self._mmap:
             self._mmap.close()
 
