@@ -37,7 +37,7 @@ class RegisterBlockDataV3(ctypes.LittleEndianStructure):
         ('default_addr_endianness', ctypes.c_uint8), # Default address encoding endianness
         ('default_addr_size', ctypes.c_uint8),      # Default address size in bytes (1, 2, 4, 8)
         ('default_data_endianness', ctypes.c_uint8), # Default data encoding endianness
-        ('default_data_size', ctypes.c_uint8),      # Default data size in bytes (1, 2, 4, 8)
+        ('default_data_size', ctypes.c_uint8),      # Default data size in bytes (1-8)
     ]
 
 
@@ -54,7 +54,7 @@ class RegisterDataV3(ctypes.LittleEndianStructure):
         ('addr_endianness', ctypes.c_uint8),        # Address encoding (0=inherit from block, 1=little, 2=big, 3=little-swapped, 4=big-swapped)
         ('addr_size', ctypes.c_uint8),              # Address size (0=inherit from block, 1,2,4,8=bytes)
         ('data_endianness', ctypes.c_uint8),        # Data encoding (0=inherit from block, 1=little, 2=big, 3=little-swapped, 4=big-swapped)
-        ('data_size', ctypes.c_uint8),              # Data size (0=inherit from block, 1,2,4,8=bytes)
+        ('data_size', ctypes.c_uint8),              # Data size (0=inherit from block, 1-8=bytes)
     ]
 
 
