@@ -4,7 +4,7 @@ import os
 import unittest
 import rwmem as rw
 
-REGS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.regs'
+REGS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.regdb'
 
 class ContextManagerTests(unittest.TestCase):
     def test(self):

@@ -5,7 +5,7 @@ Generate test data files for pyrwmem tests.
 
 This script generates:
 - test.bin: Binary data file with specific test values
-- test.regs: Register database file defining register layout
+- test.regdb: Register database file defining register layout
 
 The generated files match the existing test data structure used by
 pyrwmem tests in py/tests/.
@@ -66,7 +66,7 @@ def generate_test_bin(output_path: str):
 
 
 def generate_test_regs(output_path: str):
-    """Generate test.regs register database file.
+    """Generate test.regdb register database file.
 
     Creates a register database with:
     - TEST register file containing BLOCK1
@@ -123,14 +123,14 @@ def generate_test_regs(output_path: str):
 
 
 def main():
-    """Generate both test.bin and test.regs files."""
+    """Generate both test.bin and test.regdb files."""
 
     # Determine output directory (py/tests/)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     tests_dir = os.path.join(script_dir, '..', 'tests')
 
     bin_path = os.path.join(tests_dir, 'test.bin')
-    regs_path = os.path.join(tests_dir, 'test.regs')
+    regs_path = os.path.join(tests_dir, 'test.regdb')
 
     print('Generating test data files...')
     print(f'Output directory: {tests_dir}')
