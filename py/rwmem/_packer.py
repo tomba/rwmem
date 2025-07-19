@@ -10,7 +10,6 @@ from .enums import Endianness
 @dataclass
 class PackedField:
     name: str
-    name_offset: int
     high: int
     low: int
 
@@ -18,7 +17,6 @@ class PackedField:
 @dataclass
 class PackedRegister:
     name: str
-    name_offset: int
     offset: int
     fields: list[PackedField]
     first_field_index: int
@@ -27,22 +25,22 @@ class PackedRegister:
 @dataclass
 class PackedBlock:
     name: str
-    name_offset: int
     offset: int
     size: int
     regs: list[PackedRegister]
-    first_reg_index: int
     addr_endianness: Endianness
     addr_size: int
     data_endianness: Endianness
     data_size: int
+    first_reg_index: int
 
 
 @dataclass
 class PackedRegFile:
     name: str
-    name_offset: int
     blocks: list[PackedBlock]
+    all_registers: list[PackedRegister]  # Global deduplicated register list
+    all_fields: list[PackedField]  # Global deduplicated field list
     strings: dict[str, int]
 
 
@@ -51,25 +49,26 @@ class RegFilePacker:
         self.regfile = regfile
 
     def prepare(self) -> PackedRegFile:
-        # Phase 1: Build string table
-        strings = {'': 0}
-        str_idx = 1
+        # Create strings_map with an empty string
+        strings_map = {'': 0}
+        strings_len = 1
 
         def get_str_idx(s: str) -> int:
-            nonlocal str_idx
-            if s not in strings:
-                strings[s] = str_idx
-                str_idx += len(s) + 1
-            return strings[s]
+            nonlocal strings_map, strings_len
+            if s not in strings_map:
+                strings_map[s] = strings_len
+                strings_len += len(s) + 1
+            return strings_map[s]
 
-        # Phase 2: Sort blocks and compute indices
+        # Phase 2: Sort blocks and compute indices with deduplication
         sorted_blocks = sorted(self.regfile.blocks, key=lambda b: b.offset)
 
-        name_offset = get_str_idx(self.regfile.name)
+        get_str_idx(self.regfile.name)  # Ensure name is in strings
 
         packed_blocks = []
-        num_regs = 0
-        num_fields = 0
+        unique_register_sets = {}  # signature -> (packed_regs, first_reg_index, first_field_index)
+        all_packed_regs = []  # Global list of all unique registers
+        all_packed_fields = []  # Global list of all unique fields
 
         for block in sorted_blocks:
             # Sort registers without modifying original
@@ -81,40 +80,52 @@ class RegFilePacker:
                 last_reg = max(sorted_regs, key=lambda r: r.offset)
                 block_size = last_reg.offset + (block.data_size if block.data_size else 4)
 
-            block_name_offset = get_str_idx(block.name)
-            first_reg_index = num_regs
+            get_str_idx(block.name)  # Ensure name is in strings
 
-            packed_regs = []
-            for reg in sorted_regs:
-                # Sort fields without modifying original
-                sorted_fields = sorted(reg.fields, key=lambda f: f.high, reverse=True)
+            # Create signature for this block's register set
+            reg_signature = self._compute_register_signature(sorted_regs)
 
-                reg_name_offset = get_str_idx(reg.name)
-                first_field_index = num_fields
+            if reg_signature in unique_register_sets:
+                # Reuse existing register definitions
+                packed_regs, first_reg_index, first_field_index = unique_register_sets[reg_signature]
+            else:
+                # Create new register definitions
+                first_reg_index = len(all_packed_regs)
+                first_field_index = len(all_packed_fields)
 
-                packed_fields = []
-                for field in sorted_fields:
-                    field_name_offset = get_str_idx(field.name)
-                    packed_fields.append(PackedField(
-                        name=field.name,
-                        name_offset=field_name_offset,
-                        high=field.high,
-                        low=field.low
-                    ))
-                    num_fields += 1
+                packed_regs = []
+                for reg in sorted_regs:
+                    # Sort fields without modifying original
+                    sorted_fields = sorted(reg.fields, key=lambda f: f.high, reverse=True)
 
-                packed_regs.append(PackedRegister(
-                    name=reg.name,
-                    name_offset=reg_name_offset,
-                    offset=reg.offset,
-                    fields=packed_fields,
-                    first_field_index=first_field_index
-                ))
-                num_regs += 1
+                    get_str_idx(reg.name)  # Ensure name is in strings
+                    reg_first_field_index = len(all_packed_fields)
+
+                    packed_fields = []
+                    for field in sorted_fields:
+                        get_str_idx(field.name)  # Ensure name is in strings
+                        packed_field = PackedField(
+                            name=field.name,
+                            high=field.high,
+                            low=field.low
+                        )
+                        packed_fields.append(packed_field)
+                        all_packed_fields.append(packed_field)
+
+                    packed_reg = PackedRegister(
+                        name=reg.name,
+                        offset=reg.offset,
+                        fields=packed_fields,
+                        first_field_index=reg_first_field_index
+                    )
+                    packed_regs.append(packed_reg)
+                    all_packed_regs.append(packed_reg)
+
+                # Cache this register set for reuse
+                unique_register_sets[reg_signature] = (packed_regs, first_reg_index, first_field_index)
 
             packed_blocks.append(PackedBlock(
                 name=block.name,
-                name_offset=block_name_offset,
                 offset=block.offset,
                 size=block_size,
                 regs=packed_regs,
@@ -127,46 +138,54 @@ class RegFilePacker:
 
         return PackedRegFile(
             name=self.regfile.name,
-            name_offset=name_offset,
             blocks=packed_blocks,
-            strings=strings
+            all_registers=all_packed_regs,
+            all_fields=all_packed_fields,
+            strings=strings_map
         )
+
+    def _compute_register_signature(self, regs):
+        """Compute a signature for a set of registers to enable deduplication."""
+        signature_parts = []
+        for reg in regs:
+            # Sort fields for consistent signature
+            sorted_fields = sorted(reg.fields, key=lambda f: (f.name, f.high, f.low))
+            field_sig = tuple((f.name, f.high, f.low) for f in sorted_fields)
+            signature_parts.append((reg.name, reg.offset, field_sig))
+        return tuple(signature_parts)
 
     def pack_to(self, out: io.IOBase, packed: PackedRegFile | None = None):
         if packed is None:
             packed = self.prepare()
 
         num_blocks = len(packed.blocks)
-        num_regs = sum(len(block.regs) for block in packed.blocks)
-        num_fields = sum(len(reg.fields) for block in packed.blocks for reg in block.regs)
+        num_regs = len(packed.all_registers)
+        num_fields = len(packed.all_fields)
 
         # Write regfile header
-        out.write(pack_regfile(packed.name_offset, num_blocks, num_regs, num_fields))
+        out.write(pack_regfile(packed.strings[packed.name], num_blocks, num_regs, num_fields))
 
         # Write all blocks
         for block in packed.blocks:
             out.write(pack_block(
-                block.name_offset, block.offset, block.size,
+                packed.strings[block.name], block.offset, block.size,
                 len(block.regs), block.first_reg_index,
                 block.addr_endianness, block.addr_size,
                 block.data_endianness, block.data_size
             ))
 
-        # Write all registers
-        for block in packed.blocks:
-            for reg in block.regs:
-                out.write(pack_register(
-                    reg.name_offset, reg.offset,
-                    len(reg.fields), reg.first_field_index
-                ))
+        # Write all unique registers (deduplicated)
+        for reg in packed.all_registers:
+            out.write(pack_register(
+                packed.strings[reg.name], reg.offset,
+                len(reg.fields), reg.first_field_index
+            ))
 
-        # Write all fields
-        for block in packed.blocks:
-            for reg in block.regs:
-                for field in reg.fields:
-                    out.write(pack_field(
-                        field.name_offset, field.high, field.low
-                    ))
+        # Write all unique fields (deduplicated)
+        for field in packed.all_fields:
+            out.write(pack_field(
+                packed.strings[field.name], field.high, field.low
+            ))
 
         # Write strings table
         first_pos = out.tell()
