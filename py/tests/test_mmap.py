@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import random
 import shutil
 import stat
 import tempfile
@@ -11,92 +12,122 @@ import rwmem as rw
 BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.bin'
 
 
+def generate_test_data():
+    """Generate the same test data as in generate_test_data.py.
+
+    Creates a 768-byte binary data with random data using fixed seed 42.
+    This ensures tests stay in sync with the actual test.bin file.
+    """
+    random.seed(42)
+    data = bytearray(768)
+    for i in range(len(data)):
+        data[i] = random.randint(0, 255)
+    return data
+
+
+def extract_value(data, offset, size, endianness=rw.Endianness.Big):
+    """Extract a value from test data at given offset with specified size and endianness."""
+    chunk = data[offset:offset + size]
+    if endianness == rw.Endianness.Little:
+        chunk = chunk[::-1]  # Reverse for little endian
+
+    value = 0
+    for byte in chunk:
+        value = (value << 8) | byte
+    return value
+
+
+# Generate test data once at module level
+TEST_DATA = generate_test_data()
+
+
 class ContextManagerTests(unittest.TestCase):
     def test(self):
         with rw.MMapTarget(BIN_PATH, 0, 32, rw.Endianness.Big, 4, rw.MapMode.Read) as map:
-            self.assertEqual(map.read(8, 4), 0xF00DBAAD)
+            expected = extract_value(TEST_DATA, 8, 4, rw.Endianness.Big)
+            self.assertEqual(map.read(8, 4), expected)
 
 
 class MmapTests(unittest.TestCase):
     def setUp(self):
         self.map = rw.MMapTarget(BIN_PATH, 0, 32, rw.Endianness.Big, 4, rw.MapMode.Read)
 
-    def tests(self):
+    def test_reads(self):
         map = self.map
 
         # Test 8-bit reads (1 byte)
-        self.assertEqual(map.read(0, 1), 0x00)
-        self.assertEqual(map.read(1, 1), 0x11)
-        self.assertEqual(map.read(2, 1), 0x22)
-        self.assertEqual(map.read(3, 1), 0x33)
-        self.assertEqual(map.read(4, 1), 0x44)
-        self.assertEqual(map.read(8, 1), 0xF0)
+        self.assertEqual(map.read(0, 1), extract_value(TEST_DATA, 0, 1))
+        self.assertEqual(map.read(1, 1), extract_value(TEST_DATA, 1, 1))
+        self.assertEqual(map.read(2, 1), extract_value(TEST_DATA, 2, 1))
+        self.assertEqual(map.read(3, 1), extract_value(TEST_DATA, 3, 1))
+        self.assertEqual(map.read(4, 1), extract_value(TEST_DATA, 4, 1))
+        self.assertEqual(map.read(8, 1), extract_value(TEST_DATA, 8, 1))
 
         # Test 16-bit reads (2 bytes)
-        self.assertEqual(map.read(0, 2), 0x0011)
-        self.assertEqual(map.read(0, 2, rw.Endianness.Big), 0x0011)
-        self.assertEqual(map.read(0, 2, rw.Endianness.Little), 0x1100)
-        self.assertEqual(map.read(2, 2), 0x2233)
-        self.assertEqual(map.read(2, 2, rw.Endianness.Big), 0x2233)
-        self.assertEqual(map.read(4, 2), 0x4455)
-        self.assertEqual(map.read(4, 2, rw.Endianness.Big), 0x4455)
+        self.assertEqual(map.read(0, 2), extract_value(TEST_DATA, 0, 2, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 2, rw.Endianness.Big), extract_value(TEST_DATA, 0, 2, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 2, rw.Endianness.Little), extract_value(TEST_DATA, 0, 2, rw.Endianness.Little))
+        self.assertEqual(map.read(2, 2), extract_value(TEST_DATA, 2, 2, rw.Endianness.Big))
+        self.assertEqual(map.read(2, 2, rw.Endianness.Big), extract_value(TEST_DATA, 2, 2, rw.Endianness.Big))
+        self.assertEqual(map.read(4, 2), extract_value(TEST_DATA, 4, 2, rw.Endianness.Big))
+        self.assertEqual(map.read(4, 2, rw.Endianness.Big), extract_value(TEST_DATA, 4, 2, rw.Endianness.Big))
 
         # Test 24-bit reads (3 bytes)
-        self.assertEqual(map.read(0, 3), 0x001122)
-        self.assertEqual(map.read(0, 3, rw.Endianness.Big), 0x001122)
-        self.assertEqual(map.read(0, 3, rw.Endianness.Little), 0x221100)
-        self.assertEqual(map.read(1, 3), 0x112233)
-        self.assertEqual(map.read(1, 3, rw.Endianness.Big), 0x112233)
-        self.assertEqual(map.read(4, 3), 0x445566)
-        self.assertEqual(map.read(4, 3, rw.Endianness.Big), 0x445566)
+        self.assertEqual(map.read(0, 3), extract_value(TEST_DATA, 0, 3, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 3, rw.Endianness.Big), extract_value(TEST_DATA, 0, 3, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 3, rw.Endianness.Little), extract_value(TEST_DATA, 0, 3, rw.Endianness.Little))
+        self.assertEqual(map.read(1, 3), extract_value(TEST_DATA, 1, 3, rw.Endianness.Big))
+        self.assertEqual(map.read(1, 3, rw.Endianness.Big), extract_value(TEST_DATA, 1, 3, rw.Endianness.Big))
+        self.assertEqual(map.read(4, 3), extract_value(TEST_DATA, 4, 3, rw.Endianness.Big))
+        self.assertEqual(map.read(4, 3, rw.Endianness.Big), extract_value(TEST_DATA, 4, 3, rw.Endianness.Big))
 
         # Test 32-bit reads (4 bytes)
-        self.assertEqual(map.read(0, 4), 0x00112233)
-        self.assertEqual(map.read(0, 4, rw.Endianness.Big), 0x00112233)
-        self.assertEqual(map.read(0, 4, rw.Endianness.Little), 0x33221100)
-        self.assertEqual(map.read(4, 4), 0x44556677)
-        self.assertEqual(map.read(4, 4, rw.Endianness.Big), 0x44556677)
-        self.assertEqual(map.read(8, 4), 0xF00DBAAD)
-        self.assertEqual(map.read(8, 4, rw.Endianness.Big), 0xF00DBAAD)
-        self.assertEqual(map.read(12, 4), 0xABBAAABB)
-        self.assertEqual(map.read(16, 4), 0x00560078)
-        self.assertEqual(map.read(20, 4), 0x00112233)
-        self.assertEqual(map.read(24, 4), 0x44556677)
-        self.assertEqual(map.read(28, 4), 0xDEADBEEF)
+        self.assertEqual(map.read(0, 4), extract_value(TEST_DATA, 0, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 4, rw.Endianness.Big), extract_value(TEST_DATA, 0, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 4, rw.Endianness.Little), extract_value(TEST_DATA, 0, 4, rw.Endianness.Little))
+        self.assertEqual(map.read(4, 4), extract_value(TEST_DATA, 4, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(4, 4, rw.Endianness.Big), extract_value(TEST_DATA, 4, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(8, 4), extract_value(TEST_DATA, 8, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(8, 4, rw.Endianness.Big), extract_value(TEST_DATA, 8, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(12, 4), extract_value(TEST_DATA, 12, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(16, 4), extract_value(TEST_DATA, 16, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(20, 4), extract_value(TEST_DATA, 20, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(24, 4), extract_value(TEST_DATA, 24, 4, rw.Endianness.Big))
+        self.assertEqual(map.read(28, 4), extract_value(TEST_DATA, 28, 4, rw.Endianness.Big))
 
         # Test 40-bit reads (5 bytes)
-        self.assertEqual(map.read(0, 5), 0x0011223344)
-        self.assertEqual(map.read(0, 5, rw.Endianness.Big), 0x0011223344)
-        self.assertEqual(map.read(0, 5, rw.Endianness.Little), 0x4433221100)
-        self.assertEqual(map.read(1, 5), 0x1122334455)
-        self.assertEqual(map.read(1, 5, rw.Endianness.Big), 0x1122334455)
-        self.assertEqual(map.read(3, 5), 0x3344556677)
-        self.assertEqual(map.read(3, 5, rw.Endianness.Big), 0x3344556677)
+        self.assertEqual(map.read(0, 5), extract_value(TEST_DATA, 0, 5, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 5, rw.Endianness.Big), extract_value(TEST_DATA, 0, 5, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 5, rw.Endianness.Little), extract_value(TEST_DATA, 0, 5, rw.Endianness.Little))
+        self.assertEqual(map.read(1, 5), extract_value(TEST_DATA, 1, 5, rw.Endianness.Big))
+        self.assertEqual(map.read(1, 5, rw.Endianness.Big), extract_value(TEST_DATA, 1, 5, rw.Endianness.Big))
+        self.assertEqual(map.read(3, 5), extract_value(TEST_DATA, 3, 5, rw.Endianness.Big))
+        self.assertEqual(map.read(3, 5, rw.Endianness.Big), extract_value(TEST_DATA, 3, 5, rw.Endianness.Big))
 
         # Test 48-bit reads (6 bytes)
-        self.assertEqual(map.read(0, 6), 0x001122334455)
-        self.assertEqual(map.read(0, 6, rw.Endianness.Big), 0x001122334455)
-        self.assertEqual(map.read(0, 6, rw.Endianness.Little), 0x554433221100)
-        self.assertEqual(map.read(1, 6), 0x112233445566)
-        self.assertEqual(map.read(1, 6, rw.Endianness.Big), 0x112233445566)
-        self.assertEqual(map.read(2, 6), 0x223344556677)
-        self.assertEqual(map.read(2, 6, rw.Endianness.Big), 0x223344556677)
+        self.assertEqual(map.read(0, 6), extract_value(TEST_DATA, 0, 6, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 6, rw.Endianness.Big), extract_value(TEST_DATA, 0, 6, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 6, rw.Endianness.Little), extract_value(TEST_DATA, 0, 6, rw.Endianness.Little))
+        self.assertEqual(map.read(1, 6), extract_value(TEST_DATA, 1, 6, rw.Endianness.Big))
+        self.assertEqual(map.read(1, 6, rw.Endianness.Big), extract_value(TEST_DATA, 1, 6, rw.Endianness.Big))
+        self.assertEqual(map.read(2, 6), extract_value(TEST_DATA, 2, 6, rw.Endianness.Big))
+        self.assertEqual(map.read(2, 6, rw.Endianness.Big), extract_value(TEST_DATA, 2, 6, rw.Endianness.Big))
 
         # Test 56-bit reads (7 bytes)
-        self.assertEqual(map.read(0, 7), 0x00112233445566)
-        self.assertEqual(map.read(0, 7, rw.Endianness.Big), 0x00112233445566)
-        self.assertEqual(map.read(0, 7, rw.Endianness.Little), 0x66554433221100)
-        self.assertEqual(map.read(1, 7), 0x11223344556677)
-        self.assertEqual(map.read(1, 7, rw.Endianness.Big), 0x11223344556677)
-        self.assertEqual(map.read(8, 7), 0xF00DBAADABBAAA)
-        self.assertEqual(map.read(8, 7, rw.Endianness.Big), 0xF00DBAADABBAAA)
+        self.assertEqual(map.read(0, 7), extract_value(TEST_DATA, 0, 7, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 7, rw.Endianness.Big), extract_value(TEST_DATA, 0, 7, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 7, rw.Endianness.Little), extract_value(TEST_DATA, 0, 7, rw.Endianness.Little))
+        self.assertEqual(map.read(1, 7), extract_value(TEST_DATA, 1, 7, rw.Endianness.Big))
+        self.assertEqual(map.read(1, 7, rw.Endianness.Big), extract_value(TEST_DATA, 1, 7, rw.Endianness.Big))
+        self.assertEqual(map.read(8, 7), extract_value(TEST_DATA, 8, 7, rw.Endianness.Big))
+        self.assertEqual(map.read(8, 7, rw.Endianness.Big), extract_value(TEST_DATA, 8, 7, rw.Endianness.Big))
 
         # Test 64-bit reads (8 bytes)
-        self.assertEqual(map.read(0, 8), 0x0011223344556677)
-        self.assertEqual(map.read(0, 8, rw.Endianness.Big), 0x0011223344556677)
-        self.assertEqual(map.read(0, 8, rw.Endianness.Little), 0x7766554433221100)
-        self.assertEqual(map.read(24, 8), 0x44556677DEADBEEF)
-        self.assertEqual(map.read(24, 8, rw.Endianness.Big), 0x44556677DEADBEEF)
+        self.assertEqual(map.read(0, 8), extract_value(TEST_DATA, 0, 8, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 8, rw.Endianness.Big), extract_value(TEST_DATA, 0, 8, rw.Endianness.Big))
+        self.assertEqual(map.read(0, 8, rw.Endianness.Little), extract_value(TEST_DATA, 0, 8, rw.Endianness.Little))
+        self.assertEqual(map.read(24, 8), extract_value(TEST_DATA, 24, 8, rw.Endianness.Big))
+        self.assertEqual(map.read(24, 8, rw.Endianness.Big), extract_value(TEST_DATA, 24, 8, rw.Endianness.Big))
 
 
 class MMapTargetFailureTests(unittest.TestCase):
@@ -259,7 +290,7 @@ class WriteMmapTests(unittest.TestCase):
             self.tmpfile_path, 0, 32, rw.Endianness.Big, 4, rw.MapMode.ReadWrite
         )
 
-    def tests(self):
+    def test_writes(self):
         map = self.map
 
         # Test 8-bit writes (1 byte)
