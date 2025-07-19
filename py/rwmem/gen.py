@@ -124,8 +124,8 @@ class UnpackedRegister:
         if addr_size is not None and (not isinstance(addr_size, int) or addr_size not in (1, 2, 4, 8)):
             raise RegisterValidationError(f"Register '{name}': addr_size must be 1, 2, 4, 8, or None, got {addr_size}")
 
-        if data_size is not None and (not isinstance(data_size, int) or data_size not in (1, 2, 4, 8)):
-            raise RegisterValidationError(f"Register '{name}': data_size must be 1, 2, 4, 8, or None, got {data_size}")
+        if data_size is not None and (not isinstance(data_size, int) or data_size not in range(1, 9)):
+            raise RegisterValidationError(f"Register '{name}': data_size must be 1-8 bytes or None, got {data_size}")
 
     def _validate_field_overlaps(self) -> None:
         """Check for overlapping fields within this register."""
@@ -238,8 +238,8 @@ class UnpackedRegBlock:
         if addr_size not in (1, 2, 4, 8):
             raise BlockValidationError(f"Block '{name}': addr_size must be 1, 2, 4, or 8, got {addr_size}")
 
-        if data_size not in (1, 2, 4, 8):
-            raise BlockValidationError(f"Block '{name}': data_size must be 1, 2, 4, or 8, got {data_size}")
+        if data_size not in range(1, 9):
+            raise BlockValidationError(f"Block '{name}': data_size must be 1-8 bytes, got {data_size}")
 
         if description is not None and not isinstance(description, str):
             raise BlockValidationError(f"Block '{name}': description must be a string or None, got {type(description).__name__}")
