@@ -8,9 +8,8 @@ import rwmem.mmaptarget
 __all__ = [ 'MappedRegister', 'MappedRegisterBlock', 'MappedRegisterFile' ]
 
 class MappedRegister:
-    def __init__(self, map, reg: rwmem.Register, size, block_offset):
+    def __init__(self, map, reg: rwmem.Register, block_offset):
         self._map = map
-        self._size = size
         self._reg = reg
         self._frozen = None
         self._block_offset = block_offset
@@ -19,10 +18,14 @@ class MappedRegister:
         if self._frozen is not None:
             raise RuntimeError('Register already frozen')
 
-        self._frozen = self._map.read(self._block_offset + self._reg.offset, data_size=self._size)
+        value = self._map.read(self._block_offset + self._reg.offset, data_size=self._reg.effective_data_size)
+        self._frozen = self._convert_endianness_if_needed(value, True)
 
     def unfreeze(self):
-        self._map.write(self._block_offset + self._reg.offset, self._frozen, data_size=self._size)
+        if self._frozen is None:
+            raise RuntimeError('Register not frozen')
+        converted_val = self._convert_endianness_if_needed(self._frozen, False)
+        self._map.write(self._block_offset + self._reg.offset, converted_val, data_size=self._reg.effective_data_size)
         self._frozen = None
 
     def get_fields(self):
@@ -36,9 +39,47 @@ class MappedRegister:
 
         return fields
 
+    def _convert_endianness_if_needed(self, value: int, from_register: bool = True) -> int:
+        """Convert endianness if register endianness differs from block endianness."""
+        reg_endianness = self._reg.effective_data_endianness
+        block_endianness = self._reg.parent_block.data_endianness
+
+        if reg_endianness == block_endianness:
+            return value
+
+        # Need to convert between endiannesses
+        data_size = self._reg.effective_data_size
+
+        if from_register:
+            # Converting from block endianness (MMapTarget) to register endianness
+            if data_size == 1:
+                return value  # No conversion needed for single bytes
+            elif data_size == 2:
+                return ((value & 0xFF) << 8) | ((value >> 8) & 0xFF)
+            elif data_size == 4:
+                return (((value & 0xFF) << 24) |
+                       (((value >> 8) & 0xFF) << 16) |
+                       (((value >> 16) & 0xFF) << 8) |
+                       ((value >> 24) & 0xFF))
+            elif data_size == 8:
+                return (((value & 0xFF) << 56) |
+                       (((value >> 8) & 0xFF) << 48) |
+                       (((value >> 16) & 0xFF) << 40) |
+                       (((value >> 24) & 0xFF) << 32) |
+                       (((value >> 32) & 0xFF) << 24) |
+                       (((value >> 40) & 0xFF) << 16) |
+                       (((value >> 48) & 0xFF) << 8) |
+                       ((value >> 56) & 0xFF))
+        else:
+            # Converting from register endianness to block endianness (MMapTarget)
+            return self._convert_endianness_if_needed(value, True)  # Same conversion
+
+        return value
+
     def get_value(self) -> int:
         if self._frozen is None:
-            return self._map.read(self._block_offset + self._reg.offset, data_size=self._size)
+            value = self._map.read(self._block_offset + self._reg.offset, data_size=self._reg.effective_data_size)
+            return self._convert_endianness_if_needed(value, True)
         else:
             return self._frozen
 
@@ -50,7 +91,8 @@ class MappedRegister:
             self.unfreeze()
         else:
             if self._frozen is None:
-                self._map.write(self._block_offset + self._reg.offset, val, data_size=self._size)
+                converted_val = self._convert_endianness_if_needed(val, False)
+                self._map.write(self._block_offset + self._reg.offset, converted_val, data_size=self._reg.effective_data_size)
             else:
                 self._frozen = val
 
@@ -65,12 +107,12 @@ class MappedRegister:
             return rwmem.helpers.get_field_value(reg_value, f.high, f.low)
 
         elif isinstance(idx, int):
-            if idx < 0 or idx >= self._size * 8:
+            if idx < 0 or idx >= self._reg.effective_data_size * 8:
                 raise IndexError('Index out of bounds')
 
             return rwmem.helpers.get_field_value(reg_value, idx, idx)
         elif isinstance(idx, slice):
-            indices = idx.indices(self._size * 8 - 1)
+            indices = idx.indices(self._reg.effective_data_size * 8 - 1)
 
             low = indices[0]
             high = indices[1]
@@ -91,13 +133,13 @@ class MappedRegister:
             v = self.get_value()
             v = rwmem.helpers.set_field_value(v, f.high, f.low, val)
         elif isinstance(idx, int):
-            if idx < 0 or idx >= self._size * 8:
+            if idx < 0 or idx >= self._reg.effective_data_size * 8:
                 raise IndexError('Index out of bounds')
 
             v = self.get_value()
             v = rwmem.helpers.set_field_value(v, idx, idx, val)
         elif isinstance(idx, slice):
-            indices = idx.indices(self._size * 8 - 1)
+            indices = idx.indices(self._reg.effective_data_size * 8 - 1)
 
             low = indices[0]
             high = indices[1]
@@ -164,7 +206,7 @@ class MappedRegisterBlock(collections.abc.Mapping):
 
         r = self._regblock.get(key)
         if r:
-            mr = MappedRegister(self._map, r, self._regblock.data_size, self._offset)
+            mr = MappedRegister(self._map, r, self._offset)
             self._registers[r.name] = mr
             return mr
 
