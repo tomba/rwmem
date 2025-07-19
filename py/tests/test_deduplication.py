@@ -83,21 +83,35 @@ class DeduplicationTests(unittest.TestCase):
         uart0_block = rf['UART0']
         uart1_block = rf['UART1']
 
-        # All VP blocks should share the same first_reg_index (deduplication)
-        vp_first_reg_idx = vp0_block.rbd.first_reg_index
-        self.assertEqual(vp1_block.rbd.first_reg_index, vp_first_reg_idx,
-                        'VP1 should share register data with VP0')
-        self.assertEqual(vp2_block.rbd.first_reg_index, vp_first_reg_idx,
-                        'VP2 should share register data with VP0')
-        self.assertEqual(vp3_block.rbd.first_reg_index, vp_first_reg_idx,
-                        'VP3 should share register data with VP0')
+        # In v3, identical blocks share RegisterData entries through RegisterIndex indirection
+        # VP blocks should have their RegisterIndex entries pointing to the same RegisterData entries
+        import ctypes
+        from rwmem._structs import RegisterIndexV3
+
+        def get_register_indices(block):
+            """Get the list of RegisterData indices this block references."""
+            indices = []
+            for i in range(block.rbd.num_regs):
+                reg_index_offset = rf.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * (block.rbd.first_reg_list_index + i)
+                reg_index_data = RegisterIndexV3.from_buffer(rf._map, reg_index_offset)
+                indices.append(reg_index_data.register_index)
+            return indices
+
+        vp0_indices = get_register_indices(vp0_block)
+        vp1_indices = get_register_indices(vp1_block)
+        vp2_indices = get_register_indices(vp2_block)
+        vp3_indices = get_register_indices(vp3_block)
+
+        self.assertEqual(vp1_indices, vp0_indices, 'VP1 should reference same RegisterData entries as VP0')
+        self.assertEqual(vp2_indices, vp0_indices, 'VP2 should reference same RegisterData entries as VP0')
+        self.assertEqual(vp3_indices, vp0_indices, 'VP3 should reference same RegisterData entries as VP0')
 
         # UART blocks should share with each other but not with VP blocks
-        uart_first_reg_idx = uart0_block.rbd.first_reg_index
-        self.assertEqual(uart1_block.rbd.first_reg_index, uart_first_reg_idx,
-                        'UART1 should share register data with UART0')
-        self.assertNotEqual(uart_first_reg_idx, vp_first_reg_idx,
-                           'UART blocks should not share with VP blocks')
+        uart0_indices = get_register_indices(uart0_block)
+        uart1_indices = get_register_indices(uart1_block)
+
+        self.assertEqual(uart1_indices, uart0_indices, 'UART1 should reference same RegisterData entries as UART0')
+        self.assertNotEqual(uart0_indices, vp0_indices, 'UART and VP blocks should reference different RegisterData entries')
 
         # Test 3: Efficiency verification - deduplication should reduce total unique data structures
 
