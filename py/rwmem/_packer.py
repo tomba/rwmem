@@ -1,10 +1,19 @@
 from __future__ import annotations
 
 import io
-import struct
 from dataclasses import dataclass
 
 from .enums import Endianness
+from ._structs import (
+    RegisterFileDataV3,
+    RegisterBlockDataV3,
+    RegisterDataV3,
+    FieldDataV3,
+    RegisterIndexV3,
+    FieldIndexV3,
+    RWMEM_MAGIC_V3,
+    RWMEM_VERSION_V3,
+)
 
 
 @dataclass
@@ -69,6 +78,7 @@ class RegFilePacker:
         unique_register_sets = {}  # signature -> (packed_regs, first_reg_index, first_field_index)
         all_packed_regs = []  # Global list of all unique registers
         all_packed_fields = []  # Global list of all unique fields
+        current_reg_list_index = 0  # Track position in RegisterIndex array
 
         for block in sorted_blocks:
             # Sort registers without modifying original
@@ -129,12 +139,15 @@ class RegFilePacker:
                 offset=block.offset,
                 size=block_size,
                 regs=packed_regs,
-                first_reg_index=first_reg_index,
+                first_reg_index=current_reg_list_index,  # This is now first_reg_list_index
                 addr_endianness=block.addr_endianness,
                 addr_size=block.addr_size,
                 data_endianness=block.data_endianness,
                 data_size=block.data_size
             ))
+
+            # Update the position in RegisterIndex array
+            current_reg_list_index += len(packed_regs)
 
         return PackedRegFile(
             name=self.regfile.name,
@@ -158,34 +171,38 @@ class RegFilePacker:
         if packed is None:
             packed = self.prepare()
 
-        num_blocks = len(packed.blocks)
-        num_regs = len(packed.all_registers)
-        num_fields = len(packed.all_fields)
-
         # Write regfile header
-        out.write(pack_regfile(packed.strings[packed.name], num_blocks, num_regs, num_fields))
+        out.write(pack_regfile(packed))
 
         # Write all blocks
         for block in packed.blocks:
-            out.write(pack_block(
-                packed.strings[block.name], block.offset, block.size,
-                len(block.regs), block.first_reg_index,
-                block.addr_endianness, block.addr_size,
-                block.data_endianness, block.data_size
-            ))
+            out.write(pack_block(block, packed.strings))
 
         # Write all unique registers (deduplicated)
         for reg in packed.all_registers:
-            out.write(pack_register(
-                packed.strings[reg.name], reg.offset,
-                len(reg.fields), reg.first_field_index
-            ))
+            out.write(pack_register(reg, packed.strings))
 
         # Write all unique fields (deduplicated)
         for field in packed.all_fields:
-            out.write(pack_field(
-                packed.strings[field.name], field.high, field.low
-            ))
+            out.write(pack_field(field, packed.strings))
+
+        # Write register index arrays
+        for block in packed.blocks:
+            for reg in block.regs:
+                # Find the index of this register in the global all_registers array
+                reg_index = None
+                for i, global_reg in enumerate(packed.all_registers):
+                    if global_reg is reg:
+                        reg_index = i
+                        break
+                if reg_index is None:
+                    raise RuntimeError(f'Register {reg.name} not found in global register array')
+                out.write(pack_register_index(reg_index))
+
+        # Write field index arrays (1:1 mapping for now)
+        for reg in packed.all_registers:
+            for i in range(len(reg.fields)):
+                out.write(pack_field_index(reg.first_field_index + i))
 
         # Write strings table
         first_pos = out.tell()
@@ -200,25 +217,71 @@ class RegFilePacker:
             return f.getvalue()
 
 
-def pack_regfile(name_offset, num_blocks, num_regs, num_fields):
-    RWMEM_MAGIC = 0x00e11554
-    RWMEM_VERSION = 2
-    fmt_regfile = '>IIIIII'
-    return struct.pack(fmt_regfile, RWMEM_MAGIC, RWMEM_VERSION, name_offset, num_blocks, num_regs, num_fields)
+def pack_regfile(regfile: PackedRegFile):
+    # Calculate indirection array sizes
+    num_reg_indices = sum(len(block.regs) for block in regfile.blocks)
+    num_field_indices = sum(len(reg.fields) for reg in regfile.all_registers)
+
+    data = RegisterFileDataV3(
+        magic=RWMEM_MAGIC_V3,
+        version=RWMEM_VERSION_V3,
+        name_offset=regfile.strings[regfile.name],
+        num_blocks=len(regfile.blocks),
+        num_regs=len(regfile.all_registers),
+        num_fields=len(regfile.all_fields),
+        num_reg_indices=num_reg_indices,
+        num_field_indices=num_field_indices
+    )
+    return bytes(data)
 
 
-def pack_block(name_offset, block_offset, block_size, num_regs, first_reg_index,
-               addr_e, addr_s, data_e, data_s):
-    fmt_block = '>IQQIIBBBB'
-    return struct.pack(fmt_block, name_offset, block_offset, block_size, num_regs, first_reg_index,
-                       addr_e.value, addr_s, data_e.value, data_s)
+def pack_block(block: PackedBlock, strings: dict[str, int]):
+    data = RegisterBlockDataV3(
+        name_offset=strings[block.name],
+        description_offset=0,  # description not supported yet
+        offset=block.offset,
+        size=block.size,
+        num_regs=len(block.regs),
+        first_reg_list_index=block.first_reg_index,
+        default_addr_endianness=block.addr_endianness.value,
+        default_addr_size=block.addr_size,
+        default_data_endianness=block.data_endianness.value,
+        default_data_size=block.data_size
+    )
+    return bytes(data)
 
 
-def pack_register(name_offset, reg_offset, num_fields, first_field_index):
-    fmt_reg = '>IQII'
-    return struct.pack(fmt_reg, name_offset, reg_offset, num_fields, first_field_index)
+def pack_register(reg: PackedRegister, strings: dict[str, int]):
+    data = RegisterDataV3(
+        name_offset=strings[reg.name],
+        description_offset=0,  # description not supported yet
+        offset=reg.offset,
+        reset_value=0,  # reset value not supported yet
+        num_fields=len(reg.fields),
+        first_field_list_index=reg.first_field_index,
+        addr_endianness=0,  # inherit from block
+        addr_size=0,  # inherit from block
+        data_endianness=0,  # inherit from block
+        data_size=0  # inherit from block
+    )
+    return bytes(data)
 
 
-def pack_field(name_offset, high, low):
-    fmt_field = '>IBB'
-    return struct.pack(fmt_field, name_offset, high, low)
+def pack_field(field: PackedField, strings: dict[str, int]):
+    data = FieldDataV3(
+        name_offset=strings[field.name],
+        description_offset=0,  # description not supported yet
+        high=field.high,
+        low=field.low
+    )
+    return bytes(data)
+
+
+def pack_register_index(register_index):
+    data = RegisterIndexV3(register_index=register_index)
+    return bytes(data)
+
+
+def pack_field_index(field_index):
+    data = FieldIndexV3(field_index=field_index)
+    return bytes(data)
