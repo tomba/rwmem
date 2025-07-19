@@ -5,142 +5,361 @@ import unittest
 
 import rwmem as rw
 import rwmem.gen as gen
-from rwmem.registerfile import Register, RegisterBlock, RegisterFile
+from rwmem.registerfile import RegisterFile
 
-# Define register blocks without fields
 
-OVR_REGS = (
-    ( 'ATTRIBUTES_0', 0x20 ),
-    ( 'ATTRIBUTES_1', 0x24 ),
-    ( 'ATTRIBUTES_2', 0x28 ),
-    ( 'ATTRIBUTES_3', 0x2c ),
-)
+class V3GenerationTests(unittest.TestCase):
+    """Test v3 register database generation with comprehensive v3 features."""
 
-VP_REGS = (
-    ( 'CONTROL', 0x4 ),
-)
+    def test_basic_v2_compatibility(self):
+        """Test that basic v2-style definitions still work (backward compatibility)."""
+        # Simple block with basic registers (v2-style, no v3 features)
+        basic_regs = [
+            gen.UnpackedRegister('CONFIG', 0x00, [
+                gen.UnpackedField('ENABLE', 0, 0),
+                gen.UnpackedField('MODE', 3, 1),
+            ]),
+            gen.UnpackedRegister('STATUS', 0x04, [
+                gen.UnpackedField('READY', 0, 0),
+                gen.UnpackedField('ERROR', 7, 4),
+            ]),
+        ]
 
-BLOCKS = (
-    ( 'VP1', 0x3020a000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-    ( 'VP2', 0x3020b000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-    ( 'OVR2', 0x30208000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-    ( 'OVR1', 0x30207000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-)
+        basic_blocks = [
+            gen.UnpackedRegBlock('BASIC', 0x1000, 0x100, basic_regs,
+                               rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+        ]
 
-# Define register blocks with fields
+        urf = gen.UnpackedRegFile('BASIC_TEST', basic_blocks)
 
-OVR_REGS_FIELDS = (
-    ( 'ATTRIBUTES_0', 0x20, (
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ) ),
-    ( 'ATTRIBUTES_1', 0x24, (
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ) ),
-    ( 'ATTRIBUTES_2', 0x28, (
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ) ),
-    ( 'ATTRIBUTES_3', 0x2c, (
-        ( 'POSY', 30, 19 ),
-        ( 'POSX', 17, 6 ),
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ) ),
-)
-
-VP_REGS_FIELDS = (
-    ( 'CONTROL', 0x4, (
-        ( 'GOBIT', 5, 5 ),
-        ( 'ENABLE', 0, 0 ),
-    ) ),
-)
-
-BLOCKS_FIELDS = (
-    ( 'VP1', 0x3020a000, 0x1000, VP_REGS_FIELDS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-    ( 'VP2', 0x3020b000, 0x1000, VP_REGS_FIELDS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-    ( 'OVR2', 0x30208000, 0x1000, OVR_REGS_FIELDS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-    ( 'OVR1', 0x30207000, 0x1000, OVR_REGS_FIELDS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-)
-
-class MmapTests(unittest.TestCase):
-    def test_gen(self):
-        # Create an unpacked register file
-        urf = gen.UnpackedRegFile('DSS', BLOCKS)
-
-        # Pack the unpacked register file into a memory stream.
-        # Normally this would be written to a file.
+        # Pack and verify
         with io.BytesIO() as f:
             urf.pack_to(f)
             data = f.getvalue()
 
-        # Create a RegisterFile from the packed data.
-        # Normally this would be read from a file.
         rf = RegisterFile(data)
+        self.assertEqual(rf.name, 'BASIC_TEST')
 
-        # Test that the register file contains the correct data
-        self.assertEqual(rf.name, 'DSS')
+        block = rf['BASIC']
+        self.assertEqual(block.name, 'BASIC')
+        self.assertEqual(block.offset, 0x1000)
+        self.assertEqual(block.size, 0x100)
+        self.assertIsNone(block.description)  # No description in v2-style
 
-        self.compare_blocks(rf, BLOCKS)
+        reg = block['CONFIG']
+        self.assertEqual(reg.name, 'CONFIG')
+        self.assertEqual(reg.offset, 0x00)
+        self.assertEqual(reg.reset_value, 0)  # Default when not specified
+        self.assertIsNone(reg.description)
 
-    def test_gen_fields(self):
-        # Create an unpacked register file
-        urf = gen.UnpackedRegFile('DSS', BLOCKS_FIELDS)
+        field = reg['ENABLE']
+        self.assertEqual(field.name, 'ENABLE')
+        self.assertEqual(field.high, 0)
+        self.assertEqual(field.low, 0)
+        self.assertIsNone(field.description)
 
-        # Pack the unpacked register file into a memory stream.
-        # Normally this would be written to a file.
+    def test_comprehensive_v3_features(self):
+        """Test all v3 features: descriptions, reset values, per-register sizing."""
+
+        # GPU-style register block with comprehensive v3 features
+        gpu_regs = [
+            # Main control register
+            gen.UnpackedRegister(
+                'CTRL', 0x00,
+                description='Main GPU control register',
+                reset_value=0x80000000,  # READY bit set by default
+                fields=[
+                    gen.UnpackedField('ENABLE', 0, 0,
+                                    description='GPU enable bit'),
+                    gen.UnpackedField('RESET', 1, 1,
+                                    description='Soft reset trigger'),
+                    gen.UnpackedField('IRQ_MASK', 7, 4,
+                                    description='Interrupt mask bits'),
+                    gen.UnpackedField('MODE', 11, 8,
+                                    description='Operating mode'),
+                    gen.UnpackedField('ERROR', 19, 16,
+                                    description='Error status'),
+                    gen.UnpackedField('READY', 31, 31,
+                                    description='GPU ready flag'),
+                ]
+            ),
+
+            # 16-bit status register (per-register data size override)
+            gen.UnpackedRegister(
+                'STATUS', 0x04,
+                description='GPU status register',
+                reset_value=0x0001,  # IDLE bit set
+                data_size=2,  # Override to 16-bit
+                fields=[
+                    gen.UnpackedField('IDLE', 0, 0,
+                                    description='GPU idle state'),
+                    gen.UnpackedField('BUSY', 1, 1,
+                                    description='GPU busy flag'),
+                    gen.UnpackedField('TEMP', 15, 8,
+                                    description='Temperature reading'),
+                ]
+            ),
+
+            # 8-bit interrupt register with endianness override
+            gen.UnpackedRegister(
+                'IRQ', 0x06,
+                description='Interrupt control',
+                reset_value=0x00,
+                data_size=1,  # 8-bit register
+                data_endianness=rw.Endianness.Big,  # Override endianness
+                fields=[
+                    gen.UnpackedField('VSYNC_EN', 0, 0,
+                                    description='VSync interrupt enable'),
+                    gen.UnpackedField('HSYNC_EN', 1, 1,
+                                    description='HSync interrupt enable'),
+                    gen.UnpackedField('ERR_EN', 2, 2,
+                                    description='Error interrupt enable'),
+                    gen.UnpackedField('PEND', 7, 7,
+                                    description='Interrupt pending'),
+                ]
+            ),
+
+            # 64-bit framebuffer address register
+            gen.UnpackedRegister(
+                'FB_ADDR', 0x08,
+                description='Framebuffer base address',
+                reset_value=0x0000000000000000,
+                data_size=8,  # 64-bit register
+                fields=[
+                    gen.UnpackedField('ADDR_LOW', 31, 0,
+                                    description='Lower address bits'),
+                    gen.UnpackedField('ADDR_HIGH', 63, 32,
+                                    description='Upper address bits'),
+                ]
+            ),
+        ]
+
+        # I2C sensor block with different addressing
+        i2c_regs = [
+            gen.UnpackedRegister(
+                'SENSOR_CTRL', 0x00,
+                description='Sensor control register',
+                reset_value=0x08,  # Default sample rate
+                addr_size=1,  # 8-bit I2C addressing
+                fields=[
+                    gen.UnpackedField('SAMPLE_RATE', 3, 0,
+                                    description='Sample rate setting'),
+                    gen.UnpackedField('POWER_DOWN', 7, 7,
+                                    description='Power down mode'),
+                ]
+            ),
+            gen.UnpackedRegister(
+                'SENSOR_DATA', 0x01,
+                description='Sensor data register',
+                reset_value=0x00,
+                addr_size=1,  # 8-bit I2C addressing
+                fields=[
+                    gen.UnpackedField('TEMP_DATA', 7, 0,
+                                    description='Temperature data'),
+                ]
+            ),
+        ]
+
+        # Create blocks with descriptions
+        blocks = [
+            gen.UnpackedRegBlock(
+                'GPU', 0x40000000, 0x1000, gpu_regs,
+                rw.Endianness.Little, 4, rw.Endianness.Little, 4,
+                description='Graphics processing unit registers'
+            ),
+            gen.UnpackedRegBlock(
+                'I2C_SENSOR', 0x48, 0x10, i2c_regs,
+                rw.Endianness.Big, 1, rw.Endianness.Big, 1,
+                description='I2C temperature sensor'
+            ),
+        ]
+
+        # Create register file with description
+        urf = gen.UnpackedRegFile('GPU_SYSTEM', blocks, description='GPU system with I2C sensors')
+
+        # Pack and test
         with io.BytesIO() as f:
             urf.pack_to(f)
             data = f.getvalue()
 
-        # Create a RegisterFile from the packed data.
-        # Normally this would be read from a file.
         rf = RegisterFile(data)
 
-        # Test that the register file contains the correct data
-        self.assertEqual(rf.name, 'DSS')
+        # Test register file properties
+        self.assertEqual(rf.name, 'GPU_SYSTEM')
+        # Note: RegisterFile description property not yet implemented in step 2
 
-        self.compare_blocks(rf, BLOCKS_FIELDS)
+        # Test GPU block
+        gpu_block = rf['GPU']
+        self.assertEqual(gpu_block.name, 'GPU')
+        self.assertEqual(gpu_block.description, 'Graphics processing unit registers')
+        self.assertEqual(gpu_block.offset, 0x40000000)
+        self.assertEqual(gpu_block.addr_endianness, rw.Endianness.Little)
+        self.assertEqual(gpu_block.data_size, 4)
+
+        # Test CTRL register (32-bit)
+        ctrl_reg = gpu_block['CTRL']
+        self.assertEqual(ctrl_reg.name, 'CTRL')
+        self.assertEqual(ctrl_reg.description, 'Main GPU control register')
+        self.assertEqual(ctrl_reg.reset_value, 0x80000000)
+        self.assertEqual(ctrl_reg.effective_data_size, 4)  # Inherits from block
+        self.assertEqual(ctrl_reg.effective_data_endianness, rw.Endianness.Little)
+
+        # Test CTRL register fields
+        enable_field = ctrl_reg['ENABLE']
+        self.assertEqual(enable_field.description, 'GPU enable bit')
+
+        reset_field = ctrl_reg['RESET']
+        self.assertEqual(reset_field.description, 'Soft reset trigger')
+
+        ready_field = ctrl_reg['READY']
+        self.assertEqual(ready_field.description, 'GPU ready flag')
+
+        # Test STATUS register (16-bit override)
+        status_reg = gpu_block['STATUS']
+        self.assertEqual(status_reg.description, 'GPU status register')
+        self.assertEqual(status_reg.reset_value, 0x0001)
+        self.assertEqual(status_reg.effective_data_size, 2)  # Per-register override
+
+        # Test field
+        idle_field = status_reg['IDLE']
+        self.assertEqual(idle_field.description, 'GPU idle state')
+
+        # Test IRQ register (8-bit with endianness override)
+        irq_reg = gpu_block['IRQ']
+        self.assertEqual(irq_reg.description, 'Interrupt control')
+        self.assertEqual(irq_reg.effective_data_size, 1)  # 8-bit override
+        self.assertEqual(irq_reg.effective_data_endianness, rw.Endianness.Big)  # Endianness override
+
+        pend_field = irq_reg['PEND']
+        self.assertEqual(pend_field.description, 'Interrupt pending')
+
+        # Test FB_ADDR register (64-bit)
+        fb_reg = gpu_block['FB_ADDR']
+        self.assertEqual(fb_reg.description, 'Framebuffer base address')
+        self.assertEqual(fb_reg.effective_data_size, 8)  # 64-bit override
+        self.assertEqual(fb_reg.reset_value, 0x0000000000000000)
+
+        # Test I2C block
+        i2c_block = rf['I2C_SENSOR']
+        self.assertEqual(i2c_block.description, 'I2C temperature sensor')
+        self.assertEqual(i2c_block.addr_size, 1)  # 8-bit addressing
+        self.assertEqual(i2c_block.data_endianness, rw.Endianness.Big)
+
+        # Test I2C register with address size override
+        sensor_ctrl = i2c_block['SENSOR_CTRL']
+        self.assertEqual(sensor_ctrl.effective_addr_size, 1)  # Per-register override
+        self.assertEqual(sensor_ctrl.reset_value, 0x08)
+
+        sample_rate_field = sensor_ctrl['SAMPLE_RATE']
+        self.assertEqual(sample_rate_field.description, 'Sample rate setting')
+
+    def test_validation_errors(self):
+        """Test that validation catches v3-specific errors."""
+
+        # Test reset value too large for register size
+        with self.assertRaises(gen.RegisterValidationError) as cm:
+            reg = gen.UnpackedRegister('BAD_REG', 0x00, reset_value=0x1FF, data_size=1)
+            # Validation happens during block creation
+            gen.UnpackedRegBlock('TEST', 0x1000, 0x100, [reg],
+                               rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+        self.assertIn('reset_value', str(cm.exception))
+
+        # Test field bit position validation
+        with self.assertRaises(gen.FieldValidationError) as cm:
+            gen.UnpackedField('BAD_FIELD', 5, 7)  # high < low should fail
+        self.assertIn('high bit (5) must be >= low bit (7)', str(cm.exception))
+
+    def test_inheritance_behavior(self):
+        """Test register property inheritance from blocks."""
+
+        # Block with specific defaults
+        block_regs = [
+            # Register that inherits everything from block
+            gen.UnpackedRegister('INHERIT_ALL', 0x00, fields=[
+                gen.UnpackedField('DATA', 7, 0),
+            ]),
+
+            # Register that overrides some properties
+            gen.UnpackedRegister('OVERRIDE_SOME', 0x04,
+                               data_size=2,  # Override size
+                               addr_endianness=rw.Endianness.Big,  # Override endianness
+                               fields=[
+                                   gen.UnpackedField('DATA', 15, 0),
+                               ]),
+        ]
+
+        block = gen.UnpackedRegBlock(
+            'INHERIT_TEST', 0x2000, 0x100, block_regs,
+            rw.Endianness.Little, 4, rw.Endianness.Little, 4,
+            description='Inheritance test block'
+        )
+
+        urf = gen.UnpackedRegFile('INHERIT_TEST', [block])
+
+        with io.BytesIO() as f:
+            urf.pack_to(f)
+            data = f.getvalue()
+
+        rf = RegisterFile(data)
+        test_block = rf['INHERIT_TEST']
+
+        # Test full inheritance
+        inherit_reg = test_block['INHERIT_ALL']
+        self.assertEqual(inherit_reg.effective_addr_size, 4)  # From block
+        self.assertEqual(inherit_reg.effective_data_size, 4)  # From block
+        self.assertEqual(inherit_reg.effective_addr_endianness, rw.Endianness.Little)  # From block
+        self.assertEqual(inherit_reg.effective_data_endianness, rw.Endianness.Little)  # From block
+
+        # Test partial override
+        override_reg = test_block['OVERRIDE_SOME']
+        self.assertEqual(override_reg.effective_addr_size, 4)  # From block (not overridden)
+        self.assertEqual(override_reg.effective_data_size, 2)  # Overridden
+        self.assertEqual(override_reg.effective_addr_endianness, rw.Endianness.Big)  # Overridden
+        self.assertEqual(override_reg.effective_data_endianness, rw.Endianness.Little)  # From block (not overridden)
+
+    def test_field_sharing_optimization(self):
+        """Test that field sharing optimization works correctly."""
+
+        # Create two registers with overlapping field definitions
+        shared_fields = [
+            gen.UnpackedField('ENABLE', 0, 0, description='Enable bit'),
+            gen.UnpackedField('STATUS', 7, 4, description='Status bits'),
+        ]
+
+        reg1 = gen.UnpackedRegister('REG1', 0x00, fields=shared_fields + [
+            gen.UnpackedField('UNIQUE1', 15, 8, description='Unique to reg1'),
+        ])
+
+        reg2 = gen.UnpackedRegister('REG2', 0x04, fields=shared_fields + [
+            gen.UnpackedField('UNIQUE2', 15, 8, description='Unique to reg2'),
+        ])
+
+        block = gen.UnpackedRegBlock('SHARING_TEST', 0x3000, 0x100, [reg1, reg2],
+                                   rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+
+        urf = gen.UnpackedRegFile('SHARING_TEST', [block])
+
+        with io.BytesIO() as f:
+            urf.pack_to(f)
+            data = f.getvalue()
+
+        rf = RegisterFile(data)
+
+        # Verify both registers can access shared fields
+        test_block = rf['SHARING_TEST']
+        reg1 = test_block['REG1']
+        reg2 = test_block['REG2']
+
+        # Both should have the shared fields
+        self.assertEqual(reg1['ENABLE'].description, 'Enable bit')
+        self.assertEqual(reg2['ENABLE'].description, 'Enable bit')
+        self.assertEqual(reg1['STATUS'].description, 'Status bits')
+        self.assertEqual(reg2['STATUS'].description, 'Status bits')
+
+        # And their unique fields
+        self.assertEqual(reg1['UNIQUE1'].description, 'Unique to reg1')
+        self.assertEqual(reg2['UNIQUE2'].description, 'Unique to reg2')
 
 
-    def compare_blocks(self, rf: RegisterFile, ref_blocks):
-        for ref_name, ref_offset, ref_size, ref_regs, ref_ae, ref_as, ref_de, ref_ds in ref_blocks:
-            rb = rf[ref_name]
-            self.assertEqual(rb.name, ref_name)
-            self.assertEqual(rb.offset, ref_offset)
-            self.assertEqual(rb.size, ref_size)
-            self.assertEqual(rb.addr_endianness, ref_ae)
-            self.assertEqual(rb.addr_size, ref_as)
-            self.assertEqual(rb.data_endianness, ref_de)
-            self.assertEqual(rb.data_size, ref_ds)
-
-            self.compare_registers(rb, ref_regs)
-
-    def compare_registers(self, block: RegisterBlock, ref_regs):
-        for ref_name, ref_offset, *ref_fields in ref_regs:
-            if ref_fields:
-                ref_fields_data = ref_fields[0]
-            else:
-                ref_fields_data = None
-
-            reg = block[ref_name]
-            self.assertEqual(reg.name, ref_name)
-            self.assertEqual(reg.offset, ref_offset)
-
-            self.compare_fields(reg, ref_fields_data)
-
-    def compare_fields(self, reg: Register, ref_fields):
-        if ref_fields is None:
-            return
-        for ref_name, ref_high, ref_low in ref_fields:
-            field = reg[ref_name]
-            self.assertEqual(field.name, ref_name)
-            self.assertEqual(field.high, ref_high)
-            self.assertEqual(field.low, ref_low)
+if __name__ == '__main__':
+    unittest.main()
