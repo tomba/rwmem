@@ -221,8 +221,21 @@ static void readwriteprint(const RwmemOp& op,
 
 	oldval = userval = newval = 0;
 
+	uint8_t reg_data_size;
+	Endianness reg_data_endianness;
+
+	if (rd && rbd) {
+		// Use register-specific effective size and endianness
+		reg_data_size = rd->effective_data_size(rbd);
+		reg_data_endianness = rd->effective_data_endianness(rbd);
+	} else {
+		// Fallback to mapping defaults (existing behavior)
+		reg_data_size = 0; // Use mapping default
+		reg_data_endianness = Endianness::Default; // Use mapping default
+	}
+
 	if (rwmem_opts.write_mode != WriteMode::Write) {
-		oldval = mm->read(paddr);
+		oldval = mm->read(paddr, reg_data_size, reg_data_endianness);
 
 		switch (rwmem_opts.number_print_mode) {
 		case NumberPrintMode::Dec:
@@ -262,13 +275,13 @@ static void readwriteprint(const RwmemOp& op,
 
 		fflush(stdout);
 
-		mm->write(paddr, v);
+		mm->write(paddr, v, reg_data_size, reg_data_endianness);
 
 		newval = v;
 		userval = v;
 
 		if (rwmem_opts.write_mode == WriteMode::ReadWriteRead) {
-			newval = mm->read(paddr);
+			newval = mm->read(paddr, reg_data_size, reg_data_endianness);
 
 			switch (rwmem_opts.number_print_mode) {
 			case NumberPrintMode::Dec:
@@ -386,7 +399,9 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 			op.range = op.range - op.reg_offset;
 		}
 	} else {
-		if (op.rbd)
+		if (rd && op.rbd)
+			op.range = rd->effective_data_size(op.rbd);
+		else if (op.rbd)
 			op.range = op.rbd->data_size();
 		else
 			op.range = rwmem_opts.data_size;
@@ -420,7 +435,16 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 
 		ERR_ON(!ok, "Field not found '{}'", arg.field);
 
-		ERR_ON(fl >= rwmem_opts.data_size * 8 || fh >= rwmem_opts.data_size * 8,
+		uint8_t reg_data_size;
+		if (rd && op.rbd) {
+			reg_data_size = rd->effective_data_size(op.rbd);
+		} else if (op.rbd) {
+			reg_data_size = op.rbd->data_size();
+		} else {
+			reg_data_size = rwmem_opts.data_size;
+		}
+
+		ERR_ON(fl >= reg_data_size * 8 || fh >= reg_data_size * 8,
 		       "Field bits higher than register size");
 
 		op.custom_field = true;
@@ -429,11 +453,15 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 	} else {
 		op.custom_field = false;
 		op.low = 0;
-		if (op.rbd) {
-			op.high = op.rbd->data_size() * 8 - 1;
+		uint8_t reg_data_size;
+		if (rd && op.rbd) {
+			reg_data_size = rd->effective_data_size(op.rbd);
+		} else if (op.rbd) {
+			reg_data_size = op.rbd->data_size();
 		} else {
-			op.high = rwmem_opts.data_size * 8 - 1;
+			reg_data_size = rwmem_opts.data_size;
 		}
+		op.high = reg_data_size * 8 - 1;
 	}
 
 	/* Parse value */
@@ -443,7 +471,16 @@ static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 		int r = parse_u64(arg.value, &value);
 		ERR_ON(r, "Invalid value '{}'", arg.value);
 
-		uint64_t regmask = ~0ULL >> (64 - rwmem_opts.data_size * 8);
+		uint8_t reg_data_size;
+		if (rd && op.rbd) {
+			reg_data_size = rd->effective_data_size(op.rbd);
+		} else if (op.rbd) {
+			reg_data_size = op.rbd->data_size();
+		} else {
+			reg_data_size = rwmem_opts.data_size;
+		}
+
+		uint64_t regmask = ~0ULL >> (64 - reg_data_size * 8);
 
 		ERR_ON(value & ~regmask, "Value does not fit into the register size");
 
@@ -554,30 +591,41 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 		while (op_offset < range) {
 			const RegisterData* rd = rbd->find_register(rfd, op_offset);
 
+			uint8_t step_size;
+			if (rd) {
+				// Use register-specific size for stepping
+				step_size = rd->effective_data_size(rbd);
+			} else {
+				// Use block default size for gaps
+				step_size = data_size;
+			}
+
 			if (!rd && skip_undefined_regs) {
 				if (rwmem_opts.raw_output) {
 					uint64_t v = 0;
-					ssize_t l = write(STDOUT_FILENO, &v, data_size);
+					ssize_t l = write(STDOUT_FILENO, &v, step_size);
 					ERR_ON_ERRNO(l == -1, "write failed");
 				}
 
-				op_offset += data_size;
+				op_offset += step_size;
 				continue;
 			}
 
 			if (rwmem_opts.raw_output)
-				readprint_raw(mm, rb_access_base + op_offset, data_size);
+				readprint_raw(mm, rb_access_base + op_offset, step_size);
 			else
 				readwriteprint(op, mm, op_offset, rb_base + op_offset, rfd, rbd, rd, formatting);
 
-			op_offset += data_size;
+			op_offset += step_size;
 		}
 	} else {
 		for (const RegisterData* rd : op.rds) {
 			uint64_t op_offset = rd->offset();
 
+			uint8_t reg_size = rd->effective_data_size(rbd);
+
 			if (rwmem_opts.raw_output)
-				readprint_raw(mm, op_offset, data_size);
+				readprint_raw(mm, op_offset, reg_size);
 			else
 				readwriteprint(op, mm, op_offset, rb_base + op_offset, rfd, rbd, rd, formatting);
 		}
