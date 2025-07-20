@@ -11,7 +11,7 @@
 class MMapTargetTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        test_filename = std::string(TEST_DATA_DIR) + "/data.bin";
+        test_filename = std::string(TEST_DATA_DIR) + "/test.bin";
 
         // Verify test file exists
         struct stat st;
@@ -46,18 +46,18 @@ TEST_F(MMapTargetTest, Construction) {
 TEST_F(MMapTargetTest, MapReadOnly) {
     MMapTarget target(test_filename);
 
-    EXPECT_NO_THROW(target.map(0, 1024, Endianness::Little, 4,
+    EXPECT_NO_THROW(target.map(0, 768, Endianness::Little, 4,
                                Endianness::Little, 4, MapMode::Read));
 
-    // Should be able to read - test against known values from data.bin
+    // Should be able to read - test against known values from test.bin
     uint32_t value = target.read(0, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x0f7216c2);  // Known value at offset 0 in data.bin
+    EXPECT_EQ(value, 0x7d8c0c39);  // Known value at offset 0 in test.bin
 }
 
 TEST_F(MMapTargetTest, MapReadWrite) {
     MMapTarget target(writable_filename);
 
-    EXPECT_NO_THROW(target.map(0, 1024, Endianness::Little, 4,
+    EXPECT_NO_THROW(target.map(0, 768, Endianness::Little, 4,
                                Endianness::Little, 4, MapMode::ReadWrite));
 
     // Should be able to read and write
@@ -69,7 +69,7 @@ TEST_F(MMapTargetTest, MapReadWrite) {
 //TEST_F(MMapTargetTest, MapWriteOnly) {
 //    MMapTarget target(writable_filename);
 //
-//    EXPECT_NO_THROW(target.map(0, 1024, Endianness::Little, 4,
+//    EXPECT_NO_THROW(target.map(0, 768, Endianness::Little, 4,
 //                               Endianness::Little, 4, MapMode::Write));
 //
 //    // Should be able to write
@@ -78,7 +78,7 @@ TEST_F(MMapTargetTest, MapReadWrite) {
 
 TEST_F(MMapTargetTest, WriteToReadOnlyMapping) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Should throw when trying to write to read-only mapping
@@ -90,59 +90,59 @@ TEST_F(MMapTargetTest, Read8Bit) {
     target.map(0, 256, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
-    // Test 8-bit reads - known values from data.bin
+    // Test 8-bit reads - known values from test.bin
     uint8_t value = target.read(0, 1, Endianness::Little);
-    EXPECT_EQ(value, 0xc2);  // LSB of 0x0f7216c2
+    EXPECT_EQ(value, 0x39);  // LSB of 0x7d8c0c39
 
     value = target.read(1, 1, Endianness::Little);
-    EXPECT_EQ(value, 0x16);  // Second byte of 0x0f7216c2
+    EXPECT_EQ(value, 0x0c);  // Second byte of 0x7d8c0c39
 }
 
 TEST_F(MMapTargetTest, Read16Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test 16-bit reads - little endian
     uint16_t value = target.read(0, 2, Endianness::Little);
-    EXPECT_EQ(value, 0x16c2);  // Lower 16 bits of 0x0f7216c2
+    EXPECT_EQ(value, 0x0c39);  // Lower 16 bits of 0x7d8c0c39
 
     // Test 16-bit reads - big endian
     value = target.read(0, 2, Endianness::Big);
-    EXPECT_EQ(value, 0xc216);  // Swapped bytes
+    EXPECT_EQ(value, 0x390c);  // Swapped bytes
 }
 
 TEST_F(MMapTargetTest, Read32Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test 32-bit reads - little endian
     uint32_t value = target.read(0, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x0f7216c2);  // Known value from data.bin
+    EXPECT_EQ(value, 0x7d8c0c39);  // Known value from test.bin
 
     value = target.read(4, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x7d12d37b);  // Known value from data.bin
+    EXPECT_EQ(value, 0x2c344772);  // Known value from test.bin
 
     // Test 32-bit reads - big endian
     value = target.read(0, 4, Endianness::Big);
-    EXPECT_EQ(value, 0xc216720f);  // Byte-swapped
+    EXPECT_EQ(value, 0x390c8c7d);  // Byte-swapped
 }
 
 TEST_F(MMapTargetTest, Read64Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test 64-bit reads - little endian (combining known 32-bit values)
     uint64_t value = target.read(0, 8, Endianness::Little);
-    uint64_t expected = 0x7d12d37b0f7216c2ULL;  // Combines first two 32-bit values
+    uint64_t expected = 0x2c3447727d8c0c39ULL;  // Combines first two 32-bit values
     EXPECT_EQ(value, expected);
 }
 
 TEST_F(MMapTargetTest, Write8Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 8-bit writes
@@ -153,7 +153,7 @@ TEST_F(MMapTargetTest, Write8Bit) {
 
 TEST_F(MMapTargetTest, Write16Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 16-bit writes - little endian
@@ -169,7 +169,7 @@ TEST_F(MMapTargetTest, Write16Bit) {
 
 TEST_F(MMapTargetTest, Write32Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 32-bit writes - little endian
@@ -185,7 +185,7 @@ TEST_F(MMapTargetTest, Write32Bit) {
 
 TEST_F(MMapTargetTest, Write64Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 64-bit writes - little endian
@@ -201,59 +201,59 @@ TEST_F(MMapTargetTest, Write64Bit) {
 
 TEST_F(MMapTargetTest, DefaultDataSize) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test default data size (4 bytes)
     uint32_t value = target.read(0, 0, Endianness::Little);  // Should read 4 bytes by default
-    EXPECT_EQ(value, 0x0f7216c2);
+    EXPECT_EQ(value, 0x7d8c0c39);
 }
 
 TEST_F(MMapTargetTest, DefaultEndianness) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Big, 4, MapMode::Read);  // Default to big endian
 
     // Test default endianness
     uint32_t value = target.read(0, 4, Endianness::Default);  // Should use big endian by default
-    EXPECT_EQ(value, 0xc216720f);
+    EXPECT_EQ(value, 0x390c8c7d);
 }
 
 TEST_F(MMapTargetTest, OffsetMapping) {
     MMapTarget target(test_filename);
 
-    // Map starting at offset 0x10 with 1024 bytes
-    target.map(0x10, 1024, Endianness::Little, 4,
+    // Map starting at offset 0x10 with 752 bytes (768 - 16)
+    target.map(0x10, 752, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Reading at address 0x10 should give us the value at offset 0x10 in the file
     uint32_t value = target.read(0x10, 4, Endianness::Little);
-    EXPECT_EQ(value, 0xfbf9f1c4);  // Known value at offset 0x10 in data.bin
+    EXPECT_EQ(value, 0x8ee570d6);  // Known value at offset 0x10 in test.bin
 }
 
 TEST_F(MMapTargetTest, AddressRangeValidation) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Reading below mapped range should throw
     EXPECT_THROW(target.read(0xFFFFFFFF, 1, Endianness::Little), std::runtime_error);
 
     // Reading above mapped range should throw
-    EXPECT_THROW(target.read(1025, 1, Endianness::Little), std::runtime_error);
+    EXPECT_THROW(target.read(768, 1, Endianness::Little), std::runtime_error);
 
     // Reading at the edge of mapped range should work
-    EXPECT_NO_THROW(target.read(1023, 1, Endianness::Little));
+    EXPECT_NO_THROW(target.read(767, 1, Endianness::Little));
 
     // Reading beyond the edge should throw
-    EXPECT_THROW(target.read(1023, 4, Endianness::Little), std::runtime_error);
+    EXPECT_THROW(target.read(767, 4, Endianness::Little), std::runtime_error);
 }
 
 TEST_F(MMapTargetTest, UnmapAndRemap) {
     MMapTarget target(test_filename);
 
     // Initial mapping
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     uint32_t original_value = target.read(0, 4, Endianness::Little);
@@ -262,7 +262,7 @@ TEST_F(MMapTargetTest, UnmapAndRemap) {
     target.unmap();
 
     // Remap with different parameters
-    target.map(0, 2048, Endianness::Big, 8,
+    target.map(0, 768, Endianness::Big, 8,
                Endianness::Big, 8, MapMode::Read);
 
     uint32_t new_value = target.read(0, 4, Endianness::Little);
@@ -271,7 +271,7 @@ TEST_F(MMapTargetTest, UnmapAndRemap) {
 
 TEST_F(MMapTargetTest, Sync) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Write some data
@@ -285,7 +285,7 @@ TEST_F(MMapTargetTest, InvalidFileAccess) {
     MMapTarget target("/nonexistent/path");
 
     // Should throw when trying to map non-existent file
-    EXPECT_THROW(target.map(0, 1024, Endianness::Little, 4,
+    EXPECT_THROW(target.map(0, 768, Endianness::Little, 4,
                            Endianness::Little, 4, MapMode::ReadWrite),
                  std::runtime_error);
 }
@@ -306,79 +306,79 @@ TEST_F(MMapTargetTest, DestructorCleanup) {
     // Test that destructor properly cleans up resources
     {
         MMapTarget target(test_filename);
-        target.map(0, 1024, Endianness::Little, 4,
+        target.map(0, 768, Endianness::Little, 4,
                    Endianness::Little, 4, MapMode::Read);
         // target goes out of scope here, destructor should be called
     }
 
     // Should be able to create another target for the same file
     MMapTarget target2(test_filename);
-    EXPECT_NO_THROW(target2.map(0, 1024, Endianness::Little, 4,
+    EXPECT_NO_THROW(target2.map(0, 768, Endianness::Little, 4,
                                Endianness::Little, 4, MapMode::Read));
 }
 
 TEST_F(MMapTargetTest, Read24Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
-    // Test 24-bit reads - little endian (first 3 bytes of 0x0f7216c2)
+    // Test 24-bit reads - little endian (first 3 bytes of 0x7d8c0c39)
     uint64_t value = target.read(0, 3, Endianness::Little);
-    EXPECT_EQ(value, 0x7216c2);  // Lower 24 bits of 0x0f7216c2
+    EXPECT_EQ(value, 0x8c0c39);  // Lower 24 bits of 0x7d8c0c39
 
     // Test 24-bit reads - big endian
     value = target.read(0, 3, Endianness::Big);
-    EXPECT_EQ(value, 0xc21672);  // Byte-swapped
+    EXPECT_EQ(value, 0x390c8c);  // Byte-swapped
 }
 
 TEST_F(MMapTargetTest, Read40Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test 40-bit reads - little endian
-    // Reading 5 bytes: 0xc2, 0x16, 0x72, 0x0f, 0x7b (first byte of next value)
+    // Reading 5 bytes: 0x39, 0x0c, 0x8c, 0x7d, 0x72 (first byte of next value)
     uint64_t value = target.read(0, 5, Endianness::Little);
-    EXPECT_EQ(value, 0x7b0f7216c2ULL);  // 5 bytes in little endian order
+    EXPECT_EQ(value, 0x727d8c0c39ULL);  // 5 bytes in little endian order
 
     // Test 40-bit reads - big endian
     value = target.read(0, 5, Endianness::Big);
-    EXPECT_EQ(value, 0xc216720f7bULL);  // Same bytes in big endian order
+    EXPECT_EQ(value, 0x390c8c7d72ULL);  // Same bytes in big endian order
 }
 
 TEST_F(MMapTargetTest, Read48Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test 48-bit reads - little endian
-    // Reading 6 bytes: 0xc2, 0x16, 0x72, 0x0f, 0x7b, 0xd3 (first 2 bytes of next value)
+    // Reading 6 bytes: 0x39, 0x0c, 0x8c, 0x7d, 0x72, 0x47 (first 2 bytes of next value)
     uint64_t value = target.read(0, 6, Endianness::Little);
-    EXPECT_EQ(value, 0xd37b0f7216c2ULL);  // 6 bytes in little endian order
+    EXPECT_EQ(value, 0x47727d8c0c39ULL);  // 6 bytes in little endian order
 
     // Test 48-bit reads - big endian
     value = target.read(0, 6, Endianness::Big);
-    EXPECT_EQ(value, 0xc216720f7bd3ULL);  // Same bytes in big endian order
+    EXPECT_EQ(value, 0x390c8c7d7247ULL);  // Same bytes in big endian order
 }
 
 TEST_F(MMapTargetTest, Read56Bit) {
     MMapTarget target(test_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
     // Test 56-bit reads - little endian
-    // Reading 7 bytes: 0xc2, 0x16, 0x72, 0x0f, 0x7b, 0xd3, 0x12 (first 3 bytes of next value)
+    // Reading 7 bytes: 0x39, 0x0c, 0x8c, 0x7d, 0x72, 0x47, 0x34 (first 3 bytes of next value)
     uint64_t value = target.read(0, 7, Endianness::Little);
-    EXPECT_EQ(value, 0x12d37b0f7216c2ULL);  // 7 bytes in little endian order
+    EXPECT_EQ(value, 0x3447727d8c0c39ULL);  // 7 bytes in little endian order
 
     // Test 56-bit reads - big endian
     value = target.read(0, 7, Endianness::Big);
-    EXPECT_EQ(value, 0xc216720f7bd312ULL);  // Same bytes in big endian order
+    EXPECT_EQ(value, 0x390c8c7d724734ULL);  // Same bytes in big endian order
 }
 
 TEST_F(MMapTargetTest, Write24Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 24-bit writes - little endian
@@ -394,7 +394,7 @@ TEST_F(MMapTargetTest, Write24Bit) {
 
 TEST_F(MMapTargetTest, Write40Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 40-bit writes - little endian
@@ -410,7 +410,7 @@ TEST_F(MMapTargetTest, Write40Bit) {
 
 TEST_F(MMapTargetTest, Write48Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 48-bit writes - little endian
@@ -426,7 +426,7 @@ TEST_F(MMapTargetTest, Write48Bit) {
 
 TEST_F(MMapTargetTest, Write56Bit) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test 56-bit writes - little endian
@@ -442,7 +442,7 @@ TEST_F(MMapTargetTest, Write56Bit) {
 
 TEST_F(MMapTargetTest, ArbitrarySizeEndianness) {
     MMapTarget target(writable_filename);
-    target.map(0, 1024, Endianness::Little, 4,
+    target.map(0, 768, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::ReadWrite);
 
     // Test that byte-oriented access handles endianness correctly
@@ -462,28 +462,28 @@ TEST_F(MMapTargetTest, KnownDataValidation) {
     target.map(0, 32, Endianness::Little, 4,
                Endianness::Little, 4, MapMode::Read);
 
-    // Test known values from data.bin (based on test_rwmem_cmd.py)
+    // Test known values from test.bin
     uint32_t value = target.read(0x00, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x0f7216c2);
+    EXPECT_EQ(value, 0x7d8c0c39);
 
     value = target.read(0x04, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x7d12d37b);
+    EXPECT_EQ(value, 0x2c344772);
 
     value = target.read(0x08, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x5e1721ec);
+    EXPECT_EQ(value, 0x2f0f10d8);
 
     value = target.read(0x0c, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x3b0eb509);
+    EXPECT_EQ(value, 0x650d776f);
 
     value = target.read(0x10, 4, Endianness::Little);
-    EXPECT_EQ(value, 0xfbf9f1c4);
+    EXPECT_EQ(value, 0x8ee570d6);
 
     value = target.read(0x14, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x85f114a9);
+    EXPECT_EQ(value, 0xaed85103);
 
     value = target.read(0x18, 4, Endianness::Little);
-    EXPECT_EQ(value, 0xa4edffdd);
+    EXPECT_EQ(value, 0xac6e4f8e);
 
     value = target.read(0x1c, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x2ecde8ff);
+    EXPECT_EQ(value, 0x31c22f34);
 }
