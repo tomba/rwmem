@@ -53,7 +53,7 @@ VP_REGS = [
 plat = 'J7'
 
 if plat == 'AM625':
-    urf = gen.UnpackedRegFile(
+    urf = gen.create_register_file(
         'DSS', [
             ( 'VP1', 0x3020a000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
             ( 'VP2', 0x3020b000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
@@ -62,7 +62,7 @@ if plat == 'AM625':
         ]
     )
 elif plat == 'J7':
-    urf = gen.UnpackedRegFile(
+    urf = gen.create_register_file(
         'DSS', [
             ( 'VP1', 0x04a80000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
             ( 'VP2', 0x04aa0000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),

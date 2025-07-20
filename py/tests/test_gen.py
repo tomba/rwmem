@@ -449,23 +449,21 @@ class V3GenerationTests(unittest.TestCase):
     def test_tuple_approach_mixed_objects(self):
         """Test that tuples and objects can be mixed in specifications."""
 
-        # Mix objects and tuples at different levels
+        # Mix objects and tuples at the top level - some blocks as objects, some as tuples
+        obj_block = gen.UnpackedRegBlock(
+            'OBJ_BLOCK', 0x1000, 0x100, [
+                gen.UnpackedRegister('REG1', 0x00, [
+                    gen.UnpackedField('FIELD1', 7, 0, 'Test field'),
+                ]),
+            ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Object block'
+        )
+
         mixed_blocks_spec = [
-            # Use object for first block
-            gen.UnpackedRegBlock(
-                'OBJ_BLOCK', 0x1000, 0x100, [
-                    # Use tuple for register
-                    ('REG1', 0x00, [
-                        # Use object for field
-                        gen.UnpackedField('FIELD1', 7, 0, 'Test field'),
-                    ]),
-                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Object block'
-            ),
+            # Use pre-created object for first block
+            obj_block,
             # Use tuple for second block
             ('TUPLE_BLOCK', 0x2000, 0x100, [
-                # Use object for register
-                gen.UnpackedRegister('REG2', 0x00, [
-                    # Use tuple for field
+                ('REG2', 0x00, [
                     ('FIELD2', 7, 0, 'Another field'),
                 ]),
             ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Tuple block'),
