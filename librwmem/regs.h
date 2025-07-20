@@ -34,6 +34,11 @@ public:
 	uint64_t offset() const { return m_rd->offset(); }
 	uint32_t num_fields() const { return m_rd->num_fields(); }
 
+	Endianness effective_addr_endianness() const { return m_rd->effective_addr_endianness(m_rbd); }
+	uint8_t effective_addr_size() const { return m_rd->effective_addr_size(m_rbd); }
+	Endianness effective_data_endianness() const { return m_rd->effective_data_endianness(m_rbd); }
+	uint8_t effective_data_size() const { return m_rd->effective_data_size(m_rbd); }
+
 	Field at(uint32_t idx) const;
 
 	std::unique_ptr<Field> find_field(const std::string& name) const;
