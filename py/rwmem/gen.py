@@ -321,3 +321,54 @@ class UnpackedRegFile:
     def pack_to(self, out: io.IOBase):
         packer = RegFilePacker(self)
         packer.pack_to(out)
+
+
+def create_register_file(name: str, blocks_spec, description: str | None = None) -> UnpackedRegFile:
+    """Create UnpackedRegFile from mixed tuple/object specifications.
+
+    Args:
+        name: Register file name
+        blocks_spec: Sequence of UnpackedRegBlock objects or tuples
+        description: Optional description
+
+    Returns:
+        UnpackedRegFile with all specifications converted to objects
+    """
+    converted_blocks = [_convert_block_spec(block_spec) for block_spec in blocks_spec]
+    return UnpackedRegFile(name, converted_blocks, description)
+
+
+def _convert_block_spec(block_spec):
+    """Convert block specification to UnpackedRegBlock object."""
+    if isinstance(block_spec, UnpackedRegBlock):
+        return block_spec
+    elif isinstance(block_spec, tuple):
+        name, offset, size, regs_spec, addr_endianness, addr_size, data_endianness, data_size, *rest = block_spec
+        description = rest[0] if rest else None
+        converted_regs = [_convert_register_spec(reg_spec) for reg_spec in regs_spec]
+        return UnpackedRegBlock(name, offset, size, converted_regs, addr_endianness, addr_size, data_endianness, data_size, description)
+    else:
+        raise TypeError(f'Block specification must be UnpackedRegBlock or tuple, got {type(block_spec).__name__}')
+
+
+def _convert_register_spec(reg_spec):
+    """Convert register specification to UnpackedRegister object."""
+    if isinstance(reg_spec, UnpackedRegister):
+        return reg_spec
+    elif isinstance(reg_spec, tuple):
+        name, offset, *rest = reg_spec
+        fields_spec = rest[0] if rest else []
+        converted_fields = [_convert_field_spec(field_spec) for field_spec in fields_spec]
+        return UnpackedRegister(name, offset, converted_fields)
+    else:
+        raise TypeError(f'Register specification must be UnpackedRegister or tuple, got {type(reg_spec).__name__}')
+
+
+def _convert_field_spec(field_spec):
+    """Convert field specification to UnpackedField object."""
+    if isinstance(field_spec, UnpackedField):
+        return field_spec
+    elif isinstance(field_spec, tuple):
+        return UnpackedField(*field_spec)
+    else:
+        raise TypeError(f'Field specification must be UnpackedField or tuple, got {type(field_spec).__name__}')
