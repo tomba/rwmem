@@ -72,7 +72,7 @@ class UnpackedField:
 
 
 class UnpackedRegister:
-    def __init__(self, name: str, offset: int, fields: Sequence[UnpackedField | tuple] | None = None,
+    def __init__(self, name: str, offset: int, fields: Sequence[UnpackedField] | None = None,
                  description: str | None = None, reset_value: int = 0,
                  addr_endianness: Endianness | None = None, addr_size: int | None = None,
                  data_endianness: Endianness | None = None, data_size: int | None = None) -> None:
@@ -87,7 +87,7 @@ class UnpackedRegister:
         self.data_size = data_size
 
         if fields:
-            self.fields = [f if isinstance(f, UnpackedField) else UnpackedField(*f) for f in fields]
+            self.fields = list(fields)
             self._validate_field_overlaps()
         else:
             self.fields = []
@@ -192,7 +192,7 @@ class UnpackedRegister:
 
 
 class UnpackedRegBlock:
-    def __init__(self, name: str, offset: int, size: int, regs: Sequence[UnpackedRegister | tuple],
+    def __init__(self, name: str, offset: int, size: int, regs: Sequence[UnpackedRegister],
                  addr_endianness: Endianness, addr_size: int, data_endianness: Endianness, data_size: int,
                  description: str | None = None) -> None:
         self._validate_inputs(name, offset, size, addr_endianness, addr_size, data_endianness, data_size, description)
@@ -206,8 +206,8 @@ class UnpackedRegBlock:
         self.data_size = data_size
         self.description = description
 
-        # Create registers and validate them
-        self.regs = [r if isinstance(r, UnpackedRegister) else UnpackedRegister(*r) for r in regs]
+        # Store registers and validate them
+        self.regs = list(regs)
         self._validate_register_overlaps()
         self._validate_registers_against_block()
 
@@ -274,13 +274,13 @@ class UnpackedRegBlock:
 
 
 class UnpackedRegFile:
-    def __init__(self, name: str, blocks: Sequence[UnpackedRegBlock | tuple], description: str | None = None) -> None:
+    def __init__(self, name: str, blocks: Sequence[UnpackedRegBlock], description: str | None = None) -> None:
         self._validate_inputs(name, description)
         self.name = name
         self.description = description
 
-        # Create blocks and validate them
-        self.blocks = [b if isinstance(b, UnpackedRegBlock) else UnpackedRegBlock(*b) for b in blocks]
+        # Store blocks and validate them
+        self.blocks = list(blocks)
         self._validate_block_overlaps()
 
     def _validate_inputs(self, name: str, description: str | None) -> None:
