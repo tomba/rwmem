@@ -21,6 +21,7 @@ class PackedField:
     name: str
     high: int
     low: int
+    description: str | None = None
 
 
 @dataclass
@@ -29,6 +30,12 @@ class PackedRegister:
     offset: int
     fields: list[PackedField]
     first_field_index: int
+    description: str | None = None
+    reset_value: int = 0
+    addr_endianness: Endianness | None = None
+    addr_size: int | None = None
+    data_endianness: Endianness | None = None
+    data_size: int | None = None
 
 
 @dataclass
@@ -42,6 +49,7 @@ class PackedBlock:
     data_endianness: Endianness
     data_size: int
     first_reg_index: int
+    description: str | None = None
 
 
 @dataclass
@@ -51,6 +59,7 @@ class PackedRegFile:
     all_registers: list[PackedRegister]  # Global deduplicated register list
     all_fields: list[PackedField]  # Global deduplicated field list
     strings: dict[str, int]
+    description: str | None = None
 
 
 class RegFilePacker:
@@ -73,6 +82,8 @@ class RegFilePacker:
         sorted_blocks = sorted(self.regfile.blocks, key=lambda b: b.offset)
 
         get_str_idx(self.regfile.name)  # Ensure name is in strings
+        if self.regfile.description:
+            get_str_idx(self.regfile.description)  # Ensure description is in strings
 
         packed_blocks = []
         unique_register_sets = {}  # signature -> (packed_regs, first_reg_index, first_field_index)
@@ -88,9 +99,13 @@ class RegFilePacker:
             block_size = block.size
             if block_size == 0 and sorted_regs:
                 last_reg = max(sorted_regs, key=lambda r: r.offset)
-                block_size = last_reg.offset + (block.data_size if block.data_size else 4)
+                # Use register's effective data size or block default
+                reg_data_size = last_reg.get_effective_data_size(block.data_size)
+                block_size = last_reg.offset + reg_data_size
 
             get_str_idx(block.name)  # Ensure name is in strings
+            if block.description:
+                get_str_idx(block.description)  # Ensure description is in strings
 
             # Create signature for this block's register set
             reg_signature = self._compute_register_signature(sorted_regs)
@@ -109,15 +124,20 @@ class RegFilePacker:
                     sorted_fields = sorted(reg.fields, key=lambda f: f.high, reverse=True)
 
                     get_str_idx(reg.name)  # Ensure name is in strings
+                    if reg.description:
+                        get_str_idx(reg.description)  # Ensure description is in strings
                     reg_first_field_index = len(all_packed_fields)
 
                     packed_fields = []
                     for field in sorted_fields:
                         get_str_idx(field.name)  # Ensure name is in strings
+                        if field.description:
+                            get_str_idx(field.description)  # Ensure description is in strings
                         packed_field = PackedField(
                             name=field.name,
                             high=field.high,
-                            low=field.low
+                            low=field.low,
+                            description=field.description
                         )
                         packed_fields.append(packed_field)
                         all_packed_fields.append(packed_field)
@@ -126,7 +146,13 @@ class RegFilePacker:
                         name=reg.name,
                         offset=reg.offset,
                         fields=packed_fields,
-                        first_field_index=reg_first_field_index
+                        first_field_index=reg_first_field_index,
+                        description=reg.description,
+                        reset_value=reg.reset_value,
+                        addr_endianness=reg.addr_endianness,
+                        addr_size=reg.addr_size,
+                        data_endianness=reg.data_endianness,
+                        data_size=reg.data_size
                     )
                     packed_regs.append(packed_reg)
                     all_packed_regs.append(packed_reg)
@@ -143,7 +169,8 @@ class RegFilePacker:
                 addr_endianness=block.addr_endianness,
                 addr_size=block.addr_size,
                 data_endianness=block.data_endianness,
-                data_size=block.data_size
+                data_size=block.data_size,
+                description=block.description
             ))
 
             # Update the position in RegisterIndex array
@@ -154,7 +181,8 @@ class RegFilePacker:
             blocks=packed_blocks,
             all_registers=all_packed_regs,
             all_fields=all_packed_fields,
-            strings=strings_map
+            strings=strings_map,
+            description=self.regfile.description
         )
 
     def _compute_register_signature(self, regs):
@@ -163,8 +191,13 @@ class RegFilePacker:
         for reg in regs:
             # Sort fields for consistent signature
             sorted_fields = sorted(reg.fields, key=lambda f: (f.name, f.high, f.low))
-            field_sig = tuple((f.name, f.high, f.low) for f in sorted_fields)
-            signature_parts.append((reg.name, reg.offset, field_sig))
+            field_sig = tuple((f.name, f.high, f.low, f.description) for f in sorted_fields)
+            reg_sig = (
+                reg.name, reg.offset, field_sig, reg.description, reg.reset_value,
+                reg.addr_endianness, reg.addr_size,
+                reg.data_endianness, reg.data_size
+            )
+            signature_parts.append(reg_sig)
         return tuple(signature_parts)
 
     def pack_to(self, out: io.IOBase, packed: PackedRegFile | None = None):
@@ -236,9 +269,10 @@ def pack_regfile(regfile: PackedRegFile):
 
 
 def pack_block(block: PackedBlock, strings: dict[str, int]):
+    description_offset = strings.get(block.description, 0) if block.description else 0
     data = RegisterBlockDataV3(
         name_offset=strings[block.name],
-        description_offset=0,  # description not supported yet
+        description_offset=description_offset,
         offset=block.offset,
         size=block.size,
         num_regs=len(block.regs),
@@ -252,25 +286,33 @@ def pack_block(block: PackedBlock, strings: dict[str, int]):
 
 
 def pack_register(reg: PackedRegister, strings: dict[str, int]):
+    description_offset = strings.get(reg.description, 0) if reg.description else 0
+    # Convert None values to 0 for inheritance
+    addr_endianness = reg.addr_endianness.value if reg.addr_endianness is not None else 0
+    addr_size = reg.addr_size if reg.addr_size is not None else 0
+    data_endianness = reg.data_endianness.value if reg.data_endianness is not None else 0
+    data_size = reg.data_size if reg.data_size is not None else 0
+
     data = RegisterDataV3(
         name_offset=strings[reg.name],
-        description_offset=0,  # description not supported yet
+        description_offset=description_offset,
         offset=reg.offset,
-        reset_value=0,  # reset value not supported yet
+        reset_value=reg.reset_value,
         num_fields=len(reg.fields),
         first_field_list_index=reg.first_field_index,
-        addr_endianness=0,  # inherit from block
-        addr_size=0,  # inherit from block
-        data_endianness=0,  # inherit from block
-        data_size=0  # inherit from block
+        addr_endianness=addr_endianness,
+        addr_size=addr_size,
+        data_endianness=data_endianness,
+        data_size=data_size
     )
     return bytes(data)
 
 
 def pack_field(field: PackedField, strings: dict[str, int]):
+    description_offset = strings.get(field.description, 0) if field.description else 0
     data = FieldDataV3(
         name_offset=strings[field.name],
-        description_offset=0,  # description not supported yet
+        description_offset=description_offset,
         high=field.high,
         low=field.low
     )
