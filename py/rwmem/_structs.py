@@ -42,7 +42,7 @@ class RegisterBlockDataV3(ctypes.LittleEndianStructure):
 
 
 class RegisterDataV3(ctypes.LittleEndianStructure):
-    """v3 register definition (36 bytes)."""
+    """v3 register definition (34 bytes)."""
     _pack_ = 1
     _fields_ = [
         ('name_offset', ctypes.c_uint32),           # Offset to register name
@@ -51,8 +51,6 @@ class RegisterDataV3(ctypes.LittleEndianStructure):
         ('reset_value', ctypes.c_uint64),           # Reset value of register
         ('num_fields', ctypes.c_uint32),            # Number of fields for this register
         ('first_field_list_index', ctypes.c_uint32), # Index of first field reference in FieldIndex array
-        ('addr_endianness', ctypes.c_uint8),        # Address encoding (0=inherit from block, 1=little, 2=big, 3=little-swapped, 4=big-swapped)
-        ('addr_size', ctypes.c_uint8),              # Address size (0=inherit from block, 1,2,4,8=bytes)
         ('data_endianness', ctypes.c_uint8),        # Data encoding (0=inherit from block, 1=little, 2=big, 3=little-swapped, 4=big-swapped)
         ('data_size', ctypes.c_uint8),              # Data size (0=inherit from block, 1-8=bytes)
     ]

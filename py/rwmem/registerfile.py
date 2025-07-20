@@ -92,19 +92,6 @@ class Register(collections.abc.Mapping):
         return self.rd.reset_value
 
 
-    @property
-    def effective_addr_endianness(self) -> Endianness:
-        """Get effective address endianness (register-specific or inherited from block)."""
-        if self.rd.addr_endianness == 0:  # Inherit from block
-            return self.parent_block.addr_endianness
-        return Endianness(self.rd.addr_endianness)
-
-    @property
-    def effective_addr_size(self) -> int:
-        """Get effective address size (register-specific or inherited from block)."""
-        if self.rd.addr_size == 0:  # Inherit from block
-            return self.parent_block.addr_size
-        return self.rd.addr_size
 
     @property
     def effective_data_endianness(self) -> Endianness:

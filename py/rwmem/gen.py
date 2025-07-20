@@ -74,15 +74,12 @@ class UnpackedField:
 class UnpackedRegister:
     def __init__(self, name: str, offset: int, fields: Sequence[UnpackedField] | None = None,
                  description: str | None = None, reset_value: int = 0,
-                 addr_endianness: Endianness | None = None, addr_size: int | None = None,
                  data_endianness: Endianness | None = None, data_size: int | None = None) -> None:
-        self._validate_inputs(name, offset, description, reset_value, addr_endianness, addr_size, data_endianness, data_size)
+        self._validate_inputs(name, offset, description, reset_value, data_endianness, data_size)
         self.name = name
         self.offset = offset
         self.description = description
         self.reset_value = reset_value
-        self.addr_endianness = addr_endianness
-        self.addr_size = addr_size
         self.data_endianness = data_endianness
         self.data_size = data_size
 
@@ -93,7 +90,7 @@ class UnpackedRegister:
             self.fields = []
 
     def _validate_inputs(self, name: str, offset: int, description: str | None, reset_value: int,
-                        addr_endianness: Endianness | None, addr_size: int | None, data_endianness: Endianness | None, data_size: int | None) -> None:
+                        data_endianness: Endianness | None, data_size: int | None) -> None:
         """Validate register inputs and raise descriptive errors."""
         if not name or not isinstance(name, str):
             raise RegisterValidationError('Register name must be a non-empty string')
@@ -114,16 +111,10 @@ class UnpackedRegister:
             raise RegisterValidationError(f"Register '{name}': reset_value must be non-negative, got {reset_value}")
 
         # Validate optional endianness parameters
-        if addr_endianness is not None and not isinstance(addr_endianness, Endianness):
-            raise RegisterValidationError(f"Register '{name}': addr_endianness must be an Endianness enum or None, got {type(addr_endianness).__name__}")
-
         if data_endianness is not None and not isinstance(data_endianness, Endianness):
             raise RegisterValidationError(f"Register '{name}': data_endianness must be an Endianness enum or None, got {type(data_endianness).__name__}")
 
         # Validate optional size parameters
-        if addr_size is not None and (not isinstance(addr_size, int) or addr_size not in (1, 2, 4, 8)):
-            raise RegisterValidationError(f"Register '{name}': addr_size must be 1, 2, 4, 8, or None, got {addr_size}")
-
         if data_size is not None and (not isinstance(data_size, int) or data_size not in range(1, 9)):
             raise RegisterValidationError(f"Register '{name}': data_size must be 1-8 bytes or None, got {data_size}")
 
@@ -150,17 +141,9 @@ class UnpackedRegister:
         """Get effective data size, using register-specific size or inheriting from block."""
         return self.data_size if self.data_size is not None else block_data_size
 
-    def get_effective_addr_size(self, block_addr_size: int) -> int:
-        """Get effective addr size, using register-specific size or inheriting from block."""
-        return self.addr_size if self.addr_size is not None else block_addr_size
-
     def get_effective_data_endianness(self, block_data_endianness: Endianness) -> Endianness:
         """Get effective data endianness, using register-specific endianness or inheriting from block."""
         return self.data_endianness if self.data_endianness is not None else block_data_endianness
-
-    def get_effective_addr_endianness(self, block_addr_endianness: Endianness) -> Endianness:
-        """Get effective addr endianness, using register-specific endianness or inheriting from block."""
-        return self.addr_endianness if self.addr_endianness is not None else block_addr_endianness
 
     def validate_reset_value(self, effective_data_size: int) -> None:
         """Validate that reset_value fits within effective data size."""
