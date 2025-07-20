@@ -360,6 +360,164 @@ class V3GenerationTests(unittest.TestCase):
         self.assertEqual(reg1['UNIQUE1'].description, 'Unique to reg1')
         self.assertEqual(reg2['UNIQUE2'].description, 'Unique to reg2')
 
+    def test_tuple_approach_conversion(self):
+        """Test that tuple specifications are correctly converted to objects."""
+
+        # Define register file using pure tuple approach
+        tuple_blocks_spec = [
+            # Block tuple: (name, offset, size, regs_spec, addr_endianness, addr_size, data_endianness, data_size, description)
+            ('CTRL_BLOCK', 0x1000, 0x100, [
+                # Register tuple: (name, offset, fields_spec)
+                ('CONFIG', 0x00, [
+                    # Field tuples: (name, high, low, description)
+                    ('ENABLE', 0, 0, 'Enable bit'),
+                    ('MODE', 3, 1, 'Operation mode'),
+                ]),
+                ('STATUS', 0x04, [
+                    ('READY', 0, 0, 'Ready flag'),
+                    ('ERROR', 7, 4, 'Error status'),
+                ]),
+            ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Control block'),
+
+            ('DATA_BLOCK', 0x2000, 0x200, [
+                ('DATA_REG', 0x00, [
+                    ('VALUE', 31, 0, 'Data value'),
+                ]),
+            ], rw.Endianness.Big, 4, rw.Endianness.Big, 4, 'Data block'),
+        ]
+
+        # Create register file using tuple approach
+        tuple_rf = gen.create_register_file('TUPLE_TEST', tuple_blocks_spec, 'Test register file')
+
+        # Create equivalent register file using explicit objects
+        obj_blocks = [
+            gen.UnpackedRegBlock(
+                'CTRL_BLOCK', 0x1000, 0x100, [
+                    gen.UnpackedRegister('CONFIG', 0x00, [
+                        gen.UnpackedField('ENABLE', 0, 0, 'Enable bit'),
+                        gen.UnpackedField('MODE', 3, 1, 'Operation mode'),
+                    ]),
+                    gen.UnpackedRegister('STATUS', 0x04, [
+                        gen.UnpackedField('READY', 0, 0, 'Ready flag'),
+                        gen.UnpackedField('ERROR', 7, 4, 'Error status'),
+                    ]),
+                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Control block'
+            ),
+            gen.UnpackedRegBlock(
+                'DATA_BLOCK', 0x2000, 0x200, [
+                    gen.UnpackedRegister('DATA_REG', 0x00, [
+                        gen.UnpackedField('VALUE', 31, 0, 'Data value'),
+                    ]),
+                ], rw.Endianness.Big, 4, rw.Endianness.Big, 4, 'Data block'
+            ),
+        ]
+
+        obj_rf = gen.UnpackedRegFile('TUPLE_TEST', obj_blocks, 'Test register file')
+
+        # Pack both and compare binary output
+        with io.BytesIO() as tuple_out, io.BytesIO() as obj_out:
+            tuple_rf.pack_to(tuple_out)
+            obj_rf.pack_to(obj_out)
+
+            tuple_data = tuple_out.getvalue()
+            obj_data = obj_out.getvalue()
+
+            self.assertEqual(tuple_data, obj_data, 'Tuple approach should produce identical binary output')
+
+        # Verify both can be read and produce same results
+        tuple_regfile = RegisterFile(tuple_data)
+        obj_regfile = RegisterFile(obj_data)
+
+        self.assertEqual(tuple_regfile.name, obj_regfile.name)
+        self.assertEqual(len(tuple_regfile), len(obj_regfile))
+
+        # Test specific block/register/field access
+        tuple_ctrl = tuple_regfile['CTRL_BLOCK']
+        obj_ctrl = obj_regfile['CTRL_BLOCK']
+        self.assertEqual(tuple_ctrl.description, obj_ctrl.description)
+        self.assertEqual(tuple_ctrl.offset, obj_ctrl.offset)
+
+        tuple_config = tuple_ctrl['CONFIG']
+        obj_config = obj_ctrl['CONFIG']
+        self.assertEqual(tuple_config.name, obj_config.name)
+        self.assertEqual(tuple_config.offset, obj_config.offset)
+
+        tuple_enable = tuple_config['ENABLE']
+        obj_enable = obj_config['ENABLE']
+        self.assertEqual(tuple_enable.description, obj_enable.description)
+
+    def test_tuple_approach_mixed_objects(self):
+        """Test that tuples and objects can be mixed in specifications."""
+
+        # Mix objects and tuples at different levels
+        mixed_blocks_spec = [
+            # Use object for first block
+            gen.UnpackedRegBlock(
+                'OBJ_BLOCK', 0x1000, 0x100, [
+                    # Use tuple for register
+                    ('REG1', 0x00, [
+                        # Use object for field
+                        gen.UnpackedField('FIELD1', 7, 0, 'Test field'),
+                    ]),
+                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Object block'
+            ),
+            # Use tuple for second block
+            ('TUPLE_BLOCK', 0x2000, 0x100, [
+                # Use object for register
+                gen.UnpackedRegister('REG2', 0x00, [
+                    # Use tuple for field
+                    ('FIELD2', 7, 0, 'Another field'),
+                ]),
+            ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Tuple block'),
+        ]
+
+        mixed_rf = gen.create_register_file('MIXED_TEST', mixed_blocks_spec)
+
+        # Should work without errors
+        with io.BytesIO() as f:
+            mixed_rf.pack_to(f)
+            data = f.getvalue()
+
+        rf = RegisterFile(data)
+        self.assertEqual(rf.name, 'MIXED_TEST')
+        self.assertEqual(len(rf), 2)
+
+        # Verify both blocks are accessible
+        obj_block = rf['OBJ_BLOCK']
+        tuple_block = rf['TUPLE_BLOCK']
+        self.assertEqual(obj_block.description, 'Object block')
+        self.assertEqual(tuple_block.description, 'Tuple block')
+
+    def test_tuple_approach_error_handling(self):
+        """Test that invalid tuple specifications raise appropriate errors."""
+
+        # Test invalid block specification
+        with self.assertRaises(TypeError) as cm:
+            gen.create_register_file('ERROR_TEST', [
+                'invalid_block_spec'  # Neither tuple nor UnpackedRegBlock
+            ])
+        self.assertIn('Block specification must be UnpackedRegBlock or tuple', str(cm.exception))
+
+        # Test invalid register specification in tuple block
+        with self.assertRaises(TypeError) as cm:
+            gen.create_register_file('ERROR_TEST', [
+                ('BLOCK', 0x1000, 0x100, [
+                    123  # Neither tuple nor UnpackedRegister
+                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+            ])
+        self.assertIn('Register specification must be UnpackedRegister or tuple', str(cm.exception))
+
+        # Test invalid field specification
+        with self.assertRaises(TypeError) as cm:
+            gen.create_register_file('ERROR_TEST', [
+                ('BLOCK', 0x1000, 0x100, [
+                    ('REG', 0x00, [
+                        {'invalid': 'field'}  # Neither tuple nor UnpackedField
+                    ])
+                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+            ])
+        self.assertIn('Field specification must be UnpackedField or tuple', str(cm.exception))
+
 
 if __name__ == '__main__':
     unittest.main()
