@@ -140,7 +140,6 @@ class V3GenerationTests(unittest.TestCase):
                 'SENSOR_CTRL', 0x00,
                 description='Sensor control register',
                 reset_value=0x08,  # Default sample rate
-                addr_size=1,  # 8-bit I2C addressing
                 fields=[
                     gen.UnpackedField('SAMPLE_RATE', 3, 0,
                                     description='Sample rate setting'),
@@ -152,7 +151,6 @@ class V3GenerationTests(unittest.TestCase):
                 'SENSOR_DATA', 0x01,
                 description='Sensor data register',
                 reset_value=0x00,
-                addr_size=1,  # 8-bit I2C addressing
                 fields=[
                     gen.UnpackedField('TEMP_DATA', 7, 0,
                                     description='Temperature data'),
@@ -245,9 +243,8 @@ class V3GenerationTests(unittest.TestCase):
         self.assertEqual(i2c_block.addr_size, 1)  # 8-bit addressing
         self.assertEqual(i2c_block.data_endianness, rw.Endianness.Big)
 
-        # Test I2C register with address size override
+        # Test I2C register with reset value
         sensor_ctrl = i2c_block['SENSOR_CTRL']
-        self.assertEqual(sensor_ctrl.effective_addr_size, 1)  # Per-register override
         self.assertEqual(sensor_ctrl.reset_value, 0x08)
 
         sample_rate_field = sensor_ctrl['SAMPLE_RATE']
@@ -282,7 +279,6 @@ class V3GenerationTests(unittest.TestCase):
             # Register that overrides some properties
             gen.UnpackedRegister('OVERRIDE_SOME', 0x04,
                                data_size=2,  # Override size
-                               addr_endianness=rw.Endianness.Big,  # Override endianness
                                fields=[
                                    gen.UnpackedField('DATA', 15, 0),
                                ]),
@@ -305,16 +301,12 @@ class V3GenerationTests(unittest.TestCase):
 
         # Test full inheritance
         inherit_reg = test_block['INHERIT_ALL']
-        self.assertEqual(inherit_reg.effective_addr_size, 4)  # From block
         self.assertEqual(inherit_reg.effective_data_size, 4)  # From block
-        self.assertEqual(inherit_reg.effective_addr_endianness, rw.Endianness.Little)  # From block
         self.assertEqual(inherit_reg.effective_data_endianness, rw.Endianness.Little)  # From block
 
         # Test partial override
         override_reg = test_block['OVERRIDE_SOME']
-        self.assertEqual(override_reg.effective_addr_size, 4)  # From block (not overridden)
         self.assertEqual(override_reg.effective_data_size, 2)  # Overridden
-        self.assertEqual(override_reg.effective_addr_endianness, rw.Endianness.Big)  # Overridden
         self.assertEqual(override_reg.effective_data_endianness, rw.Endianness.Little)  # From block (not overridden)
 
     def test_field_sharing_optimization(self):

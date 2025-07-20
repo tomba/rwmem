@@ -151,15 +151,13 @@ private:
  * Represents an individual register with its address offset (relative to the
  * containing RegisterBlock) and associated bitfield definitions.
  *
- * Layout (36 bytes):
+ * Layout (34 bytes):
  * - name_offset (4 bytes): Offset to register name in string pool
  * - description_offset (4 bytes): Offset to register description in string pool
  * - offset (8 bytes): Address offset relative to containing RegisterBlock
  * - reset_value (8 bytes): Reset value of register
  * - num_fields (4 bytes): Count of bitfield definitions for this register
  * - first_field_list_index (4 bytes): Index of first field reference in FieldIndex array
- * - addr_endianness (1 byte): Address encoding (0=inherit from block, others override)
- * - addr_size (1 byte): Address size (0=inherit from block, others override)
  * - data_endianness (1 byte): Data encoding (0=inherit from block, others override)
  * - data_size (1 byte): Data size (0=inherit from block, others override)
  */
@@ -172,8 +170,6 @@ struct __attribute__((packed)) RegisterData {
 	uint32_t num_fields() const { return le32toh(m_num_fields); }
 	uint32_t first_field_index() const { return le32toh(m_first_field_list_index); }
 
-	uint8_t addr_endianness() const { return m_addr_endianness; }
-	uint8_t addr_size() const { return m_addr_size; }
 	uint8_t data_endianness() const { return m_data_endianness; }
 	uint8_t data_size() const { return m_data_size; }
 
@@ -182,10 +178,6 @@ struct __attribute__((packed)) RegisterData {
 	const FieldData* find_field(const RegisterFileData* rfd, const std::string& name) const;
 	const FieldData* find_field(const RegisterFileData* rfd, uint8_t high, uint8_t low) const;
 
-	/// Get effective address endianness (resolve inheritance from block)
-	Endianness effective_addr_endianness(const RegisterBlockData* rbd) const;
-	/// Get effective address size (resolve inheritance from block)
-	uint8_t effective_addr_size(const RegisterBlockData* rbd) const;
 	/// Get effective data endianness (resolve inheritance from block)
 	Endianness effective_data_endianness(const RegisterBlockData* rbd) const;
 	/// Get effective data size (resolve inheritance from block)
@@ -200,8 +192,6 @@ private:
 	uint32_t m_num_fields;
 	uint32_t m_first_field_list_index;
 
-	uint8_t m_addr_endianness;
-	uint8_t m_addr_size;
 	uint8_t m_data_endianness;
 	uint8_t m_data_size;
 };

@@ -32,8 +32,6 @@ class PackedRegister:
     first_field_index: int
     description: str | None = None
     reset_value: int = 0
-    addr_endianness: Endianness | None = None
-    addr_size: int | None = None
     data_endianness: Endianness | None = None
     data_size: int | None = None
 
@@ -149,8 +147,6 @@ class RegFilePacker:
                         first_field_index=reg_first_field_index,
                         description=reg.description,
                         reset_value=reg.reset_value,
-                        addr_endianness=reg.addr_endianness,
-                        addr_size=reg.addr_size,
                         data_endianness=reg.data_endianness,
                         data_size=reg.data_size
                     )
@@ -194,7 +190,6 @@ class RegFilePacker:
             field_sig = tuple((f.name, f.high, f.low, f.description) for f in sorted_fields)
             reg_sig = (
                 reg.name, reg.offset, field_sig, reg.description, reg.reset_value,
-                reg.addr_endianness, reg.addr_size,
                 reg.data_endianness, reg.data_size
             )
             signature_parts.append(reg_sig)
@@ -288,8 +283,6 @@ def pack_block(block: PackedBlock, strings: dict[str, int]):
 def pack_register(reg: PackedRegister, strings: dict[str, int]):
     description_offset = strings.get(reg.description, 0) if reg.description else 0
     # Convert None values to 0 for inheritance
-    addr_endianness = reg.addr_endianness.value if reg.addr_endianness is not None else 0
-    addr_size = reg.addr_size if reg.addr_size is not None else 0
     data_endianness = reg.data_endianness.value if reg.data_endianness is not None else 0
     data_size = reg.data_size if reg.data_size is not None else 0
 
@@ -300,8 +293,6 @@ def pack_register(reg: PackedRegister, strings: dict[str, int]):
         reset_value=reg.reset_value,
         num_fields=len(reg.fields),
         first_field_list_index=reg.first_field_index,
-        addr_endianness=addr_endianness,
-        addr_size=addr_size,
         data_endianness=data_endianness,
         data_size=data_size
     )
