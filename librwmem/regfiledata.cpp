@@ -18,9 +18,19 @@ const FieldData* RegisterFileData::fields() const
 	return (FieldData*)(&registers()[num_regs()]);
 }
 
+const uint32_t* RegisterFileData::register_indices() const
+{
+	return (const uint32_t*)(&fields()[num_fields()]);
+}
+
+const uint32_t* RegisterFileData::field_indices() const
+{
+	return &register_indices()[num_reg_indices()];
+}
+
 const char* RegisterFileData::strings() const
 {
-	return (const char*)(&fields()[num_fields()]);
+	return (const char*)(&field_indices()[num_field_indices()]);
 }
 
 const RegisterBlockData* RegisterFileData::block_at(uint32_t idx) const
@@ -78,13 +88,17 @@ const RegisterData* RegisterFileData::find_register(uint64_t offset, const Regis
 
 const RegisterData* RegisterBlockData::register_at(const RegisterFileData* rfd, uint32_t idx) const
 {
-	return &rfd->registers()[first_reg_index() + idx];
+	if (idx >= num_regs())
+		return nullptr;
+	uint32_t reg_idx = rfd->register_indices()[first_reg_list_index() + idx];
+	return &rfd->registers()[reg_idx];
 }
 
 const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, const string& name) const
 {
 	for (unsigned i = 0; i < num_regs(); ++i) {
-		const RegisterData* rd = &rfd->registers()[first_reg_index() + i];
+		uint32_t reg_idx = rfd->register_indices()[first_reg_list_index() + i];
+		const RegisterData* rd = &rfd->registers()[reg_idx];
 
 		if (strcasecmp(rd->name(rfd), name.c_str()) == 0)
 			return rd;
@@ -96,7 +110,8 @@ const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd
 const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd, uint64_t offset) const
 {
 	for (unsigned i = 0; i < num_regs(); ++i) {
-		const RegisterData* rd = &rfd->registers()[first_reg_index() + i];
+		uint32_t reg_idx = rfd->register_indices()[first_reg_list_index() + i];
+		const RegisterData* rd = &rfd->registers()[reg_idx];
 
 		if (rd->offset() == offset)
 			return rd;
@@ -107,13 +122,17 @@ const RegisterData* RegisterBlockData::find_register(const RegisterFileData* rfd
 
 const FieldData* RegisterData::field_at(const RegisterFileData* rfd, uint32_t idx) const
 {
-	return &rfd->fields()[first_field_index() + idx];
+	if (idx >= num_fields())
+		return nullptr;
+	uint32_t field_idx = rfd->field_indices()[first_field_index() + idx];
+	return &rfd->fields()[field_idx];
 }
 
 const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const string& name) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
-		const FieldData* fd = &rfd->fields()[first_field_index() + i];
+		uint32_t field_idx = rfd->field_indices()[first_field_index() + i];
+		const FieldData* fd = &rfd->fields()[field_idx];
 
 		if (strcasecmp(fd->name(rfd), name.c_str()) == 0)
 			return fd;
@@ -125,11 +144,32 @@ const FieldData* RegisterData::find_field(const RegisterFileData* rfd, const str
 const FieldData* RegisterData::find_field(const RegisterFileData* rfd, uint8_t high, uint8_t low) const
 {
 	for (unsigned i = 0; i < num_fields(); ++i) {
-		const FieldData* fd = &rfd->fields()[first_field_index() + i];
+		uint32_t field_idx = rfd->field_indices()[first_field_index() + i];
+		const FieldData* fd = &rfd->fields()[field_idx];
 
 		if (fd->high() == high && fd->low() == low)
 			return fd;
 	}
 
 	return nullptr;
+}
+
+Endianness RegisterData::effective_addr_endianness(const RegisterBlockData* rbd) const
+{
+	return addr_endianness() == 0 ? rbd->addr_endianness() : (Endianness)addr_endianness();
+}
+
+uint8_t RegisterData::effective_addr_size(const RegisterBlockData* rbd) const
+{
+	return addr_size() == 0 ? rbd->addr_size() : addr_size();
+}
+
+Endianness RegisterData::effective_data_endianness(const RegisterBlockData* rbd) const
+{
+	return data_endianness() == 0 ? rbd->data_endianness() : (Endianness)data_endianness();
+}
+
+uint8_t RegisterData::effective_data_size(const RegisterBlockData* rbd) const
+{
+	return data_size() == 0 ? rbd->data_size() : data_size();
 }
