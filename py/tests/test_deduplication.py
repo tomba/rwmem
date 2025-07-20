@@ -47,7 +47,7 @@ class DeduplicationTests(unittest.TestCase):
         )
 
         # Generate and load register file
-        urf = gen.UnpackedRegFile('SoC', BLOCKS)
+        urf = gen.create_register_file('SoC', BLOCKS)
 
         with io.BytesIO() as f:
             urf.pack_to(f)
