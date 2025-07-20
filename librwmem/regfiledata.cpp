@@ -154,16 +154,6 @@ const FieldData* RegisterData::find_field(const RegisterFileData* rfd, uint8_t h
 	return nullptr;
 }
 
-Endianness RegisterData::effective_addr_endianness(const RegisterBlockData* rbd) const
-{
-	return addr_endianness() == 0 ? rbd->addr_endianness() : (Endianness)addr_endianness();
-}
-
-uint8_t RegisterData::effective_addr_size(const RegisterBlockData* rbd) const
-{
-	return addr_size() == 0 ? rbd->addr_size() : addr_size();
-}
-
 Endianness RegisterData::effective_data_endianness(const RegisterBlockData* rbd) const
 {
 	return data_endianness() == 0 ? rbd->data_endianness() : (Endianness)data_endianness();
