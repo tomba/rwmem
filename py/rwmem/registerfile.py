@@ -265,11 +265,13 @@ class RegisterFile(collections.abc.Mapping):
             # XXX ctypes requires a writeable buffer...
             self._map = bytearray(source)
             self._mmap = None
-        else:
+        elif isinstance(source, BinaryIO):
             self.fd = source.fileno()
             # ctypes requires a writeable mmap, so we use ACCESS_COPY
             self._map = mmap.mmap(self.fd, 0, mmap.MAP_SHARED, access=mmap.ACCESS_COPY)
             self._mmap = self._map
+        else:
+            raise TypeError(f'Unsupported source type: {type(source)}')
 
         self.rfd = RegisterFileData.from_buffer(self._map)
 
