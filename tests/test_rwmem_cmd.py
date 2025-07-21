@@ -135,6 +135,39 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
         self.assertIn('SENSOR_B:', res.stdout)
         self.assertIn('MEMORY_CTRL:', res.stdout)
 
+    def test_regdb_list_search_sensor_a(self):
+        # Test listing with SENSOR_A pattern
+        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, '--list', 'SENSOR_A'],
+                           capture_output=True, encoding='ASCII', check=False)
+
+        self.assertEqual(res.returncode, 0, res)
+        self.assertEqual(res.stdout, 'SENSOR_A\n')
+
+    def test_regdb_list_search_sens_wildcard(self):
+        # Test listing with SENS* wildcard pattern
+        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, '--list', 'SENS*'],
+                           capture_output=True, encoding='ASCII', check=False)
+
+        self.assertEqual(res.returncode, 0, res)
+        self.assertEqual(res.stdout, 'SENSOR_A\nSENSOR_B\n')
+
+    def test_regdb_list_search_sensor_a_dot_wildcard(self):
+        # Test listing with SENSOR_A.* pattern
+        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, '--list', 'SENSOR_A.*'],
+                           capture_output=True, encoding='ASCII', check=False)
+
+        self.assertEqual(res.returncode, 0, res)
+        expected = 'SENSOR_A.STATUS_REG\nSENSOR_A.CONTROL_REG\nSENSOR_A.DATA_REG\nSENSOR_A.CONFIG_REG\nSENSOR_A.COUNTER_REG\nSENSOR_A.BIG_REG\nSENSOR_A.HUGE_REG\nSENSOR_A.GIANT_REG\nSENSOR_A.MAX_REG\n'
+        self.assertEqual(res.stdout, expected)
+
+    def test_regdb_list_search_sensor_a_stat_wildcard(self):
+        # Test listing with SENSOR_A.STAT* pattern
+        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, '--list', 'SENSOR_A.STAT*'],
+                           capture_output=True, encoding='ASCII', check=False)
+
+        self.assertEqual(res.returncode, 0, res)
+        self.assertEqual(res.stdout, 'SENSOR_A.STATUS_REG\n')
+
     def test_regdb_byte_register(self):
         # Test 8-bit register access
         self.assertOutput(['SENSOR_A.STATUS_REG'],
