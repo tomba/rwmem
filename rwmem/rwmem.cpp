@@ -335,7 +335,6 @@ static int readprint_raw(ITarget* mm, uint64_t offset, unsigned size)
 
 static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 {
-
 	RwmemOp op{};
 
 	const RegisterFileData* rfd = nullptr;
@@ -663,7 +662,9 @@ int main(int argc, char** argv)
 	load_opts_from_ini_pre();
 #endif
 
-	parse_cmdline(argc, argv);
+	std::vector<std::string> args(argv, argv + argc);
+
+	parse_cmdline(args);
 
 	if (rwmem_opts.target_type == TargetType::None) {
 		rwmem_opts.target_type = TargetType::MMap;
@@ -689,11 +690,11 @@ int main(int argc, char** argv)
 	if (rwmem_opts.show_list) {
 		ERR_ON(!regfile, "No regfile given");
 
-		if (rwmem_opts.args.empty()) {
+		if (rwmem_opts.list_patterns.empty()) {
 			print_regfile_all(regfile->data());
 		} else {
-			for (const string& arg : rwmem_opts.args) {
-				vector<RegMatch> m = match_reg(regfile->data(), arg);
+			for (const string& pattern : rwmem_opts.list_patterns) {
+				vector<RegMatch> m = match_reg(regfile->data(), pattern);
 				print_reg_matches(regfile->data(), m);
 			}
 		}
@@ -727,17 +728,12 @@ int main(int argc, char** argv)
 	}
 
 	case TargetType::I2C: {
+		// I2C parameter validation already done in parse_cmdline()
 		vector<string> strs = split(rwmem_opts.i2c_target, ':');
-		ERR_ON(strs.size() != 2, "bad i2c parameter");
-
-		int r;
 		uint64_t bus, addr;
 
-		r = parse_u64(strs[0], &bus);
-		ERR_ON(r, "failed to parse i2c bus");
-
-		r = parse_u64(strs[1], &addr);
-		ERR_ON(r, "failed to parse i2c address");
+		parse_u64(strs[0], &bus);
+		parse_u64(strs[1], &addr);
 
 		mm = make_unique<I2CTarget>(bus, addr);
 		break;

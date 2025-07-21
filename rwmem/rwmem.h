@@ -85,7 +85,7 @@ struct RwmemOpts {
 
 	bool show_list;
 
-	std::vector<std::string> args;
+	std::vector<std::string> list_patterns;
 	std::vector<RwmemOptsArg> parsed_args;
 
 	bool verbose;
@@ -102,7 +102,7 @@ struct RwmemFormatting {
 
 extern RwmemOpts rwmem_opts;
 
-void parse_cmdline(int argc, char** argv);
+void parse_cmdline(const std::vector<std::string>& args);
 
 #if HAS_INIH
 extern INIReader rwmem_ini;
