@@ -3,14 +3,14 @@
 
 # rwmem - A small tool to read & write device registers
 
-Copyright 2013-2020 Tomi Valkeinen
+Copyright 2013-2025 Tomi Valkeinen
 
 ## Intro
 
 **_WARNING: rwmem can break your hardware, use only if you know what you are doing._**
 
 rwmem is a small tool for reading and writing device registers. rwmem supports
-two modes: mmap mode and i2c mode.
+memory-mapped access and I2C device communication.
 
 In mmap mode rwmem accesses a file by memory mapping it. Using /dev/mem as the
 memory mapped file makes rwmem access memory and can thus be used to access
@@ -21,15 +21,21 @@ In i2c mode rwmem accesses an i2c peripheral by sending i2c messages to it.
 rwmem features:
 
 * addressing with 8/16/32/64 bit addresses
-* accessing 8/16/32/64 bit memory locations
+* accessing 8/16/24/32/40/48/56/64 bit memory locations
 * little and big endian addressess and accesses
 * bitfields
 * address ranges
 * register description database
 
+For detailed command line usage, see [docs/cmdline.md](docs/cmdline.md).
+
 ## Build Dependencies
 
-You need `meson`, `ninja` and `fmt` for building. `inih` is an optional dependency.
+- meson
+- ninja
+- fmt
+- cli11
+- inih (optional)
 
 ## Build Instructions
 
@@ -107,19 +113,19 @@ Modify memory location 0x58001000's bits 7-4 to 0xf
 
 Show the byte at location 0x10 in file edid.bin
 
-        $ rwmem --mmap edid.bin -s 8 0x10
+        $ rwmem mmap edid.bin -d 8 0x10
 
 Set /dev/fb0 to red
 
-        $ rwmem -p q --mmap /dev/fb0 0x0..$((800*4*480))=0xff0000
+        $ rwmem mmap /dev/fb0 -p q 0x0..$((800*4*480))=0xff0000
 
 Read a byte from i2c device 0x50 on bus 4, address 0x20
 
-        $ rwmem -s 8 --i2c=4:0x50 0x20
+        $ rwmem i2c 4:0x50 -d 8 0x20
 
 Read a 32 bit big endian value from 16 bit big endian address 0x800 from i2c device 0x50 on bus 4
 
-        $ rwmem -s 32be -S 16be --i2c=4:0x50 0x800
+        $ rwmem i2c 4:0x50 -a 16be -d 32be 0x800
 
 ## Examples with register file
 
@@ -141,31 +147,31 @@ Modify MIDLEMODE field in DISPC's SYSCONFIG register to 0x1
 
 List all registers in the register file
 
-        $ rwmem --list
+        $ rwmem list
 
 List registers in DISPC
 
-        $ rwmem --list DISPC
+        $ rwmem list DISPC
 
 List registers in DISPC
 
-        $ rwmem --list DISPC.*
+        $ rwmem list DISPC.*
 
 List registers in DISPC starting with VID
 
-        $ rwmem --list DISPC.VID*
+        $ rwmem list DISPC.VID*
 
 List fields in DISPC SYSCONFIG
 
-        $ rwmem --list DISPC.SYSCONFIG:*
+        $ rwmem list DISPC.SYSCONFIG:*
 
 Read binary dump of DISPC to dispc.bin file
 
-        $ rwmem --raw DISPC > dispc.bin
+        $ rwmem -R DISPC > dispc.bin
 
 Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
-        $ rwmem --mmap dispc.bin --regs dispc.regs --ignore-base DISPC.SYSCONFIG
+        $ rwmem mmap dispc.bin -r dispc.regs --ignore-base DISPC.SYSCONFIG
 
 ## Write mode
 
@@ -197,7 +203,7 @@ formatting. This can be used to get binary dumps of memory areas.
 
 ## Size and Endianness
 
-You can set the size and endianness for data and for address with -s and -S
+You can set the size and endianness for data and for address with -d and -a
 options. The size and endianness for address is used only for i2c. The size is
 in number of bits, and endianness is "be", "le", "bes" or "les".
 
@@ -208,13 +214,11 @@ bit value are swapped.
 
 ## Register description file
 
-A register description file is a binary register database. See the code
-(regfiledata.h) and the included python scripts to see the details of the
-format.
+A register description file is a binary register database. See
+[docs/regdb-v3.md](docs/regdb-v3.md) for the low-level binary format details.
 
-It is easy to generate register description files using the rwmem.gen python
-module. Two additional python scripts can be used to parse IPXACT files
-(ipxact_parse.py) and csv files from rwmem v1 (csv_parse.py).
+Register description files can be generated using the pyrwmem library. See
+[py/docs/regdb-generation.md](py/docs/regdb-generation.md) for a generation guide.
 
 ## Bash completion
 
