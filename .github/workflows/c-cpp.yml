@@ -26,6 +26,6 @@ jobs:
     - name: build
       run: ninja -v -C build
 
-    - name: Test rwmem command
+    - name: Test rwmem
       run: |
-        python3 -m unittest discover -v tests
+        ninja -C build test
