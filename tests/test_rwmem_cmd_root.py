@@ -18,7 +18,7 @@ class RwmemTestI2C(unittest.TestCase):
         else:
             self.rwmem_cmd = RWMEM_CMD_PATH
 
-        self.rwmem_common_opts = ['--i2c=12:0x50']
+        self.rwmem_common_opts = ['i2c', '12:0x50']
 
         with open(DRM_PATH + '/status') as f:
             self.assertEqual(f.read(), 'connected\n')
@@ -55,16 +55,16 @@ class RwmemTestI2C(unittest.TestCase):
         self.assertOutput(['4'],
                           f'0x04 (+0x0) = {self.get_edid_u32(4)}\n')
 
-        self.assertOutput(['-s8', '0x10'],
+        self.assertOutput(['-d', '8', '0x10'],
                           f'0x10 (+0x0) = {self.get_edid_u8(0x10)}\n')
 
-        self.assertOutput(['-s16le', '0x10'],
+        self.assertOutput(['-d', '16le', '0x10'],
                           f'0x10 (+0x0) = {self.get_edid_u16(0x10)}\n')
 
-        self.assertOutput(['-s24le', '0x10'],
+        self.assertOutput(['-d', '24le', '0x10'],
                           f'0x10 (+0x0) = {self.get_edid_u24(0x10)}\n')
 
-        self.assertOutput(['-s32le', '0x10'],
+        self.assertOutput(['-d', '32le', '0x10'],
                           f'0x10 (+0x0) = {self.get_edid_u32(0x10)}\n')
 
 
