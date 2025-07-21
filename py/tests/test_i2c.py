@@ -6,7 +6,7 @@ import unittest
 import rwmem as rw
 from rwmem.enums import Endianness
 
-DRM_PATH = '/sys/devices/pci0000:00/0000:00:02.0/drm/card0/card0-DP-2'
+DRM_PATH = '/sys/devices/pci0000:00/0000:00:02.0/drm/card1/card1-DP-2'
 
 class I2CTests(unittest.TestCase):
     def setUp(self):
@@ -44,3 +44,7 @@ class I2CTests(unittest.TestCase):
             v1 = map.read(addr, data_size=4, data_endianness=Endianness.Little)
             v2 = self.get_edid_u32(addr)
             self.assertEqual(v1, v2)
+
+
+if __name__ == '__main__':
+    unittest.main()
