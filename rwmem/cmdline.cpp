@@ -47,7 +47,7 @@ __attribute__((noreturn)) static void usage()
 	exit(1);
 }
 
-void parse_arg(string str, RwmemOptsArg* arg)
+static void parse_arg(string str, RwmemOptsArg* arg)
 {
 	size_t idx;
 
@@ -226,8 +226,20 @@ void parse_cmdline(int argc, char** argv)
 
 	const vector<string>& params = optionset.params();
 
-	if (!rwmem_opts.show_list && params.empty())
-		usage();
-
 	rwmem_opts.args = params;
+	rwmem_opts.parsed_args.clear();
+
+	if (!rwmem_opts.show_list) {
+		if (params.empty())
+			usage();
+
+		rwmem_opts.parsed_args.clear();
+		rwmem_opts.parsed_args.reserve(params.size());
+
+		for (const string& param : params) {
+			RwmemOptsArg parsed_arg;
+			parse_arg(param, &parsed_arg);
+			rwmem_opts.parsed_args.push_back(parsed_arg);
+		}
+	}
 }
