@@ -727,17 +727,12 @@ int main(int argc, char** argv)
 	}
 
 	case TargetType::I2C: {
+		// I2C parameter validation already done in parse_cmdline()
 		vector<string> strs = split(rwmem_opts.i2c_target, ':');
-		ERR_ON(strs.size() != 2, "bad i2c parameter");
-
-		int r;
 		uint64_t bus, addr;
-
-		r = parse_u64(strs[0], &bus);
-		ERR_ON(r, "failed to parse i2c bus");
-
-		r = parse_u64(strs[1], &addr);
-		ERR_ON(r, "failed to parse i2c address");
+		
+		parse_u64(strs[0], &bus);
+		parse_u64(strs[1], &addr);
 
 		mm = make_unique<I2CTarget>(bus, addr);
 		break;

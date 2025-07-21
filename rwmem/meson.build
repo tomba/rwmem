@@ -1,14 +1,14 @@
 
 inih_dep = dependency('inih', required : false)
+cli11_dep = dependency('CLI11', required : true)
 
 rwmem_sources = files([
     'cmdline.cpp',
     'helpers.cpp',
-    'opts.cpp',
     'rwmem.cpp',
 ])
 
-rwmem_deps = [ librwmem_dep, libfmt_dep ]
+rwmem_deps = [ librwmem_dep, libfmt_dep, cli11_dep ]
 
 rwmem_args = [ ]
 
