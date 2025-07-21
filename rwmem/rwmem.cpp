@@ -320,11 +320,8 @@ static int readprint_raw(ITarget* mm, uint64_t offset, unsigned size)
 	return write(STDOUT_FILENO, &v, size);
 }
 
-static RwmemOp parse_op(const string& arg_str, const RegisterFile* regfile)
+static RwmemOp parse_op(const RwmemOptsArg& arg, const RegisterFile* regfile)
 {
-	RwmemOptsArg arg;
-
-	parse_arg(arg_str, &arg);
 
 	RwmemOp op{};
 
@@ -658,7 +655,7 @@ int main(int argc, char** argv)
 
 	vector<RwmemOp> ops;
 
-	for (const string& arg : rwmem_opts.args) {
+	for (const RwmemOptsArg& arg : rwmem_opts.parsed_args) {
 		RwmemOp op = parse_op(arg, regfile.get());
 		ops.push_back(op);
 	}
