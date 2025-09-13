@@ -61,7 +61,10 @@ static void write_bytes(void* base_addr, uint64_t value, uint8_t nbytes, Endiann
 
 MMapTarget::MMapTarget(const string& filename)
 	: m_filename(filename), m_fd(-1),
-	  m_offset(0), m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
+	  m_default_addr_endianness(Endianness::Default), m_default_addr_size(0),
+	  m_default_data_endianness(Endianness::Default), m_default_data_size(0),
+	  m_mode(MapMode::ReadWrite), m_offset(0), m_len(0),
+	  m_map_base(MAP_FAILED), m_map_offset(0), m_map_len(0)
 {
 }
 

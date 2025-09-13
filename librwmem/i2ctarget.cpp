@@ -14,7 +14,9 @@
 using namespace std;
 
 I2CTarget::I2CTarget(uint16_t adapter_nr, uint16_t i2c_addr)
-	: m_adapter_nr(adapter_nr), m_i2c_addr(i2c_addr), m_fd(-1)
+	: m_adapter_nr(adapter_nr), m_i2c_addr(i2c_addr), m_fd(-1),
+	  m_address_bytes(0), m_address_endianness(Endianness::Default),
+	  m_data_bytes(0), m_data_endianness(Endianness::Default)
 {
 }
 
