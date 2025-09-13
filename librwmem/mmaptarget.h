@@ -6,7 +6,7 @@
 class MMapTarget : public ITarget
 {
 public:
-	MMapTarget(const std::string& filename);
+	explicit MMapTarget(const std::string& filename);
 	~MMapTarget();
 
 	void map(uint64_t offset, uint64_t length,
