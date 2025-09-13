@@ -85,7 +85,7 @@ RegisterFile::RegisterFile(const std::string& filename)
 	if (data == MAP_FAILED)
 		throw runtime_error(fmt::format("mmap regfile failed: {}", strerror(errno)));
 
-	m_rfd = (RegisterFileData*)data;
+	m_rfd = static_cast<const RegisterFileData*>(data);
 	m_size = len;
 
 	if (m_rfd->magic() != RWMEM_MAGIC)
@@ -97,7 +97,7 @@ RegisterFile::RegisterFile(const std::string& filename)
 
 RegisterFile::~RegisterFile()
 {
-	munmap((void*)m_rfd, m_size);
+	munmap(const_cast<void*>(static_cast<const void*>(m_rfd)), m_size);
 }
 
 RegisterBlock RegisterFile::at(uint32_t idx) const
