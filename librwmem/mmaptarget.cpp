@@ -17,18 +17,18 @@ static const uint64_t pagemask = pagesize - 1;
 template<typename T>
 static T ioread(void* addr)
 {
-	return *(volatile T*)addr;
+	return *static_cast<volatile T*>(addr);
 }
 
 template<typename T>
 static void iowrite(void* addr, T value)
 {
-	*(volatile T*)addr = value;
+	*static_cast<volatile T*>(addr) = value;
 }
 
 static uint64_t read_bytes(void* base_addr, uint8_t nbytes, Endianness endianness)
 {
-	volatile uint8_t* addr = (volatile uint8_t*)base_addr;
+	volatile uint8_t* addr = static_cast<volatile uint8_t*>(base_addr);
 	uint64_t result = 0;
 
 	if (endianness == Endianness::Little) {
@@ -46,7 +46,7 @@ static uint64_t read_bytes(void* base_addr, uint8_t nbytes, Endianness endiannes
 
 static void write_bytes(void* base_addr, uint64_t value, uint8_t nbytes, Endianness endianness)
 {
-	volatile uint8_t* addr = (volatile uint8_t*)base_addr;
+	volatile uint8_t* addr = static_cast<volatile uint8_t*>(base_addr);
 
 	if (endianness == Endianness::Little) {
 		for (int i = 0; i < nbytes; i++) {

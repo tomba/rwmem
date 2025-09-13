@@ -74,15 +74,15 @@ static uint64_t device_to_host(uint8_t buf[], unsigned numbytes, Endianness endi
 	if (numbytes == 2 || numbytes == 4 || numbytes == 8) {
 		switch (numbytes) {
 		case 2: {
-			uint16_t v = *((uint16_t*)buf);
+			uint16_t v = *reinterpret_cast<const uint16_t*>(buf);
 			return to_host(v, endianness);
 		}
 		case 4: {
-			uint32_t v = *((uint32_t*)buf);
+			uint32_t v = *reinterpret_cast<const uint32_t*>(buf);
 			return to_host(v, endianness);
 		}
 		case 8: {
-			uint64_t v = *((uint64_t*)buf);
+			uint64_t v = *reinterpret_cast<const uint64_t*>(buf);
 			return to_host(v, endianness);
 		}
 		}
@@ -117,19 +117,19 @@ static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], End
 		switch (numbytes) {
 		case 2: {
 			uint16_t v = (uint16_t)value;
-			uint16_t* p = (uint16_t*)buf;
+			uint16_t* p = reinterpret_cast<uint16_t*>(buf);
 			*p = from_host(v, endianness);
 			break;
 		}
 		case 4: {
 			uint32_t v = (uint32_t)value;
-			uint32_t* p = (uint32_t*)buf;
+			uint32_t* p = reinterpret_cast<uint32_t*>(buf);
 			*p = from_host(v, endianness);
 			break;
 		}
 		case 8: {
 			uint64_t v = (uint64_t)value;
-			uint64_t* p = (uint64_t*)buf;
+			uint64_t* p = reinterpret_cast<uint64_t*>(buf);
 			*p = from_host(v, endianness);
 			break;
 		}
