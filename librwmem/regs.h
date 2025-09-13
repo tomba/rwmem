@@ -77,7 +77,7 @@ private:
 class RegisterFile
 {
 public:
-	RegisterFile(const std::string& filename);
+	explicit RegisterFile(const std::string& filename);
 	~RegisterFile();
 
 	const char* name() const { return m_rfd->name(); }
