@@ -81,11 +81,11 @@ RegisterFile::RegisterFile(const std::string& filename)
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	void* data = mmap(nullptr, len, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (data == MAP_FAILED)
+	const void* mmap_data = mmap(nullptr, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (mmap_data == MAP_FAILED)
 		throw runtime_error(fmt::format("mmap regfile failed: {}", strerror(errno)));
 
-	m_rfd = static_cast<const RegisterFileData*>(data);
+	m_rfd = static_cast<const RegisterFileData*>(mmap_data);
 	m_size = len;
 
 	if (m_rfd->magic() != RWMEM_MAGIC)
