@@ -24,7 +24,7 @@ static int value_handler(void* user, const char* section, const char* name, cons
 	return 1;
 }
 
-static std::map<std::string, std::map<std::string, std::string>> parse_file(string filename)
+static std::map<std::string, std::map<std::string, std::string>> parse_file(const string& filename)
 {
 	std::map<std::string, std::map<std::string, std::string>> map;
 
@@ -35,17 +35,17 @@ static std::map<std::string, std::map<std::string, std::string>> parse_file(stri
 	return map;
 }
 
-void INIReader::load(std::string filename)
+void INIReader::load(const std::string& filename)
 {
 	m_values = parse_file(filename);
 }
 
-string INIReader::get(string section, string name) const
+string INIReader::get(const string& section, const string& name) const
 {
 	return m_values.at(to_lower(section)).at(to_lower(name));
 }
 
-string INIReader::get(string section, string name, string default_value) const
+string INIReader::get(const string& section, const string& name, const string& default_value) const
 {
 	try {
 		return get(section, name);
@@ -54,7 +54,7 @@ string INIReader::get(string section, string name, string default_value) const
 	}
 }
 
-int INIReader::get_int(string section, string name, int default_value) const
+int INIReader::get_int(const string& section, const string& name, int default_value) const
 {
 	try {
 		string valstr = get(section, name);
@@ -64,7 +64,7 @@ int INIReader::get_int(string section, string name, int default_value) const
 	}
 }
 
-bool INIReader::get_bool(string section, string name, bool default_value) const
+bool INIReader::get_bool(const string& section, const string& name, bool default_value) const
 {
 	try {
 		string valstr = get(section, name);
@@ -90,7 +90,7 @@ vector<string> INIReader::get_sections() const
 	return sections;
 }
 
-vector<string> INIReader::get_keys(const string section) const
+vector<string> INIReader::get_keys(const string& section) const
 {
 	vector<string> keys;
 
