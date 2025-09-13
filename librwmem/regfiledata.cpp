@@ -5,7 +5,7 @@ using namespace std;
 
 const RegisterBlockData* RegisterFileData::blocks() const
 {
-	return (RegisterBlockData*)((uint8_t*)this + sizeof(RegisterFileData));
+	return reinterpret_cast<const RegisterBlockData*>(reinterpret_cast<const uint8_t*>(this) + sizeof(RegisterFileData));
 }
 
 const RegisterData* RegisterFileData::registers() const
