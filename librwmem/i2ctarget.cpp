@@ -22,7 +22,7 @@ I2CTarget::I2CTarget(uint16_t adapter_nr, uint16_t i2c_addr)
 
 I2CTarget::~I2CTarget()
 {
-	unmap();
+	I2CTarget::unmap();
 }
 
 void I2CTarget::map(uint64_t offset, uint64_t length,

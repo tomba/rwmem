@@ -70,7 +70,7 @@ MMapTarget::MMapTarget(const string& filename)
 
 MMapTarget::~MMapTarget()
 {
-	unmap();
+	MMapTarget::unmap();
 }
 
 void MMapTarget::map(uint64_t offset, uint64_t length,
