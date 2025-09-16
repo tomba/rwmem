@@ -120,7 +120,20 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 
 void parse_cmdline(int argc, char** argv)
 {
-	CLI::App app{"rwmem - read/write memory tool"};
+	CLI::App app{ "rwmem - read/write memory tool\n\n"
+		      "USAGE:\n"
+		      "  rwmem <address>...                          # Shortcut for 'mmap /dev/mem'\n"
+		      "  rwmem mmap <file> [options] <address>...    # Access memory-mapped file\n"
+		      "  rwmem i2c <bus:addr> [options] <address>... # Access I2C device\n"
+		      "  rwmem list [options] [pattern]...           # List register database\n"
+		      "\n"
+		      "For detailed options: rwmem <subcommand> --help\n"
+		      "\n"
+		      "EXAMPLES:\n"
+		      "  rwmem 0x1000                    # Read from /dev/mem\n"
+		      "  rwmem mmap /dev/mem 0x1000      # Equivalent explicit form\n"
+		      "  rwmem i2c 1:0x50 0x10           # Read I2C device\n"
+		      "  rwmem list DISPC.*              # List DISPC registers" };
 
 	// Custom variables for CLI11 parsing
 	std::string data_size_str, addr_size_str, write_mode_str, print_mode_str, format_str;
@@ -143,19 +156,18 @@ void parse_cmdline(int argc, char** argv)
 	mmap_cmd->add_flag("--ignore-base", rwmem_opts.ignore_base, "Ignore base from register desc file");
 	mmap_cmd->add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
 	mmap_cmd->add_option("operations", rwmem_opts.args,
-		       "<address>[:field][=value]\n"
-		       "\n"
-		       "address to access:\n"
-		       "<address>	single address\n"
-		       "<address-end>	range with end address\n"
-		       "<address+len>	range with length\n"
-		       "\n"
-		       "bitfield (inclusive, start from 0):\n"
-		       "<bit>		single bit\n"
-		       "<high>:<low>	bitfield from high to low\n"
-		       "\n"
-		       "value to be written\n"
-		       );
+			     "<address>[:field][=value]\n"
+			     "\n"
+			     "address to access:\n"
+			     "<address>	single address\n"
+			     "<address-end>	range with end address\n"
+			     "<address+len>	range with length\n"
+			     "\n"
+			     "bitfield (inclusive, start from 0):\n"
+			     "<bit>		single bit\n"
+			     "<high>:<low>	bitfield from high to low\n"
+			     "\n"
+			     "value to be written\n");
 
 	// I2C subcommand setup
 	i2c_cmd->add_option("bus_addr", i2c_param, "I2C bus and device address (<bus>:<addr>)")->required();
@@ -169,19 +181,18 @@ void parse_cmdline(int argc, char** argv)
 	i2c_cmd->add_flag("--ignore-base", rwmem_opts.ignore_base, "Ignore base from register desc file");
 	i2c_cmd->add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
 	i2c_cmd->add_option("operations", rwmem_opts.args,
-		       "<address>[:field][=value]\n"
-		       "\n"
-		       "address to access:\n"
-		       "<address>	single address\n"
-		       "<address-end>	range with end address\n"
-		       "<address+len>	range with length\n"
-		       "\n"
-		       "bitfield (inclusive, start from 0):\n"
-		       "<bit>		single bit\n"
-		       "<high>:<low>	bitfield from high to low\n"
-		       "\n"
-		       "value to be written\n"
-		       );
+			    "<address>[:field][=value]\n"
+			    "\n"
+			    "address to access:\n"
+			    "<address>	single address\n"
+			    "<address-end>	range with end address\n"
+			    "<address+len>	range with length\n"
+			    "\n"
+			    "bitfield (inclusive, start from 0):\n"
+			    "<bit>		single bit\n"
+			    "<high>:<low>	bitfield from high to low\n"
+			    "\n"
+			    "value to be written\n");
 
 	// List subcommand setup
 	list_cmd->add_option("-r,--regs", rwmem_opts.regfile, "Register description file");
@@ -189,36 +200,52 @@ void parse_cmdline(int argc, char** argv)
 	list_cmd->add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
 	list_cmd->add_option("patterns", rwmem_opts.args, "Register patterns to match (optional)");
 
-	// Global options for default mode (simplified mmap /dev/mem usage)
-	app.add_option("-d,--data", data_size_str, "Data size and endianness (<size>[endian])");
-	app.add_option("-w,--write", write_mode_str, "Write mode: w, rw or rwr (default)");
-	app.add_option("-p,--print", print_mode_str, "Print mode: q, r or rf (default)");
-	app.add_option("-f,--format", format_str, "Number format: x (hex, default), b (bin), d (dec)");
-	app.add_option("-r,--regs", rwmem_opts.regfile, "Register description file");
-	app.add_flag("-R,--raw", rwmem_opts.raw_output, "Raw output mode");
-	app.add_flag("--ignore-base", rwmem_opts.ignore_base, "Ignore base from register desc file");
-	app.add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
-	app.add_option("operations", rwmem_opts.args,
-		       "<address>[:field][=value] (defaults to mmap /dev/mem)\n"
-		       "\n"
-		       "address to access:\n"
-		       "<address>	single address\n"
-		       "<address-end>	range with end address\n"
-		       "<address+len>	range with length\n"
-		       "\n"
-		       "bitfield (inclusive, start from 0):\n"
-		       "<bit>		single bit\n"
-		       "<high>:<low>	bitfield from high to low\n"
-		       "\n"
-		       "value to be written\n"
-		       );
-	
-	// Ensure subcommands are processed before main arguments
-	app.require_subcommand(0, 1);
+	// Require exactly one subcommand
+	app.require_subcommand(1);
+
+	// Convert argv to vector<string> (skip program name) and reverse for CLI11
+	std::vector<std::string> original_args;
+	for (int i = argc - 1; i >= 1; i--) {
+		original_args.push_back(argv[i]);
+	}
+
+	// Make a copy for the first parse attempt (since parse() modifies the vector)
+	std::vector<std::string> args = original_args;
 
 	try {
-		app.parse(argc, argv);
+		// First attempt: parse original arguments
+		app.parse(args);
+	} catch (const CLI::CallForHelp& e) {
+		// Handle help request for main command
+		std::cout << app.help() << std::endl;
+		exit(0);
+	} catch (const CLI::RequiredError& e) {
+		// Failed due to missing subcommand - try default mode
+		// Use original_args since args was modified by the first parse attempt
+		if (!original_args.empty() &&
+		    original_args.back() != "mmap" && original_args.back() != "i2c" && original_args.back() != "list") {
+			// Create reversed arguments: original args (already reversed) + "/dev/mem" + "mmap"
+			std::vector<std::string> default_args;
+			// Add original args (already reversed)
+			default_args.insert(default_args.end(), original_args.begin(), original_args.end());
+			// Add /dev/mem and mmap in reverse order
+			default_args.push_back("/dev/mem");
+			default_args.push_back("mmap");
 
+			try {
+				// Re-parse with default mode
+				app.parse(default_args);
+			} catch (const CLI::CallForHelp& e) {
+				// Handle help request for mmap subcommand
+				std::cout << app.help() << std::endl;
+				exit(0);
+			}
+		} else {
+			throw; // Different error, re-throw
+		}
+	}
+
+	try {
 		// Determine which mode we're in
 		if (mmap_cmd->parsed()) {
 			rwmem_opts.target_type = TargetType::MMap;
@@ -226,13 +253,13 @@ void parse_cmdline(int argc, char** argv)
 		} else if (i2c_cmd->parsed()) {
 			rwmem_opts.target_type = TargetType::I2C;
 			rwmem_opts.i2c_target = i2c_param;
-			
+
 			// Validate I2C parameter format
 			vector<string> strs = split(i2c_param, ':');
 			if (strs.size() != 2 || strs[0].empty() || strs[1].empty()) {
 				ERR("Invalid I2C parameter '{}'. Expected format: <bus>:<addr>", i2c_param);
 			}
-			
+
 			// Validate that both parts are numeric
 			uint64_t bus, addr;
 			if (parse_u64(strs[0], &bus) != 0) {
@@ -305,7 +332,7 @@ void parse_cmdline(int argc, char** argv)
 				rwmem_opts.number_print_mode = NumberPrintMode::Bin;
 			else
 				ERR("Invalid format '{}'. Valid formats: x (hex), d (dec), b (bin)", format_str);
-			
+
 			// Validate format scope
 			if (rwmem_opts.print_mode == PrintMode::Quiet && !format_str.empty()) {
 				rwmem_vprint("Warning: --format option ignored in quiet mode\n");
@@ -331,10 +358,10 @@ void parse_cmdline(int argc, char** argv)
 			}
 		}
 
-	} catch (const CLI::CallForHelp &e) {
+	} catch (const CLI::CallForHelp& e) {
 		std::cout << app.help() << std::endl;
 		exit(0);
-	} catch (const CLI::ParseError &e) {
+	} catch (const CLI::ParseError& e) {
 		ERR("Failed to parse options: {}\n", e.what());
 	}
 }
