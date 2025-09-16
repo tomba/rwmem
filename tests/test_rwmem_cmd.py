@@ -122,11 +122,11 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
     def setUp(self):
         super().setUp()
 
-        self.rwmem_common_opts = ['--regs=' + TEST_REGDB_PATH, 'mmap', DATA_BIN_PATH]
+        self.rwmem_common_opts = ['mmap', DATA_BIN_PATH, '--regs=' + TEST_REGDB_PATH]
 
     def test_regdb_list(self):
         # Test register database listing
-        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, 'list'],
+        res = subprocess.run([self.rwmem_cmd, 'list', '--regs=' + TEST_REGDB_PATH],
                            capture_output=True, encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
@@ -137,7 +137,7 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
 
     def test_regdb_list_search_sensor_a(self):
         # Test listing with SENSOR_A pattern
-        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, 'list', 'SENSOR_A'],
+        res = subprocess.run([self.rwmem_cmd, 'list', '--regs=' + TEST_REGDB_PATH, 'SENSOR_A'],
                            capture_output=True, encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
@@ -145,7 +145,7 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
 
     def test_regdb_list_search_sens_wildcard(self):
         # Test listing with SENS* wildcard pattern
-        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, 'list', 'SENS*'],
+        res = subprocess.run([self.rwmem_cmd, 'list', '--regs=' + TEST_REGDB_PATH, 'SENS*'],
                            capture_output=True, encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
@@ -153,7 +153,7 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
 
     def test_regdb_list_search_sensor_a_dot_wildcard(self):
         # Test listing with SENSOR_A.* pattern
-        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, 'list', 'SENSOR_A.*'],
+        res = subprocess.run([self.rwmem_cmd, 'list', '--regs=' + TEST_REGDB_PATH, 'SENSOR_A.*'],
                            capture_output=True, encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
@@ -162,7 +162,7 @@ class RwmemRegisterDatabaseTests(RwmemTestBase):
 
     def test_regdb_list_search_sensor_a_stat_wildcard(self):
         # Test listing with SENSOR_A.STAT* pattern
-        res = subprocess.run([self.rwmem_cmd, '--regs=' + TEST_REGDB_PATH, 'list', 'SENSOR_A.STAT*'],
+        res = subprocess.run([self.rwmem_cmd, 'list', '--regs=' + TEST_REGDB_PATH, 'SENSOR_A.STAT*'],
                            capture_output=True, encoding='ASCII', check=False)
 
         self.assertEqual(res.returncode, 0, res)
