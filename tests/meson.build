@@ -1,6 +1,9 @@
 # Unit tests for rwmem
 
-gtest_dep = dependency('gtest', main : true)
+gtest_dep = dependency('gtest', main : true, required : false)
+if not gtest_dep.found()
+  gtest_dep = disabler()
+endif
 
 test_data_generator_lib = static_library('test_data_generator',
     'test_data_generator.cpp',
