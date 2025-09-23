@@ -3,50 +3,223 @@ _rwmem()
 	local cur prev words cword split
 	_init_completion -s -n : || return
 
-	case "${prev,,}" in
-		--mmap|--regs)
+	# Common options for default, mmap, and i2c modes
+	local common_opts="-d --data -w --write -p --print -f --format -r --regs -R --raw --ignore-base -v --verbose"
+	# I2C additional option
+	local i2c_opts="-a --addr"
+	# List mode options
+	local list_opts="-r --regs -p --print -v --verbose"
+	# Subcommands
+	local subcommands="mmap i2c list"
+
+	# Determine current mode by looking at the first non-option argument
+	local mode="default"
+	local mode_arg_pos=1
+	local i
+	for (( i=1; i<cword; i++ )); do
+		case "${words[i]}" in
+			mmap)
+				mode="mmap"
+				mode_arg_pos=$((i+1))
+				break
+				;;
+			i2c)
+				mode="i2c"
+				mode_arg_pos=$((i+1))
+				break
+				;;
+			list)
+				mode="list"
+				mode_arg_pos=$((i+1))
+				break
+				;;
+			-*)
+				# Skip options
+				continue
+				;;
+			*)
+				# First non-option, non-subcommand argument
+				break
+				;;
+		esac
+	done
+
+	# Handle file completions for options that take file arguments
+	case "$prev" in
+		-r|--regs)
 			_filedir
 			return 0
 			;;
-		*)
+	esac
+
+	# Handle options that take arguments (non-file)
+	case "$prev" in
+		-d|--data|-w|--write|-p|--print|-f|--format|-a|--addr)
+			# These options take arguments but we don't have specific completions
+			return 0
 			;;
 	esac
 
-	# TODO: add options
-	opts="--mmap= --i2c= --regs= --list --ignore-base"
-
-	if [[ ${cur} == -* ]] ; then
-		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-		[[ $COMPREPLY == *= ]] && compopt -o nospace
+	# If we're at the first argument position and no subcommand yet, offer subcommands and options
+	if [[ $cword -eq 1 ]] && [[ $mode == "default" ]]; then
+		if [[ ${cur} == -* ]]; then
+			COMPREPLY=( $(compgen -W "${common_opts}" -- ${cur}) )
+		else
+			# Offer subcommands and register/address completion
+			local completions="$subcommands"
+			# Add register completion if available
+			local reg_completions
+			reg_completions=$(rwmem list "${cur}"* 2>/dev/null || true)
+			if [[ -n "$reg_completions" ]]; then
+				completions="$completions $reg_completions"
+			fi
+			COMPREPLY=( $(compgen -W "${completions}" -- ${cur}) )
+		fi
 		return 0
 	fi
 
-	RWMEM_OPTS=
-
-	case "$prev" in
-	--@(regs=*))
-		REG_FILE="${prev#*=}"
-		RWMEM_OPTS="$prev"
-		;;
+	# Mode-specific completion
+	case "$mode" in
+		mmap)
+			_rwmem_mmap_mode
+			;;
+		i2c)
+			_rwmem_i2c_mode
+			;;
+		list)
+			_rwmem_list_mode
+			;;
+		default)
+			_rwmem_default_mode
+			;;
 	esac
+}
 
-	COMPREPLY=( $(rwmem $RWMEM_OPTS --list "$cur"*) )
-
-	# if single match, append ":" or "." or " ", depending on what we're completing
-	if [ ${#COMPREPLY[@]} -eq 1 ]; then
-		case "$cur" in
-			*:*) c=" " ;;
-			*.*) c=":" ;;
-			*) c="." ;;
-		esac
-
-		COMPREPLY[0]="${COMPREPLY[0]}${c}"
-
+_rwmem_default_mode()
+{
+	# Default mode: rwmem [OPTIONS] <address>[:field][=value] ...
+	if [[ ${cur} == -* ]]; then
+		COMPREPLY=( $(compgen -W "${common_opts}" -- ${cur}) )
+	else
+		# Address or register completion
+		_rwmem_address_completion
 	fi
+}
 
-	compopt -o nospace
+_rwmem_mmap_mode()
+{
+	# mmap mode: rwmem mmap <file> [OPTIONS] <address>[:field][=value] ...
+	# Need to check if we're still expecting the file argument
+	local file_provided=0
+	local i
+	for (( i=mode_arg_pos; i<cword; i++ )); do
+		case "${words[i]}" in
+			-*)
+				# Skip options
+				continue
+				;;
+			*)
+				file_provided=1
+				break
+				;;
+		esac
+	done
 
-	# WA to get : working
-	__ltrim_colon_completions "$cur"
+	if [[ ${cur} == -* ]]; then
+		COMPREPLY=( $(compgen -W "${common_opts}" -- ${cur}) )
+	elif [[ $file_provided -eq 0 ]]; then
+		# Expecting file argument
+		_filedir
+	else
+		# File provided, now complete addresses
+		_rwmem_address_completion
+	fi
+}
+
+_rwmem_i2c_mode()
+{
+	# i2c mode: rwmem i2c <bus:addr> [OPTIONS] <address>[:field][=value] ...
+	# Need to check if we're still expecting the bus:addr argument
+	local busaddr_provided=0
+	local i
+	for (( i=mode_arg_pos; i<cword; i++ )); do
+		case "${words[i]}" in
+			-*)
+				# Skip options
+				continue
+				;;
+			*)
+				busaddr_provided=1
+				break
+				;;
+		esac
+	done
+
+	if [[ ${cur} == -* ]]; then
+		local i2c_all_opts="${common_opts} ${i2c_opts}"
+		COMPREPLY=( $(compgen -W "${i2c_all_opts}" -- ${cur}) )
+	elif [[ $busaddr_provided -eq 0 ]]; then
+		# Expecting bus:addr argument - no specific completion available
+		return 0
+	else
+		# bus:addr provided, now complete addresses
+		_rwmem_address_completion
+	fi
+}
+
+_rwmem_list_mode()
+{
+	# list mode: rwmem list [OPTIONS] [pattern] ...
+	if [[ ${cur} == -* ]]; then
+		COMPREPLY=( $(compgen -W "${list_opts}" -- ${cur}) )
+	else
+		# Pattern completion - complete register names
+		_rwmem_register_completion
+	fi
+}
+
+_rwmem_address_completion()
+{
+	# Complete register names or addresses
+	_rwmem_register_completion
+}
+
+_rwmem_register_completion()
+{
+	# Extract register file option if present
+	local rwmem_opts=""
+	local i
+	for (( i=1; i<cword; i++ )); do
+		case "${words[i]}" in
+			-r|--regs)
+				# Next argument is the register file
+				if [[ $((i+1)) -lt cword ]]; then
+					rwmem_opts="-r ${words[$((i+1))]}"
+				fi
+				break
+				;;
+		esac
+	done
+
+	# Get register completions using 'rwmem list'
+	local reg_completions
+	reg_completions=$(rwmem list $rwmem_opts "${cur}"* 2>/dev/null || true)
+	if [[ -n "$reg_completions" ]]; then
+		COMPREPLY=( $(compgen -W "${reg_completions}" -- ${cur}) )
+
+		# if single match, append ":" or "." or " ", depending on what we're completing
+		if [ ${#COMPREPLY[@]} -eq 1 ]; then
+			case "$cur" in
+				*:*) c=" " ;;
+				*.*) c=":" ;;
+				*) c="." ;;
+			esac
+			COMPREPLY[0]="${COMPREPLY[0]}${c}"
+			compopt -o nospace
+		fi
+
+		# WA to get : working
+		__ltrim_colon_completions "$cur"
+	fi
 }
 complete -F _rwmem rwmem
