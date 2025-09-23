@@ -32,11 +32,11 @@ protected:
 };
 
 TEST_F(RegisterFileDataTest, HeaderValidation) {
-    EXPECT_EQ(rfd->magic(), 0x00e11555);
-    EXPECT_EQ(rfd->version(), 3);
-    EXPECT_EQ(rfd->num_blocks(), 3);  // SENSOR_A, SENSOR_B, MEMORY_CTRL
-    EXPECT_EQ(rfd->num_regs(), 14);   // 9 + 9 - 9 (due to deduplication) = 14
-    EXPECT_EQ(rfd->num_fields(), 24); // Based on generate_test_data.py
+    EXPECT_EQ(rfd->magic(), 0x00e11555U);
+    EXPECT_EQ(rfd->version(), 3U);
+    EXPECT_EQ(rfd->num_blocks(), 3U);  // SENSOR_A, SENSOR_B, MEMORY_CTRL
+    EXPECT_EQ(rfd->num_regs(), 14U);   // 9 + 9 - 9 (due to deduplication) = 14
+    EXPECT_EQ(rfd->num_fields(), 24U); // Based on generate_test_data.py
 }
 
 TEST_F(RegisterFileDataTest, FileNameAccess) {
@@ -48,25 +48,25 @@ TEST_F(RegisterFileDataTest, BlockAccess) {
     const RegisterBlockData* sensor_a_block = rfd->block_at(0);
     ASSERT_NE(sensor_a_block, nullptr);
     EXPECT_STREQ(sensor_a_block->name(rfd), "SENSOR_A");
-    EXPECT_EQ(sensor_a_block->offset(), 0x000);
-    EXPECT_EQ(sensor_a_block->size(), 0x100);
-    EXPECT_EQ(sensor_a_block->num_regs(), 9);
+    EXPECT_EQ(sensor_a_block->offset(), 0x000U);
+    EXPECT_EQ(sensor_a_block->size(), 0x100U);
+    EXPECT_EQ(sensor_a_block->num_regs(), 9U);
 
     // Test second block (SENSOR_B)
     const RegisterBlockData* sensor_b_block = rfd->block_at(1);
     ASSERT_NE(sensor_b_block, nullptr);
     EXPECT_STREQ(sensor_b_block->name(rfd), "SENSOR_B");
-    EXPECT_EQ(sensor_b_block->offset(), 0x100);
-    EXPECT_EQ(sensor_b_block->size(), 0x100);
-    EXPECT_EQ(sensor_b_block->num_regs(), 9);
+    EXPECT_EQ(sensor_b_block->offset(), 0x100U);
+    EXPECT_EQ(sensor_b_block->size(), 0x100U);
+    EXPECT_EQ(sensor_b_block->num_regs(), 9U);
 
     // Test third block (MEMORY_CTRL)
     const RegisterBlockData* memory_ctrl_block = rfd->block_at(2);
     ASSERT_NE(memory_ctrl_block, nullptr);
     EXPECT_STREQ(memory_ctrl_block->name(rfd), "MEMORY_CTRL");
-    EXPECT_EQ(memory_ctrl_block->offset(), 0x200);
-    EXPECT_EQ(memory_ctrl_block->size(), 0x100);
-    EXPECT_EQ(memory_ctrl_block->num_regs(), 5);
+    EXPECT_EQ(memory_ctrl_block->offset(), 0x200U);
+    EXPECT_EQ(memory_ctrl_block->size(), 0x100U);
+    EXPECT_EQ(memory_ctrl_block->num_regs(), 5U);
 }
 
 TEST_F(RegisterFileDataTest, RegisterAccess) {
@@ -77,15 +77,15 @@ TEST_F(RegisterFileDataTest, RegisterAccess) {
     const RegisterData* status_reg = sensor_a_block->register_at(rfd, 0);
     ASSERT_NE(status_reg, nullptr);
     EXPECT_STREQ(status_reg->name(rfd), "STATUS_REG");
-    EXPECT_EQ(status_reg->offset(), 0x00);
-    EXPECT_EQ(status_reg->num_fields(), 3);
+    EXPECT_EQ(status_reg->offset(), 0x00U);
+    EXPECT_EQ(status_reg->num_fields(), 3U);
 
     // Test second register (CONTROL_REG)
     const RegisterData* control_reg = sensor_a_block->register_at(rfd, 1);
     ASSERT_NE(control_reg, nullptr);
     EXPECT_STREQ(control_reg->name(rfd), "CONTROL_REG");
-    EXPECT_EQ(control_reg->offset(), 0x01);
-    EXPECT_EQ(control_reg->num_fields(), 3);
+    EXPECT_EQ(control_reg->offset(), 0x01U);
+    EXPECT_EQ(control_reg->num_fields(), 3U);
 }
 
 TEST_F(RegisterFileDataTest, FieldAccess) {
@@ -97,20 +97,20 @@ TEST_F(RegisterFileDataTest, FieldAccess) {
     const FieldData* first_field = status_reg->field_at(rfd, 0);
     ASSERT_NE(first_field, nullptr);
     EXPECT_STREQ(first_field->name(rfd), "MODE");
-    EXPECT_EQ(first_field->high(), 7);
-    EXPECT_EQ(first_field->low(), 3);
+    EXPECT_EQ(first_field->high(), 7U);
+    EXPECT_EQ(first_field->low(), 3U);
 
     const FieldData* second_field = status_reg->field_at(rfd, 1);
     ASSERT_NE(second_field, nullptr);
     EXPECT_STREQ(second_field->name(rfd), "ERROR");
-    EXPECT_EQ(second_field->high(), 2);
-    EXPECT_EQ(second_field->low(), 1);
+    EXPECT_EQ(second_field->high(), 2U);
+    EXPECT_EQ(second_field->low(), 1U);
 
     const FieldData* third_field = status_reg->field_at(rfd, 2);
     ASSERT_NE(third_field, nullptr);
     EXPECT_STREQ(third_field->name(rfd), "READY");
-    EXPECT_EQ(third_field->high(), 0);
-    EXPECT_EQ(third_field->low(), 0);
+    EXPECT_EQ(third_field->high(), 0U);
+    EXPECT_EQ(third_field->low(), 0U);
 }
 
 TEST_F(RegisterFileDataTest, FindBlock) {
@@ -162,14 +162,14 @@ TEST_F(RegisterFileDataTest, ComplexFieldRanges) {
     const RegisterData* data_lo_reg = memory_ctrl_block->register_at(rfd, 3);  // DATA_LO_REG
     ASSERT_NE(data_lo_reg, nullptr);
     EXPECT_STREQ(data_lo_reg->name(rfd), "DATA_LO_REG");
-    EXPECT_EQ(data_lo_reg->num_fields(), 1);
+    EXPECT_EQ(data_lo_reg->num_fields(), 1U);
 
     // Test the wide DATA field (31:0)
     const FieldData* data_field = data_lo_reg->field_at(rfd, 0);
     ASSERT_NE(data_field, nullptr);
     EXPECT_STREQ(data_field->name(rfd), "DATA");
-    EXPECT_EQ(data_field->high(), 31);
-    EXPECT_EQ(data_field->low(), 0);
+    EXPECT_EQ(data_field->high(), 31U);
+    EXPECT_EQ(data_field->low(), 0U);
 }
 
 TEST_F(RegisterFileDataTest, RegisterSharing) {
@@ -191,6 +191,6 @@ TEST_F(RegisterFileDataTest, RegisterSharing) {
     EXPECT_STREQ(status_b->name(rfd), "STATUS_REG");
 
     // Both should have the same offset within their respective blocks
-    EXPECT_EQ(status_a->offset(), 0x00);
-    EXPECT_EQ(status_b->offset(), 0x00);
+    EXPECT_EQ(status_a->offset(), 0x00U);
+    EXPECT_EQ(status_b->offset(), 0x00U);
 }

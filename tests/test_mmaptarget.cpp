@@ -51,7 +51,7 @@ TEST_F(MMapTargetTest, MapReadOnly) {
 
     // Should be able to read - test against known values from test.bin
     uint32_t value = target.read(0, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x7d8c0c39);  // Known value at offset 0 in test.bin
+    EXPECT_EQ(value, 0x7d8c0c39U);  // Known value at offset 0 in test.bin
 }
 
 TEST_F(MMapTargetTest, MapReadWrite) {
@@ -63,7 +63,7 @@ TEST_F(MMapTargetTest, MapReadWrite) {
     // Should be able to read and write
     target.write(0, 0xDEADBEEF, 4, Endianness::Little);
     uint32_t new_value = target.read(0, 4, Endianness::Little);
-    EXPECT_EQ(new_value, 0xDEADBEEF);
+    EXPECT_EQ(new_value, 0xDEADBEEFU);
 }
 
 //TEST_F(MMapTargetTest, MapWriteOnly) {
@@ -92,10 +92,10 @@ TEST_F(MMapTargetTest, Read8Bit) {
 
     // Test 8-bit reads - known values from test.bin
     uint8_t value = target.read(0, 1, Endianness::Little);
-    EXPECT_EQ(value, 0x39);  // LSB of 0x7d8c0c39
+    EXPECT_EQ(value, 0x39U);  // LSB of 0x7d8c0c39
 
     value = target.read(1, 1, Endianness::Little);
-    EXPECT_EQ(value, 0x0c);  // Second byte of 0x7d8c0c39
+    EXPECT_EQ(value, 0x0cU);  // Second byte of 0x7d8c0c39
 }
 
 TEST_F(MMapTargetTest, Read16Bit) {
@@ -105,11 +105,11 @@ TEST_F(MMapTargetTest, Read16Bit) {
 
     // Test 16-bit reads - little endian
     uint16_t value = target.read(0, 2, Endianness::Little);
-    EXPECT_EQ(value, 0x0c39);  // Lower 16 bits of 0x7d8c0c39
+    EXPECT_EQ(value, 0x0c39U);  // Lower 16 bits of 0x7d8c0c39
 
     // Test 16-bit reads - big endian
     value = target.read(0, 2, Endianness::Big);
-    EXPECT_EQ(value, 0x390c);  // Swapped bytes
+    EXPECT_EQ(value, 0x390cU);  // Swapped bytes
 }
 
 TEST_F(MMapTargetTest, Read32Bit) {
@@ -119,14 +119,14 @@ TEST_F(MMapTargetTest, Read32Bit) {
 
     // Test 32-bit reads - little endian
     uint32_t value = target.read(0, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x7d8c0c39);  // Known value from test.bin
+    EXPECT_EQ(value, 0x7d8c0c39U);  // Known value from test.bin
 
     value = target.read(4, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x2c344772);  // Known value from test.bin
+    EXPECT_EQ(value, 0x2c344772U);  // Known value from test.bin
 
     // Test 32-bit reads - big endian
     value = target.read(0, 4, Endianness::Big);
-    EXPECT_EQ(value, 0x390c8c7d);  // Byte-swapped
+    EXPECT_EQ(value, 0x390c8c7dU);  // Byte-swapped
 }
 
 TEST_F(MMapTargetTest, Read64Bit) {
@@ -148,7 +148,7 @@ TEST_F(MMapTargetTest, Write8Bit) {
     // Test 8-bit writes
     target.write(100, 0xAB, 1, Endianness::Little);
     uint8_t value = target.read(100, 1, Endianness::Little);
-    EXPECT_EQ(value, 0xAB);
+    EXPECT_EQ(value, 0xABU);
 }
 
 TEST_F(MMapTargetTest, Write16Bit) {
@@ -159,12 +159,12 @@ TEST_F(MMapTargetTest, Write16Bit) {
     // Test 16-bit writes - little endian
     target.write(100, 0x1234, 2, Endianness::Little);
     uint16_t value = target.read(100, 2, Endianness::Little);
-    EXPECT_EQ(value, 0x1234);
+    EXPECT_EQ(value, 0x1234U);
 
     // Test 16-bit writes - big endian
     target.write(102, 0x5678, 2, Endianness::Big);
     value = target.read(102, 2, Endianness::Big);
-    EXPECT_EQ(value, 0x5678);
+    EXPECT_EQ(value, 0x5678U);
 }
 
 TEST_F(MMapTargetTest, Write32Bit) {
@@ -175,12 +175,12 @@ TEST_F(MMapTargetTest, Write32Bit) {
     // Test 32-bit writes - little endian
     target.write(100, 0x12345678, 4, Endianness::Little);
     uint32_t value = target.read(100, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x12345678);
+    EXPECT_EQ(value, 0x12345678U);
 
     // Test 32-bit writes - big endian
     target.write(104, 0x9ABCDEF0, 4, Endianness::Big);
     value = target.read(104, 4, Endianness::Big);
-    EXPECT_EQ(value, 0x9ABCDEF0);
+    EXPECT_EQ(value, 0x9ABCDEF0U);
 }
 
 TEST_F(MMapTargetTest, Write64Bit) {
@@ -206,7 +206,7 @@ TEST_F(MMapTargetTest, DefaultDataSize) {
 
     // Test default data size (4 bytes)
     uint32_t value = target.read(0, 0, Endianness::Little);  // Should read 4 bytes by default
-    EXPECT_EQ(value, 0x7d8c0c39);
+    EXPECT_EQ(value, 0x7d8c0c39U);
 }
 
 TEST_F(MMapTargetTest, DefaultEndianness) {
@@ -216,7 +216,7 @@ TEST_F(MMapTargetTest, DefaultEndianness) {
 
     // Test default endianness
     uint32_t value = target.read(0, 4, Endianness::Default);  // Should use big endian by default
-    EXPECT_EQ(value, 0x390c8c7d);
+    EXPECT_EQ(value, 0x390c8c7dU);
 }
 
 TEST_F(MMapTargetTest, OffsetMapping) {
@@ -228,7 +228,7 @@ TEST_F(MMapTargetTest, OffsetMapping) {
 
     // Reading at address 0x10 should give us the value at offset 0x10 in the file
     uint32_t value = target.read(0x10, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x8ee570d6);  // Known value at offset 0x10 in test.bin
+    EXPECT_EQ(value, 0x8ee570d6U);  // Known value at offset 0x10 in test.bin
 }
 
 TEST_F(MMapTargetTest, AddressRangeValidation) {
@@ -324,11 +324,11 @@ TEST_F(MMapTargetTest, Read24Bit) {
 
     // Test 24-bit reads - little endian (first 3 bytes of 0x7d8c0c39)
     uint64_t value = target.read(0, 3, Endianness::Little);
-    EXPECT_EQ(value, 0x8c0c39);  // Lower 24 bits of 0x7d8c0c39
+    EXPECT_EQ(value, 0x8c0c39U);  // Lower 24 bits of 0x7d8c0c39
 
     // Test 24-bit reads - big endian
     value = target.read(0, 3, Endianness::Big);
-    EXPECT_EQ(value, 0x390c8c);  // Byte-swapped
+    EXPECT_EQ(value, 0x390c8cU);  // Byte-swapped
 }
 
 TEST_F(MMapTargetTest, Read40Bit) {
@@ -384,12 +384,12 @@ TEST_F(MMapTargetTest, Write24Bit) {
     // Test 24-bit writes - little endian
     target.write(100, 0xABCDEF, 3, Endianness::Little);
     uint64_t value = target.read(100, 3, Endianness::Little);
-    EXPECT_EQ(value, 0xABCDEF);
+    EXPECT_EQ(value, 0xABCDEFU);
 
     // Test 24-bit writes - big endian
     target.write(104, 0x123456, 3, Endianness::Big);
     value = target.read(104, 3, Endianness::Big);
-    EXPECT_EQ(value, 0x123456);
+    EXPECT_EQ(value, 0x123456U);
 }
 
 TEST_F(MMapTargetTest, Write40Bit) {
@@ -400,12 +400,12 @@ TEST_F(MMapTargetTest, Write40Bit) {
     // Test 40-bit writes - little endian
     target.write(100, 0x123456789A, 5, Endianness::Little);
     uint64_t value = target.read(100, 5, Endianness::Little);
-    EXPECT_EQ(value, 0x123456789A);
+    EXPECT_EQ(value, 0x123456789AULL);
 
     // Test 40-bit writes - big endian
     target.write(106, 0xABCDEF0123, 5, Endianness::Big);
     value = target.read(106, 5, Endianness::Big);
-    EXPECT_EQ(value, 0xABCDEF0123);
+    EXPECT_EQ(value, 0xABCDEF0123ULL);
 }
 
 TEST_F(MMapTargetTest, Write48Bit) {
@@ -416,12 +416,12 @@ TEST_F(MMapTargetTest, Write48Bit) {
     // Test 48-bit writes - little endian
     target.write(100, 0x123456789ABC, 6, Endianness::Little);
     uint64_t value = target.read(100, 6, Endianness::Little);
-    EXPECT_EQ(value, 0x123456789ABC);
+    EXPECT_EQ(value, 0x123456789ABCULL);
 
     // Test 48-bit writes - big endian
     target.write(107, 0xABCDEF012345, 6, Endianness::Big);
     value = target.read(107, 6, Endianness::Big);
-    EXPECT_EQ(value, 0xABCDEF012345);
+    EXPECT_EQ(value, 0xABCDEF012345ULL);
 }
 
 TEST_F(MMapTargetTest, Write56Bit) {
@@ -432,12 +432,12 @@ TEST_F(MMapTargetTest, Write56Bit) {
     // Test 56-bit writes - little endian
     target.write(100, 0x123456789ABCDE, 7, Endianness::Little);
     uint64_t value = target.read(100, 7, Endianness::Little);
-    EXPECT_EQ(value, 0x123456789ABCDE);
+    EXPECT_EQ(value, 0x123456789ABCDEULL);
 
     // Test 56-bit writes - big endian
     target.write(108, 0xABCDEF01234567, 7, Endianness::Big);
     value = target.read(108, 7, Endianness::Big);
-    EXPECT_EQ(value, 0xABCDEF01234567);
+    EXPECT_EQ(value, 0xABCDEF01234567ULL);
 }
 
 TEST_F(MMapTargetTest, ArbitrarySizeEndianness) {
@@ -453,8 +453,8 @@ TEST_F(MMapTargetTest, ArbitrarySizeEndianness) {
     uint64_t le_value = target.read(100, 3, Endianness::Little);
     uint64_t be_value = target.read(100, 3, Endianness::Big);
 
-    EXPECT_EQ(le_value, 0x345678);  // Lower 3 bytes, little endian
-    EXPECT_EQ(be_value, 0x785634);  // Same bytes, big endian order
+    EXPECT_EQ(le_value, 0x345678U);  // Lower 3 bytes, little endian
+    EXPECT_EQ(be_value, 0x785634U);  // Same bytes, big endian order
 }
 
 TEST_F(MMapTargetTest, KnownDataValidation) {
@@ -464,26 +464,26 @@ TEST_F(MMapTargetTest, KnownDataValidation) {
 
     // Test known values from test.bin
     uint32_t value = target.read(0x00, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x7d8c0c39);
+    EXPECT_EQ(value, 0x7d8c0c39U);
 
     value = target.read(0x04, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x2c344772);
+    EXPECT_EQ(value, 0x2c344772U);
 
     value = target.read(0x08, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x2f0f10d8);
+    EXPECT_EQ(value, 0x2f0f10d8U);
 
     value = target.read(0x0c, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x650d776f);
+    EXPECT_EQ(value, 0x650d776fU);
 
     value = target.read(0x10, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x8ee570d6);
+    EXPECT_EQ(value, 0x8ee570d6U);
 
     value = target.read(0x14, 4, Endianness::Little);
-    EXPECT_EQ(value, 0xaed85103);
+    EXPECT_EQ(value, 0xaed85103U);
 
     value = target.read(0x18, 4, Endianness::Little);
-    EXPECT_EQ(value, 0xac6e4f8e);
+    EXPECT_EQ(value, 0xac6e4f8eU);
 
     value = target.read(0x1c, 4, Endianness::Little);
-    EXPECT_EQ(value, 0x31c22f34);
+    EXPECT_EQ(value, 0x31c22f34U);
 }
