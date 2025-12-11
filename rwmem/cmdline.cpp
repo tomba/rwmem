@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
@@ -6,16 +5,100 @@
 #include <cstring>
 #include <unistd.h>
 #include <charconv>
-#include <CLI/CLI.hpp>
 
 #include "rwmem.h"
 #include "helpers.h"
+#include "opts.h"
 
 using namespace std;
+using namespace rwmem;
 
 RwmemOpts rwmem_opts;
 
-static void parse_arg(string str, RwmemOptsArg* arg, const CLI::App& app)
+// Option IDs
+enum OptId {
+	OPT_HELP = 1,
+	OPT_DATA,
+	OPT_ADDR,
+	OPT_WRITE,
+	OPT_PRINT,
+	OPT_FORMAT,
+	OPT_REGS,
+	OPT_RAW,
+	OPT_IGNORE_BASE,
+	OPT_VERBOSE,
+};
+
+// Mmap options
+static const std::vector<OptDef> mmap_opts = {
+	{ OPT_HELP, 'h', "help", ArgReq::NONE },
+	{ OPT_DATA, 'd', "data", ArgReq::REQUIRED },
+	{ OPT_WRITE, 'w', "write", ArgReq::REQUIRED },
+	{ OPT_PRINT, 'p', "print", ArgReq::REQUIRED },
+	{ OPT_FORMAT, 'f', "format", ArgReq::REQUIRED },
+	{ OPT_REGS, 'r', "regs", ArgReq::REQUIRED },
+	{ OPT_RAW, 'R', "raw", ArgReq::NONE },
+	{ OPT_IGNORE_BASE, '\0', "ignore-base", ArgReq::NONE },
+	{ OPT_VERBOSE, 'v', "verbose", ArgReq::NONE },
+};
+
+// I2C options (includes address option)
+static const std::vector<OptDef> i2c_opts = {
+	{ OPT_HELP, 'h', "help", ArgReq::NONE },
+	{ OPT_ADDR, 'a', "addr", ArgReq::REQUIRED },
+	{ OPT_DATA, 'd', "data", ArgReq::REQUIRED },
+	{ OPT_WRITE, 'w', "write", ArgReq::REQUIRED },
+	{ OPT_PRINT, 'p', "print", ArgReq::REQUIRED },
+	{ OPT_FORMAT, 'f', "format", ArgReq::REQUIRED },
+	{ OPT_REGS, 'r', "regs", ArgReq::REQUIRED },
+	{ OPT_RAW, 'R', "raw", ArgReq::NONE },
+	{ OPT_IGNORE_BASE, '\0', "ignore-base", ArgReq::NONE },
+	{ OPT_VERBOSE, 'v', "verbose", ArgReq::NONE },
+};
+
+// List options (minimal set)
+static const std::vector<OptDef> list_opts = {
+	{ OPT_HELP, 'h', "help", ArgReq::NONE },
+	{ OPT_REGS, 'r', "regs", ArgReq::REQUIRED },
+	{ OPT_PRINT, 'p', "print", ArgReq::REQUIRED },
+	{ OPT_VERBOSE, 'v', "verbose", ArgReq::NONE },
+};
+
+static void print_help()
+{
+	fmt::print(
+		"usage: rwmem [options] <address>[:field][=value] ...\n"
+		"       rwmem mmap <file> [options] <address>[:field][=value] ...\n"
+		"       rwmem i2c <bus>:<addr> [options] <address>[:field][=value] ...\n"
+		"       rwmem list [options] [pattern] ...\n"
+		"\n"
+		"	address			address to access:\n"
+		"				<address>	single address\n"
+		"				<start-end>	range with end address\n"
+		"				<start+len>	range with length\n"
+		"\n"
+		"	field			bitfield (inclusive, start from 0):\n"
+		"				<bit>		single bit\n"
+		"				<high>:<low>	bitfield from high to low\n"
+		"\n"
+		"	value			value to be written\n"
+		"\n"
+		"	size			8-64 bits, multiple of 8\n"
+		"	endian			be, le, bes, les\n"
+		"\n"
+		"	-h, --help		show this help\n"
+		"	-d, --data <size>[endian]	data access size (mmap, i2c)\n"
+		"	-a, --addr <size>[endian]	address size (i2c only)\n"
+		"	-w, --write <mode>	write mode: w, rw or rwr (default) (mmap, i2c)\n"
+		"	-p, --print <mode>	print mode: q, r or rf (default)\n"
+		"	-f, --format <fmt>	number format: x (hex), b (bin) or d (dec)\n"
+		"	-r, --regs <file>	register description file\n"
+		"	-R, --raw		raw output mode (mmap, i2c)\n"
+		"	--ignore-base		ignore base from register file (mmap, i2c)\n"
+		"	-v, --verbose		verbose output\n");
+}
+
+static void parse_arg(string str, RwmemOptsArg* arg)
 {
 	size_t idx;
 
@@ -28,7 +111,7 @@ static void parse_arg(string str, RwmemOptsArg* arg, const CLI::App& app)
 		str.resize(idx);
 
 		if (arg->value.empty())
-			throw CLI::ValidationError("Empty value not allowed");
+			throw runtime_error("Empty value not allowed");
 	}
 
 	// extract field
@@ -40,7 +123,7 @@ static void parse_arg(string str, RwmemOptsArg* arg, const CLI::App& app)
 		str.resize(idx);
 
 		if (arg->field.empty())
-			throw CLI::ValidationError("Empty field not allowed");
+			throw runtime_error("Empty field not allowed");
 	}
 
 	// extract len
@@ -53,7 +136,7 @@ static void parse_arg(string str, RwmemOptsArg* arg, const CLI::App& app)
 		str.resize(idx);
 
 		if (arg->range.empty())
-			throw CLI::ValidationError("Empty range not allowed");
+			throw runtime_error("Empty range not allowed");
 	} else {
 		// extract end
 
@@ -65,14 +148,14 @@ static void parse_arg(string str, RwmemOptsArg* arg, const CLI::App& app)
 			str.resize(idx);
 
 			if (arg->range.empty())
-				throw CLI::ValidationError("Empty range not allowed");
+				throw runtime_error("Empty range not allowed");
 		}
 	}
 
 	arg->address = str;
 
 	if (arg->address.empty())
-		throw CLI::ValidationError("Empty address not allowed");
+		throw runtime_error("Empty address not allowed");
 }
 
 static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
@@ -84,11 +167,11 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 	auto [ptr, ec]{ std::from_chars(start, end, num) };
 
 	if (ec != std::errc()) {
-		throw CLI::ValidationError("Failed to parse size '" + std::string(s) + "'");
+		throw runtime_error("Failed to parse size '" + std::string(s) + "'");
 	}
 
 	if (num == 0 || num > 64 || (num % 8) != 0) {
-		throw CLI::ValidationError("Invalid size '" + std::to_string(num) + "' (must be 8-64 bits, multiple of 8)");
+		throw runtime_error("Invalid size '" + std::to_string(num) + "' (must be 8-64 bits, multiple of 8)");
 	}
 
 	string_view ending(ptr, end);
@@ -104,156 +187,170 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 	else if (ending == "les")
 		*e = Endianness::LittleSwapped;
 	else
-		throw CLI::ValidationError("Bad endianness '" + std::string(ending) + "'");
+		throw runtime_error("Bad endianness '" + std::string(ending) + "'");
 
 	*size = num;
 }
 
+// Pass 1: Normalize arguments for default mode
+static void normalize_args_for_default_mode(std::vector<std::string>& args)
+{
+	// Find first positional (skip program name and options)
+	size_t first_pos_idx = 0;
+	for (size_t i = 1; i < args.size(); i++) {
+		if (args[i][0] != '-') {
+			first_pos_idx = i;
+			break;
+		}
+	}
+
+	// Check if explicit subcommand
+	if (first_pos_idx > 0) {
+		const string& cmd = args[first_pos_idx];
+		if (cmd == "mmap" || cmd == "i2c" || cmd == "list") {
+			return; // Already explicit, nothing to do
+		}
+	}
+
+	// Need to insert default mode
+	// Insert "mmap" and "/dev/mem" at first positional position
+	// Or after program name if no positionals yet
+	size_t insert_pos = (first_pos_idx > 0) ? first_pos_idx : args.size();
+	args.insert(args.begin() + insert_pos, "/dev/mem");
+	args.insert(args.begin() + insert_pos, "mmap");
+}
+
 void parse_cmdline(const std::vector<std::string>& args)
 {
-	CLI::App app{ "rwmem - read/write memory tool\n\n"
-		      "USAGE:\n"
-		      "  rwmem <address>...                          # Shortcut for 'mmap /dev/mem'\n"
-		      "  rwmem mmap <file> [options] <address>...    # Access memory-mapped file\n"
-		      "  rwmem i2c <bus:addr> [options] <address>... # Access I2C device\n"
-		      "  rwmem list [options] [pattern]...           # List register database\n"
-		      "\n"
-		      "For detailed options: rwmem <subcommand> --help\n"
-		      "\n"
-		      "EXAMPLES:\n"
-		      "  rwmem 0x1000                    # Read from /dev/mem\n"
-		      "  rwmem mmap /dev/mem 0x1000      # Equivalent explicit form\n"
-		      "  rwmem i2c 1:0x50 0x10           # Read I2C device\n"
-		      "  rwmem list DISPC.*              # List DISPC registers" };
-
-	// Custom variables for CLI11 parsing
-	std::string data_size_str, addr_size_str, write_mode_str, print_mode_str, format_str;
-	std::string i2c_param;
-	std::string mmap_file;
-	std::vector<std::string> op_strs;
-
-	// Create subcommands
-	auto* mmap_cmd = app.add_subcommand("mmap", "Memory-mapped access mode");
-	auto* i2c_cmd = app.add_subcommand("i2c", "I2C device access mode");
-	auto* list_cmd = app.add_subcommand("list", "List registers from register database");
-
-	// Mmap subcommand setup
-	mmap_cmd->add_option("file", mmap_file, "File to open")->required();
-	mmap_cmd->add_option("-d,--data", data_size_str, "Data size and endianness (<size>[endian])");
-	mmap_cmd->add_option("-w,--write", write_mode_str, "Write mode: w, rw or rwr (default)");
-	mmap_cmd->add_option("-p,--print", print_mode_str, "Print mode: q, r or rf (default)");
-	mmap_cmd->add_option("-f,--format", format_str, "Number format: x (hex, default), b (bin), d (dec)");
-	mmap_cmd->add_option("-r,--regs", rwmem_opts.regfile, "Register description file");
-	mmap_cmd->add_flag("-R,--raw", rwmem_opts.raw_output, "Raw output mode");
-	mmap_cmd->add_flag("--ignore-base", rwmem_opts.ignore_base, "Ignore base from register desc file");
-	mmap_cmd->add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
-	mmap_cmd->add_option("operations", op_strs,
-			     "<address>[:field][=value]\n"
-			     "\n"
-			     "address to access:\n"
-			     "<address>	single address\n"
-			     "<address-end>	range with end address\n"
-			     "<address+len>	range with length\n"
-			     "\n"
-			     "bitfield (inclusive, start from 0):\n"
-			     "<bit>		single bit\n"
-			     "<high>:<low>	bitfield from high to low\n"
-			     "\n"
-			     "value to be written\n");
-
-	// I2C subcommand setup
-	i2c_cmd->add_option("bus_addr", i2c_param, "I2C bus and device address (<bus>:<addr>)")->required();
-	i2c_cmd->add_option("-a,--addr", addr_size_str, "Address size and endianness (<size>[endian])");
-	i2c_cmd->add_option("-d,--data", data_size_str, "Data size and endianness (<size>[endian])");
-	i2c_cmd->add_option("-w,--write", write_mode_str, "Write mode: w, rw or rwr (default)");
-	i2c_cmd->add_option("-p,--print", print_mode_str, "Print mode: q, r or rf (default)");
-	i2c_cmd->add_option("-f,--format", format_str, "Number format: x (hex, default), b (bin), d (dec)");
-	i2c_cmd->add_option("-r,--regs", rwmem_opts.regfile, "Register description file");
-	i2c_cmd->add_flag("-R,--raw", rwmem_opts.raw_output, "Raw output mode");
-	i2c_cmd->add_flag("--ignore-base", rwmem_opts.ignore_base, "Ignore base from register desc file");
-	i2c_cmd->add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
-	i2c_cmd->add_option("operations", op_strs,
-			    "<address>[:field][=value]\n"
-			    "\n"
-			    "address to access:\n"
-			    "<address>	single address\n"
-			    "<address-end>	range with end address\n"
-			    "<address+len>	range with length\n"
-			    "\n"
-			    "bitfield (inclusive, start from 0):\n"
-			    "<bit>		single bit\n"
-			    "<high>:<low>	bitfield from high to low\n"
-			    "\n"
-			    "value to be written\n");
-
-	// List subcommand setup
-	list_cmd->add_option("-r,--regs", rwmem_opts.regfile, "Register description file");
-	list_cmd->add_option("-p,--print", print_mode_str, "Print mode: r or rf (default)");
-	list_cmd->add_flag("-v,--verbose", rwmem_opts.verbose, "Verbose output");
-	list_cmd->add_option("patterns", rwmem_opts.list_patterns, "Register patterns to match (optional)");
-
-	// Require exactly one subcommand
-	app.require_subcommand(1);
-
-	// CLI11 wants the arguments in reverse order, without command name
-	std::vector<std::string> cli11_args;
-	std::reverse_copy(args.begin() + 1, args.end(), std::back_inserter(cli11_args));
-
-	// If no arguments provided, show help
-	if (cli11_args.empty()) {
-		std::cout << app.help() << std::endl;
+	// Show help if no arguments
+	if (args.size() == 1) {
+		print_help();
 		exit(0);
 	}
 
 	try {
-		// CLI11 mutates the args vector, so keep a copy of the original
-		std::vector<std::string> original_args = cli11_args;
-
-		try {
-			// First attempt: parse original arguments
-			app.parse(cli11_args);
-		} catch (const CLI::RequiredError& e) {
-			bool any_parsed = mmap_cmd->parsed() || i2c_cmd->parsed() || list_cmd->parsed();
-
-			if (any_parsed)
-				throw;
-
-			// Failed due to missing subcommand - try default mode
-			// Use original_args since args was modified by the first parse attempt
-			// Add /dev/mem and mmap in reverse order
-			original_args.push_back("/dev/mem");
-			original_args.push_back("mmap");
-
-			// Re-parse with default mode
-			app.parse(original_args);
+		// Check for --help before any processing
+		for (size_t i = 1; i < args.size(); i++) {
+			if (args[i] == "--help" || args[i] == "-h") {
+				print_help();
+				exit(0);
+			}
 		}
 
-		// Determine which mode we're in
-		if (mmap_cmd->parsed()) {
+		// Pass 1: Normalize arguments for default mode
+		std::vector<std::string> mutable_args(args);
+		normalize_args_for_default_mode(mutable_args);
+
+		// Pass 2: Full parsing
+		ArgParser parser(mutable_args);
+
+		// Parse subcommand (always present after normalization)
+		// Use minimal option set for initial parsing (just to skip options before subcommand)
+		auto cmd_arg = parser.get_next(mmap_opts);
+		if (!cmd_arg || cmd_arg->type != ArgType::POSITIONAL) {
+			throw runtime_error("Expected subcommand");
+		}
+
+		string subcommand = string(cmd_arg->positional);
+
+		// Variables for option parsing
+		string data_size_str, addr_size_str, write_mode_str, print_mode_str, format_str;
+		vector<string> op_strs;
+		bool help_requested = false;
+
+		// Parse subcommand argument and set mode
+		std::span<const OptDef> opts;
+
+		if (subcommand == "mmap") {
+			auto file_arg = parser.get_next(mmap_opts);
+			if (!file_arg || file_arg->type != ArgType::POSITIONAL) {
+				throw runtime_error("mmap requires file argument");
+			}
 			rwmem_opts.target_type = TargetType::MMap;
-			rwmem_opts.mmap_target = mmap_file;
-		} else if (i2c_cmd->parsed()) {
+			rwmem_opts.mmap_target = string(file_arg->positional);
+			opts = mmap_opts;
+		} else if (subcommand == "i2c") {
+			auto param_arg = parser.get_next(i2c_opts);
+			if (!param_arg || param_arg->type != ArgType::POSITIONAL) {
+				throw runtime_error("i2c requires bus:addr argument");
+			}
 			rwmem_opts.target_type = TargetType::I2C;
-			rwmem_opts.i2c_target = i2c_param;
+			rwmem_opts.i2c_target = string(param_arg->positional);
 
 			// Validate I2C parameter format
-			vector<string> strs = split(i2c_param, ':');
+			vector<string> strs = split(rwmem_opts.i2c_target, ':');
 			if (strs.size() != 2 || strs[0].empty() || strs[1].empty()) {
-				throw CLI::ValidationError("Invalid I2C parameter '" + i2c_param + "'. Expected format: <bus>:<addr>");
+				throw runtime_error("Invalid I2C parameter '" + rwmem_opts.i2c_target + "'. Expected format: <bus>:<addr>");
 			}
 
 			// Validate that both parts are numeric
 			uint64_t bus, addr;
 			if (parse_u64(strs[0], &bus) != 0) {
-				throw CLI::ValidationError("Invalid I2C bus '" + strs[0] + "'. Must be a number");
+				throw runtime_error("Invalid I2C bus '" + strs[0] + "'. Must be a number");
 			}
 			if (parse_u64(strs[1], &addr) != 0) {
-				throw CLI::ValidationError("Invalid I2C address '" + strs[1] + "'. Must be a number");
+				throw runtime_error("Invalid I2C address '" + strs[1] + "'. Must be a number");
 			}
-		} else if (list_cmd->parsed()) {
+			opts = i2c_opts;
+		} else if (subcommand == "list") {
 			rwmem_opts.show_list = true;
+			opts = list_opts;
 		} else {
-			throw CLI::RequiredError("No subcommand parsed");
+			throw runtime_error("Unknown subcommand: " + subcommand);
+		}
+
+		// Parse remaining arguments
+		while (parser.has_more()) {
+			auto arg = parser.get_next(opts);
+			if (!arg)
+				break;
+
+			if (arg->type == ArgType::OPTION) {
+				switch (arg->option_id) {
+				case OPT_HELP:
+					help_requested = true;
+					break;
+				case OPT_DATA:
+					data_size_str = string(arg->option_value);
+					break;
+				case OPT_ADDR:
+					addr_size_str = string(arg->option_value);
+					break;
+				case OPT_WRITE:
+					write_mode_str = string(arg->option_value);
+					break;
+				case OPT_PRINT:
+					print_mode_str = string(arg->option_value);
+					break;
+				case OPT_FORMAT:
+					format_str = string(arg->option_value);
+					break;
+				case OPT_REGS:
+					rwmem_opts.regfile = string(arg->option_value);
+					break;
+				case OPT_RAW:
+					rwmem_opts.raw_output = true;
+					break;
+				case OPT_IGNORE_BASE:
+					rwmem_opts.ignore_base = true;
+					break;
+				case OPT_VERBOSE:
+					rwmem_opts.verbose = true;
+					break;
+				}
+			} else if (arg->type == ArgType::POSITIONAL) {
+				if (rwmem_opts.show_list) {
+					rwmem_opts.list_patterns.push_back(string(arg->positional));
+				} else {
+					op_strs.push_back(string(arg->positional));
+				}
+			}
+		}
+
+		// Handle help request
+		if (help_requested) {
+			print_help();
+			exit(0);
 		}
 
 		// Post-processing for custom parsing
@@ -283,7 +380,7 @@ void parse_cmdline(const std::vector<std::string>& args)
 			else if (write_mode_str == "rwr")
 				rwmem_opts.write_mode = WriteMode::ReadWriteRead;
 			else
-				throw CLI::ValidationError("illegal write mode '" + write_mode_str + "'");
+				throw runtime_error("illegal write mode '" + write_mode_str + "'");
 		}
 
 		if (!print_mode_str.empty()) {
@@ -294,7 +391,7 @@ void parse_cmdline(const std::vector<std::string>& args)
 			else if (print_mode_str == "rf")
 				rwmem_opts.print_mode = PrintMode::RegFields;
 			else
-				throw CLI::ValidationError("illegal print mode '" + print_mode_str + "'");
+				throw runtime_error("illegal print mode '" + print_mode_str + "'");
 		}
 
 		// Handle format option
@@ -306,7 +403,7 @@ void parse_cmdline(const std::vector<std::string>& args)
 			else if (format_str == "b")
 				rwmem_opts.number_print_mode = NumberPrintMode::Bin;
 			else
-				throw CLI::ValidationError("Invalid format '" + format_str + "'. Valid formats: x (hex), d (dec), b (bin)");
+				throw runtime_error("Invalid format '" + format_str + "'. Valid formats: x (hex), d (dec), b (bin)");
 
 			// Validate format scope
 			if (rwmem_opts.print_mode == PrintMode::Quiet && !format_str.empty()) {
@@ -317,24 +414,22 @@ void parse_cmdline(const std::vector<std::string>& args)
 			}
 		}
 
+		// Parse operation arguments
 		if (!rwmem_opts.show_list) {
 			if (op_strs.empty())
-				throw CLI::RequiredError("No operations specified");
+				throw runtime_error("No operations specified");
 
 			rwmem_opts.parsed_args.clear();
 			rwmem_opts.parsed_args.reserve(op_strs.size());
 
 			for (const string& param : op_strs) {
 				RwmemOptsArg parsed_arg;
-				parse_arg(param, &parsed_arg, app);
+				parse_arg(param, &parsed_arg);
 				rwmem_opts.parsed_args.push_back(parsed_arg);
 			}
 		}
 
-	} catch (const CLI::CallForHelp& e) {
-		std::cout << app.help() << std::endl;
-		exit(0);
-	} catch (const CLI::ParseError& e) {
-		exit(app.exit(e));
+	} catch (const runtime_error& e) {
+		ERR("Error: {}\n", e.what());
 	}
 }

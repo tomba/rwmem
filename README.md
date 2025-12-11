@@ -34,7 +34,6 @@ For detailed command line usage, see [docs/cmdline.md](docs/cmdline.md).
 - meson
 - ninja
 - fmt
-- cli11
 - inih (optional)
 
 ## Build Instructions
