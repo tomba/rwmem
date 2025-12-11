@@ -1,13 +1,14 @@
 #include "mmaptarget.h"
 
 #include <stdexcept>
+#include <cstdio>
 #include <cstring>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <fmt/format.h>
+#include <format>
 
 using namespace std;
 
@@ -108,7 +109,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 	m_fd = open(m_filename.c_str(), oflag | O_SYNC);
 
 	if (m_fd == -1)
-		throw runtime_error(fmt::format("Failed to open file '{}': {}", m_filename, strerror(errno)));
+		throw runtime_error(std::format("Failed to open file '{}': {}", m_filename, strerror(errno)));
 
 	const off_t mmap_offset = offset & ~pagemask;
 	const size_t mmap_len = (offset + length - mmap_offset + pagesize - 1) & ~pagemask;
@@ -119,7 +120,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 	struct stat st;
 	int r = fstat(m_fd, &st);
 	if (r != 0)
-		throw runtime_error(fmt::format("Failed to get map file stat: {}", strerror(errno)));
+		throw runtime_error(std::format("Failed to get map file stat: {}", strerror(errno)));
 
 	if (S_ISREG(st.st_mode) && (size_t)st.st_size < offset + length)
 		throw runtime_error("Trying to access file past its end");
@@ -129,7 +130,7 @@ void MMapTarget::map(uint64_t offset, uint64_t length,
 			  MAP_SHARED, m_fd, mmap_offset);
 
 	if (m_map_base == MAP_FAILED)
-		throw runtime_error(fmt::format("failed to mmap: {}", strerror(errno)));
+		throw runtime_error(std::format("failed to mmap: {}", strerror(errno)));
 
 	m_offset = offset;
 	m_len = length;
@@ -141,7 +142,7 @@ void MMapTarget::unmap()
 {
 	if (m_map_base != MAP_FAILED) {
 		if (munmap(m_map_base, m_map_len) == -1)
-			fmt::print(stderr, "Warning: failed to munmap: {}\n", strerror(errno));
+			fputs(std::format("Warning: failed to munmap: {}\n", strerror(errno)).c_str(), stderr);
 
 		m_map_base = MAP_FAILED;
 	}
@@ -159,7 +160,7 @@ void MMapTarget::sync()
 
 	int ret = msync(m_map_base, m_map_len, MS_SYNC);
 	if (ret != 0)
-		throw runtime_error(fmt::format("failed to msync(): {}", strerror(errno)));
+		throw runtime_error(std::format("failed to msync(): {}", strerror(errno)));
 }
 
 uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) const
@@ -189,7 +190,7 @@ uint64_t MMapTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) 
 	case 7:
 		return read_bytes(base_addr, nbytes, endianness);
 	default:
-		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
+		throw runtime_error(std::format("Illegal data regsize '{}'", nbytes));
 	}
 }
 
@@ -228,14 +229,14 @@ void MMapTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness
 		write_bytes(base_addr, value, nbytes, endianness);
 		break;
 	default:
-		throw runtime_error(fmt::format("Illegal data regsize '{}'", nbytes));
+		throw runtime_error(std::format("Illegal data regsize '{}'", nbytes));
 	}
 }
 
 void MMapTarget::validate_access(uint64_t addr, uint8_t nbytes) const
 {
 	if (addr < m_offset)
-		throw runtime_error(fmt::format("address {:#x} below map range {:#x}-{:#x}",
+		throw runtime_error(std::format("address {:#x} below map range {:#x}-{:#x}",
 						addr, m_offset, m_offset + m_len));
 
 	if (addr + nbytes > m_offset + m_len)

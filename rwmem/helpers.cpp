@@ -15,16 +15,16 @@
 
 using namespace std;
 
-void err_vprint(fmt::string_view fmt, fmt::format_args args)
+void err_vprint(std::string_view fmt, std::format_args args)
 {
-	fmt::vprint(stderr, fmt, args);
+	fputs(std::vformat(fmt, args).c_str(), stderr);
 	fputc('\n', stderr);
 }
 
-void errno_vprint(int eno, fmt::string_view fmt, fmt::format_args args)
+void errno_vprint(int eno, std::string_view fmt, std::format_args args)
 {
-	fmt::vprint(stderr, fmt, args);
-	fmt::print(": {}\n", strerror(eno));
+	fputs(std::vformat(fmt, args).c_str(), stderr);
+	fputs(std::format(": {}\n", strerror(eno)).c_str(), stderr);
 }
 
 void split(const string& s, char delim, vector<string>& elems)

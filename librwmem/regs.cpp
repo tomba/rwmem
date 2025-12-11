@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <fmt/format.h>
+#include <format>
 
 #include "regs.h"
 
@@ -76,14 +76,14 @@ RegisterFile::RegisterFile(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
 	if (fd < 0)
-		throw runtime_error(fmt::format("Open regfile '{}' failed: {}", filename, strerror(errno)));
+		throw runtime_error(std::format("Open regfile '{}' failed: {}", filename, strerror(errno)));
 
 	off_t len = lseek(fd, (size_t)0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
 	const void* mmap_data = mmap(nullptr, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (mmap_data == MAP_FAILED)
-		throw runtime_error(fmt::format("mmap regfile failed: {}", strerror(errno)));
+		throw runtime_error(std::format("mmap regfile failed: {}", strerror(errno)));
 
 	m_rfd = static_cast<const RegisterFileData*>(mmap_data);
 	m_size = len;

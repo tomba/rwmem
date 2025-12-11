@@ -23,8 +23,6 @@ endif
 
 add_project_arguments(cpp_arguments, language : 'cpp')
 
-libfmt_dep = dependency('fmt', fallback : ['fmt', 'fmt_dep'])
-
 subdir('librwmem')
 subdir('rwmem')
 subdir('tests')

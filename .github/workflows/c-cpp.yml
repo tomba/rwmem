@@ -18,7 +18,7 @@ jobs:
       run: sudo apt update -y
 
     - name: install deps
-      run: sudo apt install -y meson ninja-build libfmt-dev libgtest-dev
+      run: sudo apt install -y meson ninja-build libgtest-dev
 
     - name: configure
       run: meson setup -Dwerror=true -Db_lto=true build

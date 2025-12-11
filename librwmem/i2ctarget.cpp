@@ -1,6 +1,6 @@
 #include "i2ctarget.h"
 
-#include <fmt/format.h>
+#include <format>
 #include <stdexcept>
 #include <cstring>
 #include <sys/types.h>
@@ -32,16 +32,16 @@ void I2CTarget::map(uint64_t offset, uint64_t length,
 {
 	unmap();
 
-	string name = fmt::format("/dev/i2c-{}", m_adapter_nr);
+	string name = std::format("/dev/i2c-{}", m_adapter_nr);
 
 	m_fd = open(name.c_str(), O_RDWR);
 	if (m_fd < 0)
-		throw runtime_error(fmt::format("Failed to open i2c device: {}", strerror(errno)));
+		throw runtime_error(std::format("Failed to open i2c device: {}", strerror(errno)));
 
 	unsigned long i2c_funcs;
 	int r = ioctl(m_fd, I2C_FUNCS, &i2c_funcs);
 	if (r < 0)
-		throw runtime_error(fmt::format("failed to get i2c functions: {}", strerror(errno)));
+		throw runtime_error(std::format("failed to get i2c functions: {}", strerror(errno)));
 
 	if (!(i2c_funcs & I2C_FUNC_I2C))
 		throw runtime_error("no i2c functionality");
@@ -65,7 +65,7 @@ void I2CTarget::unmap()
 static uint64_t device_to_host(uint8_t buf[], unsigned numbytes, Endianness endianness)
 {
 	if (numbytes == 0 || numbytes > 8)
-		throw invalid_argument(fmt::format("Invalid number of bytes: {}", numbytes));
+		throw invalid_argument(std::format("Invalid number of bytes: {}", numbytes));
 
 	if (numbytes == 1)
 		return buf[0];
@@ -105,7 +105,7 @@ static uint64_t device_to_host(uint8_t buf[], unsigned numbytes, Endianness endi
 static void host_to_device(uint64_t value, unsigned numbytes, uint8_t buf[], Endianness endianness)
 {
 	if (numbytes == 0 || numbytes > 8)
-		throw invalid_argument(fmt::format("Invalid number of bytes: {}", numbytes));
+		throw invalid_argument(std::format("Invalid number of bytes: {}", numbytes));
 
 	if (numbytes == 1) {
 		buf[0] = value & 0xff;
@@ -180,7 +180,7 @@ uint64_t I2CTarget::read(uint64_t addr, uint8_t nbytes, Endianness endianness) c
 
 	int r = ioctl(m_fd, I2C_RDWR, &data);
 	if (r < 0)
-		throw runtime_error(fmt::format("i2c transfer failed: {}", strerror(errno)));
+		throw runtime_error(std::format("i2c transfer failed: {}", strerror(errno)));
 
 	return device_to_host(data_buf, nbytes, endianness);
 }
@@ -212,5 +212,5 @@ void I2CTarget::write(uint64_t addr, uint64_t value, uint8_t nbytes, Endianness 
 
 	int r = ioctl(m_fd, I2C_RDWR, &data);
 	if (r < 0)
-		throw runtime_error(fmt::format("i2c transfer failed: {}", strerror(errno)));
+		throw runtime_error(std::format("i2c transfer failed: {}", strerror(errno)));
 }

@@ -7,7 +7,7 @@ librwmem_sources = files([
 
 public_includes = include_directories('.')
 
-librwmem_deps = [ libfmt_dep ]
+librwmem_deps = []
 
 librwmem = static_library('rwmem',
                           librwmem_sources,

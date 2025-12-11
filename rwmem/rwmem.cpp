@@ -93,21 +93,21 @@ static vector<RegMatch> match_reg(const RegisterFileData* rfd, const string& pat
 
 static void print_regfile_all(const RegisterFileData* rfd)
 {
-	fmt::print("{}: total {}/{}/{}\n",
-		   rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
+	print("{}: total {}/{}/{}\n",
+	      rfd->name(), rfd->num_blocks(), rfd->num_regs(), rfd->num_fields());
 
 	for (unsigned bidx = 0; bidx < rfd->num_blocks(); ++bidx) {
 		const RegisterBlockData* rbd = rfd->block_at(bidx);
 
-		fmt::print("  {}: {:#x} {:#x}, regs {}, endianness: {}/{}\n",
-			   rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
-			   (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
+		print("  {}: {:#x} {:#x}, regs {}, endianness: {}/{}\n",
+		      rbd->name(rfd), rbd->offset(), rbd->size(), rbd->num_regs(),
+		      (unsigned)rbd->addr_endianness(), (unsigned)rbd->data_endianness());
 
 		for (unsigned ridx = 0; ridx < rbd->num_regs(); ++ridx) {
 			const RegisterData* rd = rbd->register_at(rfd, ridx);
 
-			fmt::print("    {}: {:#x}, fields {}\n",
-				   rd->name(rfd), rd->offset(), rd->num_fields());
+			print("    {}: {:#x}, fields {}\n",
+			      rd->name(rfd), rd->offset(), rd->num_fields());
 
 			if (rwmem_opts.print_mode != PrintMode::RegFields)
 				continue;
@@ -115,8 +115,8 @@ static void print_regfile_all(const RegisterFileData* rfd)
 			for (unsigned fidx = 0; fidx < rd->num_fields(); ++fidx) {
 				const FieldData* fd = rd->field_at(rfd, fidx);
 
-				fmt::print("      {}: {}:{}\n",
-					   fd->name(rfd), fd->high(), fd->low());
+				print("      {}: {}:{}\n",
+				      fd->name(rfd), fd->high(), fd->low());
 			}
 		}
 	}
@@ -203,7 +203,7 @@ static void readwriteprint(const RwmemOp& op,
 			   const RwmemFormatting& formatting)
 {
 	if (rd) {
-		string name = fmt::format("{}.{}", rbd->name(rfd), rd->name(rfd));
+		string name = std::format("{}.{}", rbd->name(rfd), rd->name(rfd));
 		rwmem_printq("{:<{}} ", name.c_str(), formatting.name_chars);
 	}
 
@@ -643,11 +643,11 @@ static void print_reg_matches(const RegisterFileData* rfd, const vector<RegMatch
 {
 	for (const RegMatch& m : matches) {
 		if (m.rd && m.fd)
-			fmt::print("{}.{}:{}\n", m.rbd->name(rfd), m.rd->name(rfd), m.fd->name(rfd));
+			print("{}.{}:{}\n", m.rbd->name(rfd), m.rd->name(rfd), m.fd->name(rfd));
 		else if (m.rd)
-			fmt::print("{}.{}\n", m.rbd->name(rfd), m.rd->name(rfd));
+			print("{}.{}\n", m.rbd->name(rfd), m.rd->name(rfd));
 		else
-			fmt::print("{}\n", m.rbd->name(rfd));
+			print("{}\n", m.rbd->name(rfd));
 	}
 }
 
