@@ -740,7 +740,7 @@ int main(int argc, char** argv)
 	}
 
 	default:
-		FAIL("bad target type");
+		abort();
 	}
 
 	for (const RwmemOp& op : ops)

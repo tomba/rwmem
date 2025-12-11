@@ -54,13 +54,6 @@ void ERR_ON_ERRNO(bool condition, std::format_string<Args...> format_str, Args&&
 	}
 }
 
-#define FAIL(format_str, ...)                                                                                    \
-	do {                                                                                                     \
-		std::fputs(std::format("{}:{}: {}\n", __FILE__, __LINE__, __PRETTY_FUNCTION__).c_str(), stderr); \
-		ERR(format_str, ##__VA_ARGS__);                                                                  \
-		abort();                                                                                         \
-	} while (0)
-
 #define GENMASK(h, l) (((~0ULL) << (l)) & (~0ULL >> (64 - 1 - (h))))
 
 void split(const std::string& s, char delim, std::vector<std::string>& elems);
