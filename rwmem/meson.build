@@ -8,7 +8,7 @@ rwmem_sources = files([
     'rwmem.cpp',
 ])
 
-rwmem_deps = [ librwmem_dep, libfmt_dep ]
+rwmem_deps = [ librwmem_dep ]
 
 rwmem_args = [ ]
 

@@ -2,59 +2,72 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <vector>
-#include <fmt/format.h>
+#include <format>
 
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-void err_vprint(fmt::string_view fmt, fmt::format_args args);
+void err_vprint(std::string_view fmt, std::format_args args);
 
-void errno_vprint(int eno, fmt::string_view fmt, fmt::format_args args);
+void errno_vprint(int eno, std::string_view fmt, std::format_args args);
 
 template<typename... Args>
-void ERR(fmt::format_string<Args...> format_str, Args&&... args)
+void print(std::format_string<Args...> format_str, Args&&... args)
 {
-	const auto& vargs = fmt::make_format_args(args...);
-	err_vprint(format_str, vargs);
+	std::fputs(std::format(format_str, std::forward<Args>(args)...).c_str(), stdout);
+}
+
+template<typename... Args>
+void eprint(std::format_string<Args...> format_str, Args&&... args)
+{
+	std::fputs(std::format(format_str, std::forward<Args>(args)...).c_str(), stderr);
+}
+
+template<typename... Args>
+void ERR(std::format_string<Args...> format_str, Args&&... args)
+{
+	const auto& vargs = std::make_format_args(args...);
+	err_vprint(format_str.get(), vargs);
 	exit(1);
 }
 
 template<typename... Args>
-void ERR_ON(bool condition, fmt::format_string<Args...> format_str, Args&&... args)
+void ERR_ON(bool condition, std::format_string<Args...> format_str, Args&&... args)
 {
 	if (unlikely(condition)) {
-		const auto& vargs = fmt::make_format_args(args...);
-		err_vprint(format_str, vargs);
+		const auto& vargs = std::make_format_args(args...);
+		err_vprint(format_str.get(), vargs);
 		exit(1);
 	}
 }
 
 template<typename... Args>
-void ERR_ERRNO(fmt::format_string<Args...> format_str, Args&&... args)
+void ERR_ERRNO(std::format_string<Args...> format_str, Args&&... args)
 {
 	int eno = errno;
-	const auto& vargs = fmt::make_format_args(args...);
-	errno_vprint(eno, format_str, vargs);
+	const auto& vargs = std::make_format_args(args...);
+	errno_vprint(eno, format_str.get(), vargs);
 	exit(1);
 }
 
 template<typename... Args>
-void ERR_ON_ERRNO(bool condition, fmt::format_string<Args...> format_str, Args&&... args)
+void ERR_ON_ERRNO(bool condition, std::format_string<Args...> format_str, Args&&... args)
 {
 	if (unlikely(condition)) {
 		int eno = errno;
-		const auto& vargs = fmt::make_format_args(args...);
-		errno_vprint(eno, format_str, vargs);
+		const auto& vargs = std::make_format_args(args...);
+		errno_vprint(eno, format_str.get(), vargs);
 		exit(1);
 	}
 }
 
-#define FAIL(format_str, ...)                                                               \
-	do {                                                                                \
-		fmt::print(stderr, "{}:{}: {}\n", __FILE__, __LINE__, __PRETTY_FUNCTION__); \
-		ERR(format_str, ##__VA_ARGS__);                                             \
-		abort();                                                                    \
+#define FAIL(format_str, ...)                                                                                    \
+	do {                                                                                                     \
+		std::fputs(std::format("{}:{}: {}\n", __FILE__, __LINE__, __PRETTY_FUNCTION__).c_str(), stderr); \
+		ERR(format_str, ##__VA_ARGS__);                                                                  \
+		abort();                                                                                         \
 	} while (0)
 
 #define FAIL_IF(condition, format_str, ...)              \

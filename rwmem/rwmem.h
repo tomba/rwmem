@@ -4,8 +4,6 @@
 #include <vector>
 #include <cstdint>
 
-#include <fmt/format.h>
-
 #include "regfiledata.h"
 #include "inireader.h"
 
@@ -111,14 +109,14 @@ void load_opts_from_ini_pre();
 void detect_platform();
 #endif
 
-#define rwmem_vprint(format, ...)                                  \
-	do {                                                       \
-		if (rwmem_opts.verbose)                            \
-			fmt::print(stderr, format, ##__VA_ARGS__); \
+#define rwmem_vprint(fmt_, ...)                                  \
+	do {                                                     \
+		if (rwmem_opts.verbose)                          \
+			eprint(fmt_ __VA_OPT__(, ) __VA_ARGS__); \
 	} while (0)
 
-#define rwmem_printq(format, ...)                              \
-	do {                                                   \
-		if (rwmem_opts.print_mode != PrintMode::Quiet) \
-			fmt::print(format, ##__VA_ARGS__);     \
+#define rwmem_printq(fmt_, ...)                                 \
+	do {                                                    \
+		if (rwmem_opts.print_mode != PrintMode::Quiet)  \
+			print(fmt_ __VA_OPT__(, ) __VA_ARGS__); \
 	} while (0)

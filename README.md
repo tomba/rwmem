@@ -33,7 +33,6 @@ For detailed command line usage, see [docs/cmdline.md](docs/cmdline.md).
 
 - meson
 - ninja
-- fmt
 - inih (optional)
 
 ## Build Instructions
@@ -76,7 +75,7 @@ endian = 'little'
 You can build a static rwmem executable e.g. with:
 
 ```
-meson setup -Dfmt:cpp_std=c++20 -Dbuildtype=minsize -Db_lto=true -Dwrap_mode=forcefallback -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
+meson setup -Dbuildtype=minsize -Db_lto=true -Dwrap_mode=forcefallback -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
 ninja -C build
 ```
 
