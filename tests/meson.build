@@ -21,8 +21,16 @@ test_mmaptarget = executable('test_mmaptarget',
     cpp_args : ['-DTEST_DATA_DIR="' + meson.current_source_dir() + '"'],
 )
 
+test_opts = executable('test_opts',
+    'test_opts.cpp',
+    '../rwmem/opts.cpp',
+    include_directories : include_directories('..'),
+    dependencies : [gtest_dep],
+)
+
 test('regfiledata', test_regfiledata)
 test('mmaptarget', test_mmaptarget)
+test('opts', test_opts)
 
 # Python tests
 python3 = find_program('python3')

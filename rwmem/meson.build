@@ -5,6 +5,7 @@ cli11_dep = dependency('CLI11', required : true)
 rwmem_sources = files([
     'cmdline.cpp',
     'helpers.cpp',
+    'opts.cpp',
     'rwmem.cpp',
 ])
 
