@@ -44,15 +44,6 @@ void ERR_ON(bool condition, std::format_string<Args...> format_str, Args&&... ar
 }
 
 template<typename... Args>
-void ERR_ERRNO(std::format_string<Args...> format_str, Args&&... args)
-{
-	int eno = errno;
-	const auto& vargs = std::make_format_args(args...);
-	errno_vprint(eno, format_str.get(), vargs);
-	exit(1);
-}
-
-template<typename... Args>
 void ERR_ON_ERRNO(bool condition, std::format_string<Args...> format_str, Args&&... args)
 {
 	if (unlikely(condition)) {
@@ -68,12 +59,6 @@ void ERR_ON_ERRNO(bool condition, std::format_string<Args...> format_str, Args&&
 		std::fputs(std::format("{}:{}: {}\n", __FILE__, __LINE__, __PRETTY_FUNCTION__).c_str(), stderr); \
 		ERR(format_str, ##__VA_ARGS__);                                                                  \
 		abort();                                                                                         \
-	} while (0)
-
-#define FAIL_IF(condition, format_str, ...)              \
-	do {                                             \
-		if (unlikely(condition))                 \
-			FAIL(format_str, ##__VA_ARGS__); \
 	} while (0)
 
 #define GENMASK(h, l) (((~0ULL) << (l)) & (~0ULL >> (64 - 1 - (h))))
