@@ -1,5 +1,5 @@
 
-inih_dep = dependency('inih', required : false)
+inih_dep = dependency('inih', required : get_option('inih'))
 
 rwmem_sources = files([
     'cmdline.cpp',

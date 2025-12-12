@@ -1,0 +1,2 @@
+option('inih', type : 'feature', value : 'auto',
+       description : 'Enable inih INI file parser support')
