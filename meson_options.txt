@@ -1,2 +1,4 @@
 option('inih', type : 'feature', value : 'auto',
        description : 'Enable inih INI file parser support')
+option('tests', type : 'boolean', value : true,
+       description : 'Enable building and running tests')

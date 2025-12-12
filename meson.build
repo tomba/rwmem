@@ -25,4 +25,7 @@ add_project_arguments(cpp_arguments, language : 'cpp')
 
 subdir('librwmem')
 subdir('rwmem')
-subdir('tests')
+
+if get_option('tests')
+    subdir('tests')
+endif
