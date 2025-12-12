@@ -21,12 +21,6 @@ void err_vprint(std::string_view fmt, std::format_args args)
 	fputc('\n', stderr);
 }
 
-void errno_vprint(int eno, std::string_view fmt, std::format_args args)
-{
-	fputs(std::vformat(fmt, args).c_str(), stderr);
-	fputs(std::format(": {}\n", strerror(eno)).c_str(), stderr);
-}
-
 void split(const string& s, char delim, vector<string>& elems)
 {
 	stringstream ss(s);

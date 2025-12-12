@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <unistd.h>
 
 #include "rwmem.h"
@@ -603,7 +604,7 @@ static void do_op_symbolic(const RwmemOp& op, const RegisterFile* regfile, ITarg
 				if (rwmem_opts.raw_output) {
 					uint64_t v = 0;
 					ssize_t l = write(STDOUT_FILENO, &v, step_size);
-					ERR_ON_ERRNO(l == -1, "write failed");
+					ERR_ON(l == -1, "write failed: {}", strerror(errno));
 				}
 
 				op_offset += step_size;
