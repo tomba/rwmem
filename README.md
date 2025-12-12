@@ -75,7 +75,7 @@ endian = 'little'
 You can build a static rwmem executable e.g. with:
 
 ```
-meson setup -Dbuildtype=minsize -Db_lto=true -Dwrap_mode=forcefallback -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
+meson setup -Dinih=disabled -Dtests=false -Dbuildtype=minsize -Db_lto=true -Ddefault_library=static -Dprefer_static=true -Dc_link_args="-s -static" -Dcpp_link_args="-s -static" build
 ninja -C build
 ```
 
