@@ -27,7 +27,121 @@ rwmem features:
 * address ranges
 * register description database
 
-For detailed command line usage, see [docs/cmdline.md](docs/cmdline.md).
+## Command Line Reference
+
+### Command Structure
+
+rwmem supports three main modes of operation:
+
+```bash
+# Default mode (simplified mmap /dev/mem)
+rwmem [OPTIONS] <address>[:field][=value] ...
+
+# Explicit mmap mode
+rwmem mmap <file> [OPTIONS] <address>[:field][=value] ...
+
+# I2C mode
+rwmem i2c <bus:addr> [OPTIONS] <address>[:field][=value] ...
+
+# List mode
+rwmem list [OPTIONS] [pattern] ...
+```
+
+### Address Syntax
+
+All modes support the same address syntax:
+
+- `0x1000` - Single address
+- `0x1000-0x1040` - Address range (from start to end)
+- `0x1000+0x40` - Address range (start + length)
+- `0x1000:7` - Single bit access (bit 7)
+- `0x1000:7:4` - Bitfield access (bits 7 down to 4)
+- `0x1000:7:4=0xf` - Bitfield write (set bits 7-4 to 0xf)
+- `DISPC.SYSCONFIG:MIDLEMODE=0x1` - Register database access
+
+### Common Options
+
+Most options are shared across default, mmap, and i2c modes:
+
+- `-d, --data <size>[endian]` - Data size and endianness
+- `-w, --write <mode>` - Write mode: w, rw, rwr (default)
+- `-p, --print <mode>` - Print mode: q (quiet), r (register), rf (register+fields, default)
+- `-f, --format <fmt>` - Number format: x (hex, default), b (binary), d (decimal)
+- `-r, --regs <file>` - Register description file
+- `-R, --raw` - Raw output mode
+- `--ignore-base` - Ignore base from register file
+- `-v, --verbose` - Verbose output
+
+**Size Formats:**
+- Data sizes: `8`, `16`, `24`, `32`, `40`, `48`, `56`, `64` bits (any multiple of 8)
+- Address sizes (I2C only): `8`, `16`, `32`, `64` bits
+- Endianness: `be` (big), `le` (little), `bes` (big swapped), `les` (little swapped)
+
+### Default Mode
+
+Shorthand for mmap mode using `/dev/mem`:
+
+```bash
+rwmem 0x1000                    # Read 32-bit native endian value at 0x1000
+rwmem -d 16 0x1000              # Read 16-bit value (native endian)
+rwmem -d 32be 0x1000            # Read 32-bit big-endian value
+rwmem 0x1000=0x12345678         # Write value
+rwmem 0x1000:7:4=0xf            # Set bitfield
+```
+
+This is equivalent to `rwmem mmap /dev/mem [options] <address>`.
+
+### mmap Mode
+
+For memory-mapped access to any file:
+
+```bash
+rwmem mmap /dev/mem 0x1000           # Equivalent to default mode
+rwmem mmap /sys/class/uio/uio0/maps/map0/addr -d 32 0x0
+rwmem mmap my_dump.bin -d 16le 0x100
+```
+
+**Additional parameter:**
+- `<file>` - File to open for memory mapping (required)
+
+### I2C Mode
+
+For communicating with I2C devices:
+
+```bash
+rwmem i2c 1:0x50 0x10                    # Read from I2C bus 1, device 0x50, register 0x10
+rwmem i2c 1:0x50 -a 16 -d 8 0x1000      # 16-bit address, 8-bit data
+rwmem i2c 2:0x48 -a 8le -d 16be 0x80=0x1234  # Little-endian address, big-endian data
+```
+
+**Additional parameter:**
+- `<bus:addr>` - I2C bus number and device address (required)
+
+**Additional option:**
+- `-a, --addr <size>[endian]` - Address size and endianness (I2C only)
+
+### List Mode
+
+For listing registers from a register database:
+
+```bash
+rwmem list                               # List all registers
+rwmem list -r my.regdb                   # Use specific register file
+rwmem list DISPC.*                       # List DISPC registers
+rwmem list DISPC.SYSCONFIG               # List specific register
+rwmem list DISPC.SYSCONFIG:MIDLEMODE     # List specific field
+```
+
+**Options:**
+- `-r, --regs <file>` - Register description file
+- `-p, --print <mode>` - Print mode: r (register), rf (register+fields, default)
+- `-v, --verbose` - Verbose output
+
+**Pattern Format:**
+- `BLOCK.*` - All registers in block
+- `BLOCK.REGISTER` - Specific register
+- `BLOCK.REGISTER:FIELD` - Specific field
+- Supports shell wildcards (`*`, `?`)
 
 ## Build Dependencies
 
@@ -171,32 +285,56 @@ Show SYSCONFIG register, as defined in dispc.regs, in file dispc.bin
 
         $ rwmem mmap dispc.bin -r dispc.regs --ignore-base DISPC.SYSCONFIG
 
-## Write mode
+## Write Modes
 
-The write mode parameter affects how rwmem handles writing.
+The write mode parameter (`-w, --write`) affects how rwmem handles writing:
 
-Write mode 'w' means write-only. In this mode rwmem never reads from the
-address. This means that if you modify only certain bits with the bitfield
-operator, the rest of the bits will be set to 0.
+- **`w` (write only)** - Writes the register directly without reading first
+  - CAUTION: For bitfield operations like `0x1000:5=1`, this sets bit 5 to 1 but all other bits to 0
 
-Write mode 'rw' means read-write. In this mode rwmem reads from the address,
-modifies the value, and writes it back.
+- **`rw` (read-write)** - Reads current value, modifies specified bits/fields, then writes
+  - Safe for bitfield operations: `0x1000:5=1` preserves other bits
+  - Shows: original value and intended write value
+  - Does NOT read back after writing (assumes write succeeded)
 
-Write mode 'rwr' means read-write-read. This is the same as 'rw' except rwmem
-reads from the address again after writing for the purpose of showing the new
-value. This is the default mode.
+- **`rwr` (read-write-read, default)** - Like `rw` but also reads back after writing
+  - Safe for bitfield operations with verification
+  - Shows: original value, intended write value, and actual final value
 
-## Print mode
+**Examples:**
+```bash
+# Safe bitfield modification (preserves other bits)
+rwmem 0x1000:7:4=0xa                     # Uses rwr (default)
+rwmem -w rw 0x1000:7:4=0xa               # Uses rw (no verification)
 
-The print mode parameter affects what rwmem will output.
+# Dangerous: sets bits 7:4 to 0xa, all other bits to 0!
+rwmem -w w 0x1000:7:4=0xa                # Uses w (destructive)
 
-'q'  - quiet
-'r'  - print only register value, not individual fields
-'rf' - print register and fields (when available).
+# Safe: writing complete register value
+rwmem -w w 0x1000=0x12345678             # Uses w (appropriate here)
+```
 
-## Raw output mode
+## Print Modes
 
-In raw output mode rwmem will copy the values it reads to stdout without any
+The print mode parameter (`-p, --print`) affects what rwmem will output:
+
+- `q` - Quiet
+- `r` - Register (show register name and value)
+- `rf` - Register+fields (show register, value, and field breakdown) - default
+
+## Number Formats
+
+The format parameter (`-f, --format`) controls how numbers are displayed:
+
+- `x` - Hexadecimal (default, shows as 0x1234)
+- `d` - Decimal (shows as 1234)
+- `b` - Binary (shows as 0b10110010)
+
+Note: Format only applies to register display modes (`-p r` and `-p rf`). It is ignored in quiet (`-p q`) and raw (`-R`) modes.
+
+## Raw Output Mode
+
+In raw output mode (`-R, --raw`) rwmem will copy the values it reads to stdout without any
 formatting. This can be used to get binary dumps of memory areas.
 
 ## Size and Endianness
