@@ -24,17 +24,21 @@ classifiers = [
   'Operating System :: POSIX :: Linux',
 ]
 
+[project.scripts]
+rwmem-tui = 'rwmem.tui.cli:main'
+
 [project.urls]
 Homepage = 'https://github.com/tomba/rwmem'
 Repository = 'https://github.com/tomba/rwmem.git'
 'Bug Tracker' = 'https://github.com/tomba/rwmem/issues'
 
 [project.optional-dependencies]
+tui = ['textual>=1.0.0']
 dev = ["ruff", "pytest", "tabulate", "pylint"]
-all = ["rwmem[dev]"]
+all = ["rwmem[tui]", "rwmem[dev]"]
 
 [tool.setuptools]
-packages = ["rwmem"]
+packages = ["rwmem", "rwmem.tui"]
 package-dir = {"" = "py"}
 
 [tool.ruff]
