@@ -29,6 +29,10 @@ Homepage = 'https://github.com/tomba/rwmem'
 Repository = 'https://github.com/tomba/rwmem.git'
 'Bug Tracker' = 'https://github.com/tomba/rwmem/issues'
 
+[project.optional-dependencies]
+dev = ["ruff", "pytest", "tabulate", "pylint"]
+all = ["rwmem[dev]"]
+
 [tool.setuptools]
 packages = ["rwmem"]
 package-dir = {"" = "py"}

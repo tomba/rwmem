@@ -16,15 +16,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: "pip"
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint tabulate
+        pip install .[all]
 
-    - name: Test with unittest
+    - name: Test with pytest
       run: |
-        PYTHONPATH=py/ python3 -m unittest discover -v py/tests
+        pytest py/tests/
+
+    - name: Analysing the code with Pyright
+      uses: jakebailey/pyright-action@v2
 
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
+
+    - name: Analysing the code with Ruff
+      run: ruff check --output-format=github .
+
+    - name: Check the format with Ruff format
+      run: ruff format --check --output-format=github .
