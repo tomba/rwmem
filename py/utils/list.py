@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import argparse
 import rwmem as rw
 import rwmem.helpers as rwh
@@ -39,12 +41,7 @@ print()
 
 table = []
 
-rf: rw.RegisterFile
-
 for name, rb in rf.items():
-    name: str
-    rb: rw.RegisterBlock
-
     # Block row
     block_desc = rb.description if args.descriptions and rb.description else ''
 
@@ -56,7 +53,6 @@ for name, rb in rf.items():
                 hex(rb.size),
                 f'{rb.data_size * 8}/{format_endianness_brief(rb.data_endianness)}',
                 f'{rb.addr_size * 8}/{format_endianness_brief(rb.addr_endianness)}',
-                '',
                 '',
                 block_desc,
             )
@@ -70,7 +66,6 @@ for name, rb in rf.items():
                 f'{rb.data_size * 8}/{format_endianness_brief(rb.data_endianness)}',
                 f'{rb.addr_size * 8}/{format_endianness_brief(rb.addr_endianness)}',
                 '',
-                '',
             )
         )
 
@@ -82,19 +77,12 @@ for name, rb in rf.items():
 
             # Build size/endianness info - show if different from block defaults
             reg_data_info = ''
-            reg_addr_info = ''
 
             if (
                 r.effective_data_size != rb.data_size
                 or r.effective_data_endianness != rb.data_endianness
             ):
                 reg_data_info = f'{r.effective_data_size * 8}/{format_endianness_brief(r.effective_data_endianness)}'
-
-            if (
-                r.effective_addr_size != rb.addr_size
-                or r.effective_addr_endianness != rb.addr_endianness
-            ):
-                reg_addr_info = f'{r.effective_addr_size * 8}/{format_endianness_brief(r.effective_addr_endianness)}'
 
             # Build reset column
             reset_col = hex(r.reset_value) if r.reset_value != 0 else ''
@@ -106,7 +94,7 @@ for name, rb in rf.items():
                         hex(r.offset),
                         hex(r.effective_data_size * 8),
                         reg_data_info,
-                        reg_addr_info,
+                        '',
                         reset_col,
                         reg_desc,
                     )
@@ -118,7 +106,7 @@ for name, rb in rf.items():
                         hex(r.offset),
                         hex(r.effective_data_size * 8),
                         reg_data_info,
-                        reg_addr_info,
+                        '',
                         reset_col,
                     )
                 )
