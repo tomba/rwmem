@@ -279,8 +279,8 @@ class MMapTargetFailureTests(unittest.TestCase):
             map.write(0, 0x10000, 2)
 
     def test_mode_conflicts(self):
-        # Write-only mode doesn't work with regular files due to permission issues
-        # Only test writing to Read-only map
+        # MapMode.Write has been removed (broken on Linux, mmap requires
+        # PROT_READ with MAP_SHARED). Only test writing to Read-only map.
 
         # Writing to Read-only map should fail
         read_map = rw.MMapTarget(BIN_PATH, 0, 32, rw.Endianness.Big, 4, rw.MapMode.Read)

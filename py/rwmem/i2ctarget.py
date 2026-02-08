@@ -88,9 +88,6 @@ class I2CTarget:
         addr_size: int | None = None,
         addr_endianness: Endianness = Endianness.Default,
     ) -> int:
-        if self.mode == MapMode.Write:
-            raise RuntimeError()
-
         if addr_size is None:
             addr_size = self.addr_size
         elif addr_size <= 0:

@@ -40,9 +40,6 @@ class MMapTarget:
         if mode == MapMode.Read:
             oflag = os.O_RDONLY
             prot = mmap.PROT_READ
-        elif mode == MapMode.Write:
-            oflag = os.O_WRONLY
-            prot = mmap.PROT_WRITE
         else:
             oflag = os.O_RDWR
             prot = mmap.PROT_READ | mmap.PROT_WRITE
@@ -122,9 +119,6 @@ class MMapTarget:
         addr_size: int | None = None,
         addr_endianness: Endianness = Endianness.Default,
     ) -> int:
-        if self.mode == MapMode.Write:
-            raise RuntimeError()
-
         if data_size is None:
             data_size = self.data_size
         elif data_size <= 0:
