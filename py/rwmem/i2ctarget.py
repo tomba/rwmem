@@ -3,10 +3,10 @@ from __future__ import annotations
 import ctypes
 import fcntl
 import os
-import sys
 import weakref
 
 from .enums import Endianness, MapMode
+from .target import Target
 
 __all__ = [
     'I2CTarget',
@@ -34,7 +34,7 @@ class i2c_rdwr_ioctl_data(ctypes.Structure):
     ]
 
 
-class I2CTarget:
+class I2CTarget(Target):
     def __init__(
         self,
         i2c_adapter_nr: int,
@@ -73,22 +73,6 @@ class I2CTarget:
     def close(self):
         if self._finalizer.detach():
             os.close(self.fd)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.close()
-
-    def _endianness_to_bo(self, endianness: Endianness):
-        if endianness == Endianness.Default:
-            return sys.byteorder
-        elif endianness == Endianness.Little:
-            return 'little'
-        elif endianness == Endianness.Big:
-            return 'big'
-
-        raise NotImplementedError()
 
     def read(
         self,

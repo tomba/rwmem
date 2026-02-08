@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import mmap
 import os
-import sys
 import weakref
 from typing import BinaryIO
 
 from .enums import Endianness, MapMode
+from .target import Target
 
 __all__ = [
     'MMapTarget',
 ]
 
 
-class MMapTarget:
+class MMapTarget(Target):
     def __init__(
         self,
         file: str | BinaryIO,
@@ -73,22 +73,6 @@ class MMapTarget:
     def close(self):
         if self._finalizer.detach():
             self._map.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.close()
-
-    def _endianness_to_bo(self, endianness: Endianness):
-        if endianness == Endianness.Default:
-            return sys.byteorder
-        elif endianness == Endianness.Little:
-            return 'little'
-        elif endianness == Endianness.Big:
-            return 'big'
-
-        raise NotImplementedError()
 
     def _check_access(self, addr: int, data_size, addr_size, addr_endianness):
         if addr_size is not None and addr_size != 0:

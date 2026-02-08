@@ -1,3 +1,4 @@
+from .target import *
 from .mmaptarget import *
 from .i2ctarget import *
 from .enums import *
