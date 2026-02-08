@@ -7,73 +7,216 @@ import rwmem as rw
 import rwmem.gen as gen
 
 OVR_REGS = [
-    ( 'ATTRIBUTES_0', 0x20, [
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ] ),
-    ( 'ATTRIBUTES_1', 0x24, [
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ] ),
-    ( 'ATTRIBUTES_2', 0x28, [
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ] ),
-    ( 'ATTRIBUTES_3', 0x2c, [
-        ( 'CHANNELIN', 4, 1 ),
-        ( 'ENABLE', 0, 0 ),
-    ] ),
-
-    ( 'ATTRIBUTES2_0', 0x34, [
-        ( 'POSY', 29, 16 ),
-        ( 'POSX', 13, 0 ),
-    ] ),
-    ( 'ATTRIBUTES2_1', 0x38, [
-        ( 'POSY', 29, 16 ),
-        ( 'POSX', 13, 0 ),
-    ] ),
-    ( 'ATTRIBUTES2_2', 0x3c, [
-        ( 'POSY', 29, 16 ),
-        ( 'POSX', 13, 0 ),
-    ] ),
-    ( 'ATTRIBUTES2_3', 0x40, [
-        ( 'POSY', 29, 16 ),
-        ( 'POSX', 13, 0 ),
-    ] ),
-
+    (
+        'ATTRIBUTES_0',
+        0x20,
+        [
+            ('CHANNELIN', 4, 1),
+            ('ENABLE', 0, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES_1',
+        0x24,
+        [
+            ('CHANNELIN', 4, 1),
+            ('ENABLE', 0, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES_2',
+        0x28,
+        [
+            ('CHANNELIN', 4, 1),
+            ('ENABLE', 0, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES_3',
+        0x2C,
+        [
+            ('CHANNELIN', 4, 1),
+            ('ENABLE', 0, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES2_0',
+        0x34,
+        [
+            ('POSY', 29, 16),
+            ('POSX', 13, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES2_1',
+        0x38,
+        [
+            ('POSY', 29, 16),
+            ('POSX', 13, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES2_2',
+        0x3C,
+        [
+            ('POSY', 29, 16),
+            ('POSX', 13, 0),
+        ],
+    ),
+    (
+        'ATTRIBUTES2_3',
+        0x40,
+        [
+            ('POSY', 29, 16),
+            ('POSX', 13, 0),
+        ],
+    ),
 ]
 
 VP_REGS = [
-    ( 'CONTROL', 0x4, [
-        ( 'GOBIT', 5, 5 ),
-        ( 'ENABLE', 0, 0 ),
-    ] ),
+    (
+        'CONTROL',
+        0x4,
+        [
+            ('GOBIT', 5, 5),
+            ('ENABLE', 0, 0),
+        ],
+    ),
 ]
 
 plat = 'J7'
 
 if plat == 'AM625':
     urf = gen.create_register_file(
-        'DSS', [
-            ( 'VP1', 0x3020a000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'VP2', 0x3020b000, 0x1000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'OVR2', 0x30208000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'OVR1', 0x30207000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-        ]
+        'DSS',
+        [
+            (
+                'VP1',
+                0x3020A000,
+                0x1000,
+                VP_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'VP2',
+                0x3020B000,
+                0x1000,
+                VP_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'OVR2',
+                0x30208000,
+                0x1000,
+                OVR_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'OVR1',
+                0x30207000,
+                0x1000,
+                OVR_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+        ],
     )
 elif plat == 'J7':
     urf = gen.create_register_file(
-        'DSS', [
-            ( 'VP1', 0x04a80000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'VP2', 0x04aa0000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'VP3', 0x04ac0000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'VP4', 0x04ae0000, 0x10000, VP_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-
-            ( 'OVR1', 0x04a70000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'OVR2', 0x04a90000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'OVR3', 0x04ab0000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-            ( 'OVR4', 0x04ad0000, 0x1000, OVR_REGS, rw.Endianness.Default, 4, rw.Endianness.Default, 4 ),
-        ]
+        'DSS',
+        [
+            (
+                'VP1',
+                0x04A80000,
+                0x10000,
+                VP_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'VP2',
+                0x04AA0000,
+                0x10000,
+                VP_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'VP3',
+                0x04AC0000,
+                0x10000,
+                VP_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'VP4',
+                0x04AE0000,
+                0x10000,
+                VP_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'OVR1',
+                0x04A70000,
+                0x1000,
+                OVR_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'OVR2',
+                0x04A90000,
+                0x1000,
+                OVR_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'OVR3',
+                0x04AB0000,
+                0x1000,
+                OVR_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+            (
+                'OVR4',
+                0x04AD0000,
+                0x1000,
+                OVR_REGS,
+                rw.Endianness.Default,
+                4,
+                rw.Endianness.Default,
+                4,
+            ),
+        ],
     )
 else:
     raise RuntimeError()
@@ -100,13 +243,17 @@ else:
 #            <0x00 0x04af0000 0x00 0x10000>; /* wb */
 
 
-
 with io.BytesIO() as f:
     urf.pack_to(f)
     rf = rw.RegisterFile(f.getvalue())
 
+
 def print_rf(rf: rw.RegisterFile):
-    print('{}: blocks {}, regs {}, fields {}'.format(rf.name, rf.num_blocks, rf.num_regs, rf.num_fields))
+    print(
+        '{}: blocks {}, regs {}, fields {}'.format(
+            rf.name, rf.num_blocks, rf.num_regs, rf.num_fields
+        )
+    )
 
     for rb in rf.values():
         print('{} {:#x} {:#x}'.format(rb.name, rb.offset, rb.size))
@@ -115,11 +262,13 @@ def print_rf(rf: rw.RegisterFile):
             for f in r.values():
                 print('    {} {}:{}'.format(f.name, f.low, f.high))
 
-#print_rf(rf)
+
+# print_rf(rf)
 
 print('==')
 
 mrf = rw.MappedRegisterFile(rf)
+
 
 def pr_old():
     for vp_idx in range(1, 5):
@@ -140,9 +289,13 @@ def pr_old():
         for ovr_attr_idx in range(0, 4):
             ovr_attrs_name = f'ATTRIBUTES_{ovr_attr_idx}'
             reg = ovr[ovr_attrs_name]
-            print(f'    {ovr_attrs_name} enable={reg["ENABLE"]} channelin={reg["CHANNELIN"]} posx={reg["POSX"]} posy={reg["POSY"]}')
+            print(
+                f'    {ovr_attrs_name} enable={reg["ENABLE"]} channelin={reg["CHANNELIN"]} posx={reg["POSX"]} posy={reg["POSY"]}'
+            )
+
 
 print('==')
+
 
 def pr():
     for rb in mrf.values():
@@ -162,9 +315,10 @@ def pr():
 
             print()
 
+
 pr()
 
-mrf['OVR2']['ATTRIBUTES_0']['CHANNELIN']=0
+mrf['OVR2']['ATTRIBUTES_0']['CHANNELIN'] = 0
 time.sleep(1)
-mrf['OVR2']['ATTRIBUTES_1']['CHANNELIN']=3
-#mrf.VP2.CONTROL.GOBIT=1
+mrf['OVR2']['ATTRIBUTES_1']['CHANNELIN'] = 3
+# mrf.VP2.CONTROL.GOBIT=1

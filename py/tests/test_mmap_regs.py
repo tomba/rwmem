@@ -10,12 +10,13 @@ import rwmem as rw
 REGS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.regdb'
 BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.bin'
 
+
 class ContextManagerTests(unittest.TestCase):
     def test(self):
         with rw.RegisterFile(REGS_PATH) as rf:
-            with rw.MappedRegisterBlock(BIN_PATH, rf['SENSOR_A'],
-                                        mode=rw.MapMode.Read) as map:
+            with rw.MappedRegisterBlock(BIN_PATH, rf['SENSOR_A'], mode=rw.MapMode.Read) as map:
                 self.assertEqual(map['STATUS_REG'].value, 0x39)
+
 
 class MmapRegsTests(unittest.TestCase):
     def setUp(self):
@@ -33,7 +34,7 @@ class MmapRegsTests(unittest.TestCase):
         self.assertEqual(m['STATUS_REG'].value, 0x39)
 
         # Test field access: MODE[7:3]=0x7, ERROR[2:1]=0x0, READY[0:0]=0x1
-        self.assertEqual(m['STATUS_REG']['MODE'], 0x7)   # bits 7:3 = 0111
+        self.assertEqual(m['STATUS_REG']['MODE'], 0x7)  # bits 7:3 = 0111
         self.assertEqual(m['STATUS_REG']['ERROR'], 0x0)  # bits 2:1 = 00
         self.assertEqual(m['STATUS_REG']['READY'], 0x1)  # bit 0 = 1
 
@@ -43,14 +44,14 @@ class MmapRegsTests(unittest.TestCase):
         self.assertEqual(m['STATUS_REG'][0:0], 0x1)  # READY field
 
         # Test DATA_REG (16-bit little endian)
-        self.assertEqual(m['DATA_REG'].value, 0x7d8c)
-        self.assertEqual(m['DATA_REG']['VALUE'], 0x7d8c)
+        self.assertEqual(m['DATA_REG'].value, 0x7D8C)
+        self.assertEqual(m['DATA_REG']['VALUE'], 0x7D8C)
 
         # Test CONFIG_REG (24-bit little endian: 0x344772)
         self.assertEqual(m['CONFIG_REG'].value, 0x344772)
         self.assertEqual(m['CONFIG_REG']['THRESHOLD'], 0x34)  # bits 23:16
-        self.assertEqual(m['CONFIG_REG']['GAIN'], 0x47)       # bits 15:8
-        self.assertEqual(m['CONFIG_REG']['OFFSET'], 0x72)     # bits 7:0
+        self.assertEqual(m['CONFIG_REG']['GAIN'], 0x47)  # bits 15:8
+        self.assertEqual(m['CONFIG_REG']['OFFSET'], 0x72)  # bits 7:0
 
 
 class WriteMmapRegsTests(unittest.TestCase):
@@ -63,7 +64,9 @@ class WriteMmapRegsTests(unittest.TestCase):
         shutil.copy2(BIN_PATH, self.tmpfile_path)
         os.chmod(self.tmpfile_path, stat.S_IREAD | stat.S_IWRITE)
 
-        self.map = rw.MappedRegisterBlock(self.tmpfile_path, self.rf['SENSOR_A'], mode=rw.MapMode.ReadWrite)
+        self.map = rw.MappedRegisterBlock(
+            self.tmpfile_path, self.rf['SENSOR_A'], mode=rw.MapMode.ReadWrite
+        )
 
     def tests(self):
         m = self.map
@@ -78,9 +81,9 @@ class WriteMmapRegsTests(unittest.TestCase):
 
         # Test writing individual fields
         m['STATUS_REG'].set_value(0x00)  # Reset to known state
-        m['STATUS_REG']['MODE'] = 0x1F    # Set MODE to max value (5 bits)
-        m['STATUS_REG']['ERROR'] = 0x3    # Set ERROR to max value (2 bits)
-        m['STATUS_REG']['READY'] = 0x1    # Set READY bit
+        m['STATUS_REG']['MODE'] = 0x1F  # Set MODE to max value (5 bits)
+        m['STATUS_REG']['ERROR'] = 0x3  # Set ERROR to max value (2 bits)
+        m['STATUS_REG']['READY'] = 0x1  # Set READY bit
 
         # Verify field writes: MODE[7:3]=0x1F, ERROR[2:1]=0x3, READY[0:0]=0x1
         # Expected: 1111 1111 = 0xFF
@@ -110,8 +113,8 @@ class WriteMmapRegsTests(unittest.TestCase):
 
         # Verify changes are written to file
         import difflib
-        with (open(BIN_PATH, 'rb') as f1,
-              open(self.tmpfile_path, 'rb') as f2):
+
+        with open(BIN_PATH, 'rb') as f1, open(self.tmpfile_path, 'rb') as f2:
             x = f1.read()
             y = f2.read()
 

@@ -18,6 +18,7 @@ from rwmem.enums import Endianness
 
 tabulate.PRESERVE_WHITESPACE = True
 
+
 def format_endianness(val):
     """Format endianness enum value."""
     try:
@@ -25,15 +26,18 @@ def format_endianness(val):
     except ValueError:
         return f'INVALID({val})'
 
+
 def format_hex(val):
     """Format integer as hex string."""
     return f'0x{val:x}'
 
+
 def format_size(val):
     """Format size with human readable suffix."""
     if val >= 1024:
-        return f'{val} ({val//1024}KB)'
+        return f'{val} ({val // 1024}KB)'
     return str(val)
+
 
 def dump_file_header(rf):
     """Dump file format header information."""
@@ -49,9 +53,24 @@ def dump_file_header(rf):
 
     # Header validation
     header_table = [
-        ['Magic', format_hex(rf.rfd.magic), format_hex(RWMEM_MAGIC), '✓' if rf.rfd.magic == RWMEM_MAGIC else '✗'],
-        ['Version', str(rf.rfd.version), str(RWMEM_VERSION), '✓' if rf.rfd.version == RWMEM_VERSION else '✗'],
-        ['Name Offset', str(rf.rfd.name_offset), '-', '✓' if rf.rfd.name_offset < file_size else '✗'],
+        [
+            'Magic',
+            format_hex(rf.rfd.magic),
+            format_hex(RWMEM_MAGIC),
+            '✓' if rf.rfd.magic == RWMEM_MAGIC else '✗',
+        ],
+        [
+            'Version',
+            str(rf.rfd.version),
+            str(RWMEM_VERSION),
+            '✓' if rf.rfd.version == RWMEM_VERSION else '✗',
+        ],
+        [
+            'Name Offset',
+            str(rf.rfd.name_offset),
+            '-',
+            '✓' if rf.rfd.name_offset < file_size else '✗',
+        ],
     ]
 
     print('Header Validation:')
@@ -71,6 +90,7 @@ def dump_file_header(rf):
     print(tabulate.tabulate(counts_table, ['Type', 'Count']))
     print()
 
+
 def dump_memory_layout(rf):
     """Dump memory layout and section offsets."""
     print('MEMORY LAYOUT')
@@ -89,16 +109,55 @@ def dump_memory_layout(rf):
 
     layout_table = [
         ['Header', 0, header_size, header_size, '✓'],
-        ['Blocks', rf.blocks_offset, blocks_size, rf.registers_offset, '✓' if rf.blocks_offset + blocks_size == rf.registers_offset else '✗'],
-        ['Registers', rf.registers_offset, registers_size, rf.fields_offset, '✓' if rf.registers_offset + registers_size == rf.fields_offset else '✗'],
-        ['Fields', rf.fields_offset, fields_size, rf.register_indices_offset, '✓' if rf.fields_offset + fields_size == rf.register_indices_offset else '✗'],
-        ['Reg Indices', rf.register_indices_offset, reg_indices_size, rf.field_indices_offset, '✓' if rf.register_indices_offset + reg_indices_size == rf.field_indices_offset else '✗'],
-        ['Field Indices', rf.field_indices_offset, field_indices_size, rf.strings_offset, '✓' if rf.field_indices_offset + field_indices_size == rf.strings_offset else '✗'],
-        ['Strings', rf.strings_offset, strings_size, file_size, '✓' if rf.strings_offset + strings_size == file_size else '✗'],
+        [
+            'Blocks',
+            rf.blocks_offset,
+            blocks_size,
+            rf.registers_offset,
+            '✓' if rf.blocks_offset + blocks_size == rf.registers_offset else '✗',
+        ],
+        [
+            'Registers',
+            rf.registers_offset,
+            registers_size,
+            rf.fields_offset,
+            '✓' if rf.registers_offset + registers_size == rf.fields_offset else '✗',
+        ],
+        [
+            'Fields',
+            rf.fields_offset,
+            fields_size,
+            rf.register_indices_offset,
+            '✓' if rf.fields_offset + fields_size == rf.register_indices_offset else '✗',
+        ],
+        [
+            'Reg Indices',
+            rf.register_indices_offset,
+            reg_indices_size,
+            rf.field_indices_offset,
+            '✓'
+            if rf.register_indices_offset + reg_indices_size == rf.field_indices_offset
+            else '✗',
+        ],
+        [
+            'Field Indices',
+            rf.field_indices_offset,
+            field_indices_size,
+            rf.strings_offset,
+            '✓' if rf.field_indices_offset + field_indices_size == rf.strings_offset else '✗',
+        ],
+        [
+            'Strings',
+            rf.strings_offset,
+            strings_size,
+            file_size,
+            '✓' if rf.strings_offset + strings_size == file_size else '✗',
+        ],
     ]
 
     print(tabulate.tabulate(layout_table, ['Section', 'Offset', 'Size', 'Next Offset', 'Valid']))
     print()
+
 
 def dump_blocks_raw(rf):
     """Dump raw block structure data."""
@@ -119,14 +178,21 @@ def dump_blocks_raw(rf):
             ['size', format_hex(rbd.size)],
             ['num_regs', rbd.num_regs],
             ['first_reg_list_index', rbd.first_reg_list_index],
-            ['default_addr_endianness', f'{rbd.default_addr_endianness} ({format_endianness(rbd.default_addr_endianness)})'],
+            [
+                'default_addr_endianness',
+                f'{rbd.default_addr_endianness} ({format_endianness(rbd.default_addr_endianness)})',
+            ],
             ['default_addr_size', rbd.default_addr_size],
-            ['default_data_endianness', f'{rbd.default_data_endianness} ({format_endianness(rbd.default_data_endianness)})'],
+            [
+                'default_data_endianness',
+                f'{rbd.default_data_endianness} ({format_endianness(rbd.default_data_endianness)})',
+            ],
             ['default_data_size', rbd.default_data_size],
         ]
 
         print(tabulate.tabulate(block_table, ['Field', 'Value']))
         print()
+
 
 def dump_registers_raw(rf):
     """Dump raw register structure data."""
@@ -147,14 +213,21 @@ def dump_registers_raw(rf):
             ['reset_value', format_hex(rd.reset_value)],
             ['num_fields', rd.num_fields],
             ['first_field_list_index', rd.first_field_list_index],
-            ['addr_endianness', f"{rd.addr_endianness} ({format_endianness(rd.addr_endianness) if rd.addr_endianness else 'inherit'})"],
-            ['addr_size', f"{rd.addr_size} {'(inherit)' if rd.addr_size == 0 else ''}"],
-            ['data_endianness', f"{rd.data_endianness} ({format_endianness(rd.data_endianness) if rd.data_endianness else 'inherit'})"],
-            ['data_size', f"{rd.data_size} {'(inherit)' if rd.data_size == 0 else ''}"],
+            [
+                'addr_endianness',
+                f'{rd.addr_endianness} ({format_endianness(rd.addr_endianness) if rd.addr_endianness else "inherit"})',
+            ],
+            ['addr_size', f'{rd.addr_size} {"(inherit)" if rd.addr_size == 0 else ""}'],
+            [
+                'data_endianness',
+                f'{rd.data_endianness} ({format_endianness(rd.data_endianness) if rd.data_endianness else "inherit"})',
+            ],
+            ['data_size', f'{rd.data_size} {"(inherit)" if rd.data_size == 0 else ""}'],
         ]
 
         print(tabulate.tabulate(reg_table, ['Field', 'Value']))
         print()
+
 
 def dump_fields_raw(rf):
     """Dump raw field structure data."""
@@ -177,6 +250,7 @@ def dump_fields_raw(rf):
 
         print(tabulate.tabulate(field_table, ['Field', 'Value']))
         print()
+
 
 def dump_indices(rf):
     """Dump index arrays."""
@@ -205,6 +279,7 @@ def dump_indices(rf):
     print(tabulate.tabulate(field_indices_table, ['Index', 'Field Index']))
     print()
 
+
 def dump_strings(rf):
     """Dump string table."""
     print('STRING TABLE')
@@ -227,13 +302,15 @@ def dump_strings(rf):
                 break
 
             # Extract string
-            string_bytes = rf._map[rf.strings_offset + current_offset:null_pos]
+            string_bytes = rf._map[rf.strings_offset + current_offset : null_pos]
             if string_bytes:  # Skip empty strings
                 try:
                     string_value = string_bytes.decode('ascii')
                     strings_table.append([current_offset, len(string_bytes), repr(string_value)])
                 except UnicodeDecodeError:
-                    strings_table.append([current_offset, len(string_bytes), f'<invalid: {string_bytes}>'])
+                    strings_table.append(
+                        [current_offset, len(string_bytes), f'<invalid: {string_bytes}>']
+                    )
 
             current_offset = null_pos - rf.strings_offset + 1
         except Exception:
@@ -243,8 +320,11 @@ def dump_strings(rf):
     print(tabulate.tabulate(strings_table, ['Offset', 'Length', 'Value']))
     print()
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Dump detailed register database internal structure')
+    parser = argparse.ArgumentParser(
+        description='Dump detailed register database internal structure'
+    )
     parser.add_argument('regfile', help='Register database file to analyze')
     parser.add_argument('--no-blocks', action='store_true', help='Skip raw block structures')
     parser.add_argument('--no-registers', action='store_true', help='Skip raw register structures')
@@ -278,6 +358,7 @@ def main():
         return 1
 
     return 0
+
 
 if __name__ == '__main__':
     exit(main())

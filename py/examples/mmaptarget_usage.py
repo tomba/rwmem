@@ -18,9 +18,9 @@ def create_device_registers():
     data = bytearray(32)
 
     # Device registers with realistic values (32-bit each)
-    data[0:4] = [0x00, 0x12, 0x34, 0x56]    # DEVICE_ID register
-    data[4:8] = [0x00, 0x00, 0x00, 0x01]    # STATUS register
-    data[8:12] = [0x00, 0x00, 0x80, 0x00]   # CONTROL register
+    data[0:4] = [0x00, 0x12, 0x34, 0x56]  # DEVICE_ID register
+    data[4:8] = [0x00, 0x00, 0x00, 0x01]  # STATUS register
+    data[8:12] = [0x00, 0x00, 0x80, 0x00]  # CONTROL register
     data[12:16] = [0x12, 0x34, 0x56, 0x78]  # DATA register
 
     return data
@@ -38,15 +38,14 @@ def main():
 
     try:
         # Map device registers (native endianness, 32-bit default)
-        with rw.MMapTarget(device_file, 0, 32,
-                          rw.Endianness.Default, 4,
-                          rw.MapMode.ReadWrite) as device:
-
+        with rw.MMapTarget(
+            device_file, 0, 32, rw.Endianness.Default, 4, rw.MapMode.ReadWrite
+        ) as device:
             print('Reading device registers:')
             device_id = device.read(0x00)
             status = device.read(0x04)
             control = device.read(0x08)
-            data_reg = device.read(0x0c)
+            data_reg = device.read(0x0C)
 
             print(f'  DEVICE_ID (0x00): 0x{device_id:08x}')
             print(f'  STATUS    (0x04): 0x{status:08x}')
@@ -55,11 +54,11 @@ def main():
 
             print('\nWriting to registers:')
             # Enable device (set bit 0 in CONTROL register)
-            device.write(0x08, 0x00008001)    # No size parameter = use default
+            device.write(0x08, 0x00008001)  # No size parameter = use default
             print('  Set CONTROL to 0x00008001 (enabled)')
 
             # Write data register
-            device.write(0x0c, 0xDEADBEEF)
+            device.write(0x0C, 0xDEADBEEF)
             print('  Set DATA to 0xDEADBEEF')
 
             # Example of 16-bit access (less common but possible)

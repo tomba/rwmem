@@ -19,7 +19,7 @@ from ._structs import (
     RWMEM_VERSION_V3 as RWMEM_VERSION,
 )
 
-__all__ = [ 'RegisterFile', 'RegisterBlock', 'Register', 'Field' ]
+__all__ = ['RegisterFile', 'RegisterBlock', 'Register', 'Field']
 
 
 # Structure definitions now imported from _structs.py
@@ -47,7 +47,6 @@ class Field:
         return self.rf._get_str(self.fd.description_offset)
 
 
-
 class Register(collections.abc.Mapping):
     def __init__(self, rf: RegisterFile, rd: RegisterData, parent_block: RegisterBlock) -> None:
         self.rf = rf
@@ -59,7 +58,9 @@ class Register(collections.abc.Mapping):
 
         for idx in range(self.rd.num_fields):
             # Get field index from the FieldIndex array
-            field_index_offset = self.rf.field_indices_offset + ctypes.sizeof(FieldIndexV3) * (self.rd.first_field_list_index + idx)
+            field_index_offset = self.rf.field_indices_offset + ctypes.sizeof(FieldIndexV3) * (
+                self.rd.first_field_list_index + idx
+            )
             field_index_data = FieldIndexV3.from_buffer(self.rf._map, field_index_offset)
             actual_field_index = field_index_data.field_index
 
@@ -91,8 +92,6 @@ class Register(collections.abc.Mapping):
         """Get register reset value."""
         return self.rd.reset_value
 
-
-
     @property
     def effective_data_endianness(self) -> Endianness:
         """Get effective data endianness (register-specific or inherited from block)."""
@@ -117,7 +116,9 @@ class Register(collections.abc.Mapping):
 
         for idx in range(self.rd.num_fields):
             # Get field index from the FieldIndex array
-            field_index_offset = self.rf.field_indices_offset + ctypes.sizeof(FieldIndexV3) * (self.rd.first_field_list_index + idx)
+            field_index_offset = self.rf.field_indices_offset + ctypes.sizeof(FieldIndexV3) * (
+                self.rd.first_field_list_index + idx
+            )
             field_index_data = FieldIndexV3.from_buffer(self.rf._map, field_index_offset)
             actual_field_index = field_index_data.field_index
 
@@ -150,7 +151,9 @@ class RegisterBlock(collections.abc.Mapping):
 
         for idx in range(self.rbd.num_regs):
             # Get register index from the RegisterIndex array
-            reg_index_offset = self.rf.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * (self.rbd.first_reg_list_index + idx)
+            reg_index_offset = self.rf.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * (
+                self.rbd.first_reg_list_index + idx
+            )
             reg_index_data = RegisterIndexV3.from_buffer(self.rf._map, reg_index_offset)
             actual_reg_index = reg_index_data.register_index
 
@@ -207,7 +210,9 @@ class RegisterBlock(collections.abc.Mapping):
 
         for idx in range(self.rbd.num_regs):
             # Get register index from the RegisterIndex array
-            reg_index_offset = self.rf.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * (self.rbd.first_reg_list_index + idx)
+            reg_index_offset = self.rf.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * (
+                self.rbd.first_reg_list_index + idx
+            )
             reg_index_data = RegisterIndexV3.from_buffer(self.rf._map, reg_index_offset)
             actual_reg_index = reg_index_data.register_index
 
@@ -231,7 +236,6 @@ class RegisterBlock(collections.abc.Mapping):
 
 
 class RegisterFile(collections.abc.Mapping):
-
     RWMEM_MAGIC = RWMEM_MAGIC
     RWMEM_VERSION = RWMEM_VERSION
 
@@ -269,11 +273,19 @@ class RegisterFile(collections.abc.Mapping):
             raise RuntimeError()
 
         self.blocks_offset = ctypes.sizeof(RegisterFileData)
-        self.registers_offset = self.blocks_offset + ctypes.sizeof(RegisterBlockData) * self.rfd.num_blocks
+        self.registers_offset = (
+            self.blocks_offset + ctypes.sizeof(RegisterBlockData) * self.rfd.num_blocks
+        )
         self.fields_offset = self.registers_offset + ctypes.sizeof(RegisterData) * self.rfd.num_regs
-        self.register_indices_offset = self.fields_offset + ctypes.sizeof(FieldData) * self.rfd.num_fields
-        self.field_indices_offset = self.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * self.rfd.num_reg_indices
-        self.strings_offset = self.field_indices_offset + ctypes.sizeof(FieldIndexV3) * self.rfd.num_field_indices
+        self.register_indices_offset = (
+            self.fields_offset + ctypes.sizeof(FieldData) * self.rfd.num_fields
+        )
+        self.field_indices_offset = (
+            self.register_indices_offset + ctypes.sizeof(RegisterIndexV3) * self.rfd.num_reg_indices
+        )
+        self.strings_offset = (
+            self.field_indices_offset + ctypes.sizeof(FieldIndexV3) * self.rfd.num_field_indices
+        )
 
         self.name = self._get_str(self.rfd.name_offset)
 
@@ -338,7 +350,7 @@ class RegisterFile(collections.abc.Mapping):
         v = cp.value
         if not v:
             raise RuntimeError()
-        return v.decode('ascii') # pylint: disable=no-member
+        return v.decode('ascii')  # pylint: disable=no-member
 
     def __getitem__(self, key: str):
         if key not in self._regblock_infos:

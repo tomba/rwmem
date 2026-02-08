@@ -15,19 +15,28 @@ class V3GenerationTests(unittest.TestCase):
         """Test that basic v2-style definitions still work (backward compatibility)."""
         # Simple block with basic registers (v2-style, no v3 features)
         basic_regs = [
-            gen.UnpackedRegister('CONFIG', 0x00, [
-                gen.UnpackedField('ENABLE', 0, 0),
-                gen.UnpackedField('MODE', 3, 1),
-            ]),
-            gen.UnpackedRegister('STATUS', 0x04, [
-                gen.UnpackedField('READY', 0, 0),
-                gen.UnpackedField('ERROR', 7, 4),
-            ]),
+            gen.UnpackedRegister(
+                'CONFIG',
+                0x00,
+                [
+                    gen.UnpackedField('ENABLE', 0, 0),
+                    gen.UnpackedField('MODE', 3, 1),
+                ],
+            ),
+            gen.UnpackedRegister(
+                'STATUS',
+                0x04,
+                [
+                    gen.UnpackedField('READY', 0, 0),
+                    gen.UnpackedField('ERROR', 7, 4),
+                ],
+            ),
         ]
 
         basic_blocks = [
-            gen.UnpackedRegBlock('BASIC', 0x1000, 0x100, basic_regs,
-                               rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+            gen.UnpackedRegBlock(
+                'BASIC', 0x1000, 0x100, basic_regs, rw.Endianness.Little, 4, rw.Endianness.Little, 4
+            )
         ]
 
         urf = gen.UnpackedRegFile('BASIC_TEST', basic_blocks)
@@ -65,110 +74,107 @@ class V3GenerationTests(unittest.TestCase):
         gpu_regs = [
             # Main control register
             gen.UnpackedRegister(
-                'CTRL', 0x00,
+                'CTRL',
+                0x00,
                 description='Main GPU control register',
                 reset_value=0x80000000,  # READY bit set by default
                 fields=[
-                    gen.UnpackedField('ENABLE', 0, 0,
-                                    description='GPU enable bit'),
-                    gen.UnpackedField('RESET', 1, 1,
-                                    description='Soft reset trigger'),
-                    gen.UnpackedField('IRQ_MASK', 7, 4,
-                                    description='Interrupt mask bits'),
-                    gen.UnpackedField('MODE', 11, 8,
-                                    description='Operating mode'),
-                    gen.UnpackedField('ERROR', 19, 16,
-                                    description='Error status'),
-                    gen.UnpackedField('READY', 31, 31,
-                                    description='GPU ready flag'),
-                ]
+                    gen.UnpackedField('ENABLE', 0, 0, description='GPU enable bit'),
+                    gen.UnpackedField('RESET', 1, 1, description='Soft reset trigger'),
+                    gen.UnpackedField('IRQ_MASK', 7, 4, description='Interrupt mask bits'),
+                    gen.UnpackedField('MODE', 11, 8, description='Operating mode'),
+                    gen.UnpackedField('ERROR', 19, 16, description='Error status'),
+                    gen.UnpackedField('READY', 31, 31, description='GPU ready flag'),
+                ],
             ),
-
             # 16-bit status register (per-register data size override)
             gen.UnpackedRegister(
-                'STATUS', 0x04,
+                'STATUS',
+                0x04,
                 description='GPU status register',
                 reset_value=0x0001,  # IDLE bit set
                 data_size=2,  # Override to 16-bit
                 fields=[
-                    gen.UnpackedField('IDLE', 0, 0,
-                                    description='GPU idle state'),
-                    gen.UnpackedField('BUSY', 1, 1,
-                                    description='GPU busy flag'),
-                    gen.UnpackedField('TEMP', 15, 8,
-                                    description='Temperature reading'),
-                ]
+                    gen.UnpackedField('IDLE', 0, 0, description='GPU idle state'),
+                    gen.UnpackedField('BUSY', 1, 1, description='GPU busy flag'),
+                    gen.UnpackedField('TEMP', 15, 8, description='Temperature reading'),
+                ],
             ),
-
             # 8-bit interrupt register with endianness override
             gen.UnpackedRegister(
-                'IRQ', 0x06,
+                'IRQ',
+                0x06,
                 description='Interrupt control',
                 reset_value=0x00,
                 data_size=1,  # 8-bit register
                 data_endianness=rw.Endianness.Big,  # Override endianness
                 fields=[
-                    gen.UnpackedField('VSYNC_EN', 0, 0,
-                                    description='VSync interrupt enable'),
-                    gen.UnpackedField('HSYNC_EN', 1, 1,
-                                    description='HSync interrupt enable'),
-                    gen.UnpackedField('ERR_EN', 2, 2,
-                                    description='Error interrupt enable'),
-                    gen.UnpackedField('PEND', 7, 7,
-                                    description='Interrupt pending'),
-                ]
+                    gen.UnpackedField('VSYNC_EN', 0, 0, description='VSync interrupt enable'),
+                    gen.UnpackedField('HSYNC_EN', 1, 1, description='HSync interrupt enable'),
+                    gen.UnpackedField('ERR_EN', 2, 2, description='Error interrupt enable'),
+                    gen.UnpackedField('PEND', 7, 7, description='Interrupt pending'),
+                ],
             ),
-
             # 64-bit framebuffer address register
             gen.UnpackedRegister(
-                'FB_ADDR', 0x08,
+                'FB_ADDR',
+                0x08,
                 description='Framebuffer base address',
                 reset_value=0x0000000000000000,
                 data_size=8,  # 64-bit register
                 fields=[
-                    gen.UnpackedField('ADDR_LOW', 31, 0,
-                                    description='Lower address bits'),
-                    gen.UnpackedField('ADDR_HIGH', 63, 32,
-                                    description='Upper address bits'),
-                ]
+                    gen.UnpackedField('ADDR_LOW', 31, 0, description='Lower address bits'),
+                    gen.UnpackedField('ADDR_HIGH', 63, 32, description='Upper address bits'),
+                ],
             ),
         ]
 
         # I2C sensor block with different addressing
         i2c_regs = [
             gen.UnpackedRegister(
-                'SENSOR_CTRL', 0x00,
+                'SENSOR_CTRL',
+                0x00,
                 description='Sensor control register',
                 reset_value=0x08,  # Default sample rate
                 fields=[
-                    gen.UnpackedField('SAMPLE_RATE', 3, 0,
-                                    description='Sample rate setting'),
-                    gen.UnpackedField('POWER_DOWN', 7, 7,
-                                    description='Power down mode'),
-                ]
+                    gen.UnpackedField('SAMPLE_RATE', 3, 0, description='Sample rate setting'),
+                    gen.UnpackedField('POWER_DOWN', 7, 7, description='Power down mode'),
+                ],
             ),
             gen.UnpackedRegister(
-                'SENSOR_DATA', 0x01,
+                'SENSOR_DATA',
+                0x01,
                 description='Sensor data register',
                 reset_value=0x00,
                 fields=[
-                    gen.UnpackedField('TEMP_DATA', 7, 0,
-                                    description='Temperature data'),
-                ]
+                    gen.UnpackedField('TEMP_DATA', 7, 0, description='Temperature data'),
+                ],
             ),
         ]
 
         # Create blocks with descriptions
         blocks = [
             gen.UnpackedRegBlock(
-                'GPU', 0x40000000, 0x1000, gpu_regs,
-                rw.Endianness.Little, 4, rw.Endianness.Little, 4,
-                description='Graphics processing unit registers'
+                'GPU',
+                0x40000000,
+                0x1000,
+                gpu_regs,
+                rw.Endianness.Little,
+                4,
+                rw.Endianness.Little,
+                4,
+                description='Graphics processing unit registers',
             ),
             gen.UnpackedRegBlock(
-                'I2C_SENSOR', 0x48, 0x10, i2c_regs,
-                rw.Endianness.Big, 1, rw.Endianness.Big, 1,
-                description='I2C temperature sensor'
+                'I2C_SENSOR',
+                0x48,
+                0x10,
+                i2c_regs,
+                rw.Endianness.Big,
+                1,
+                rw.Endianness.Big,
+                1,
+                description='I2C temperature sensor',
             ),
         ]
 
@@ -226,7 +232,9 @@ class V3GenerationTests(unittest.TestCase):
         irq_reg = gpu_block['IRQ']
         self.assertEqual(irq_reg.description, 'Interrupt control')
         self.assertEqual(irq_reg.effective_data_size, 1)  # 8-bit override
-        self.assertEqual(irq_reg.effective_data_endianness, rw.Endianness.Big)  # Endianness override
+        self.assertEqual(
+            irq_reg.effective_data_endianness, rw.Endianness.Big
+        )  # Endianness override
 
         pend_field = irq_reg['PEND']
         self.assertEqual(pend_field.description, 'Interrupt pending')
@@ -257,8 +265,9 @@ class V3GenerationTests(unittest.TestCase):
         with self.assertRaises(gen.RegisterValidationError) as cm:
             reg = gen.UnpackedRegister('BAD_REG', 0x00, reset_value=0x1FF, data_size=1)
             # Validation happens during block creation
-            gen.UnpackedRegBlock('TEST', 0x1000, 0x100, [reg],
-                               rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+            gen.UnpackedRegBlock(
+                'TEST', 0x1000, 0x100, [reg], rw.Endianness.Little, 4, rw.Endianness.Little, 4
+            )
         self.assertIn('reset_value', str(cm.exception))
 
         # Test field bit position validation
@@ -272,22 +281,34 @@ class V3GenerationTests(unittest.TestCase):
         # Block with specific defaults
         block_regs = [
             # Register that inherits everything from block
-            gen.UnpackedRegister('INHERIT_ALL', 0x00, fields=[
-                gen.UnpackedField('DATA', 7, 0),
-            ]),
-
+            gen.UnpackedRegister(
+                'INHERIT_ALL',
+                0x00,
+                fields=[
+                    gen.UnpackedField('DATA', 7, 0),
+                ],
+            ),
             # Register that overrides some properties
-            gen.UnpackedRegister('OVERRIDE_SOME', 0x04,
-                               data_size=2,  # Override size
-                               fields=[
-                                   gen.UnpackedField('DATA', 15, 0),
-                               ]),
+            gen.UnpackedRegister(
+                'OVERRIDE_SOME',
+                0x04,
+                data_size=2,  # Override size
+                fields=[
+                    gen.UnpackedField('DATA', 15, 0),
+                ],
+            ),
         ]
 
         block = gen.UnpackedRegBlock(
-            'INHERIT_TEST', 0x2000, 0x100, block_regs,
-            rw.Endianness.Little, 4, rw.Endianness.Little, 4,
-            description='Inheritance test block'
+            'INHERIT_TEST',
+            0x2000,
+            0x100,
+            block_regs,
+            rw.Endianness.Little,
+            4,
+            rw.Endianness.Little,
+            4,
+            description='Inheritance test block',
         )
 
         urf = gen.UnpackedRegFile('INHERIT_TEST', [block])
@@ -307,7 +328,9 @@ class V3GenerationTests(unittest.TestCase):
         # Test partial override
         override_reg = test_block['OVERRIDE_SOME']
         self.assertEqual(override_reg.effective_data_size, 2)  # Overridden
-        self.assertEqual(override_reg.effective_data_endianness, rw.Endianness.Little)  # From block (not overridden)
+        self.assertEqual(
+            override_reg.effective_data_endianness, rw.Endianness.Little
+        )  # From block (not overridden)
 
     def test_field_sharing_optimization(self):
         """Test that field sharing optimization works correctly."""
@@ -318,16 +341,34 @@ class V3GenerationTests(unittest.TestCase):
             gen.UnpackedField('STATUS', 7, 4, description='Status bits'),
         ]
 
-        reg1 = gen.UnpackedRegister('REG1', 0x00, fields=shared_fields + [
-            gen.UnpackedField('UNIQUE1', 15, 8, description='Unique to reg1'),
-        ])
+        reg1 = gen.UnpackedRegister(
+            'REG1',
+            0x00,
+            fields=shared_fields
+            + [
+                gen.UnpackedField('UNIQUE1', 15, 8, description='Unique to reg1'),
+            ],
+        )
 
-        reg2 = gen.UnpackedRegister('REG2', 0x04, fields=shared_fields + [
-            gen.UnpackedField('UNIQUE2', 15, 8, description='Unique to reg2'),
-        ])
+        reg2 = gen.UnpackedRegister(
+            'REG2',
+            0x04,
+            fields=shared_fields
+            + [
+                gen.UnpackedField('UNIQUE2', 15, 8, description='Unique to reg2'),
+            ],
+        )
 
-        block = gen.UnpackedRegBlock('SHARING_TEST', 0x3000, 0x100, [reg1, reg2],
-                                   rw.Endianness.Little, 4, rw.Endianness.Little, 4)
+        block = gen.UnpackedRegBlock(
+            'SHARING_TEST',
+            0x3000,
+            0x100,
+            [reg1, reg2],
+            rw.Endianness.Little,
+            4,
+            rw.Endianness.Little,
+            4,
+        )
 
         urf = gen.UnpackedRegFile('SHARING_TEST', [block])
 
@@ -358,24 +399,55 @@ class V3GenerationTests(unittest.TestCase):
         # Define register file using pure tuple approach
         tuple_blocks_spec = [
             # Block tuple: (name, offset, size, regs_spec, addr_endianness, addr_size, data_endianness, data_size, description)
-            ('CTRL_BLOCK', 0x1000, 0x100, [
-                # Register tuple: (name, offset, fields_spec)
-                ('CONFIG', 0x00, [
-                    # Field tuples: (name, high, low, description)
-                    ('ENABLE', 0, 0, 'Enable bit'),
-                    ('MODE', 3, 1, 'Operation mode'),
-                ]),
-                ('STATUS', 0x04, [
-                    ('READY', 0, 0, 'Ready flag'),
-                    ('ERROR', 7, 4, 'Error status'),
-                ]),
-            ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Control block'),
-
-            ('DATA_BLOCK', 0x2000, 0x200, [
-                ('DATA_REG', 0x00, [
-                    ('VALUE', 31, 0, 'Data value'),
-                ]),
-            ], rw.Endianness.Big, 4, rw.Endianness.Big, 4, 'Data block'),
+            (
+                'CTRL_BLOCK',
+                0x1000,
+                0x100,
+                [
+                    # Register tuple: (name, offset, fields_spec)
+                    (
+                        'CONFIG',
+                        0x00,
+                        [
+                            # Field tuples: (name, high, low, description)
+                            ('ENABLE', 0, 0, 'Enable bit'),
+                            ('MODE', 3, 1, 'Operation mode'),
+                        ],
+                    ),
+                    (
+                        'STATUS',
+                        0x04,
+                        [
+                            ('READY', 0, 0, 'Ready flag'),
+                            ('ERROR', 7, 4, 'Error status'),
+                        ],
+                    ),
+                ],
+                rw.Endianness.Little,
+                4,
+                rw.Endianness.Little,
+                4,
+                'Control block',
+            ),
+            (
+                'DATA_BLOCK',
+                0x2000,
+                0x200,
+                [
+                    (
+                        'DATA_REG',
+                        0x00,
+                        [
+                            ('VALUE', 31, 0, 'Data value'),
+                        ],
+                    ),
+                ],
+                rw.Endianness.Big,
+                4,
+                rw.Endianness.Big,
+                4,
+                'Data block',
+            ),
         ]
 
         # Create register file using tuple approach
@@ -384,23 +456,51 @@ class V3GenerationTests(unittest.TestCase):
         # Create equivalent register file using explicit objects
         obj_blocks = [
             gen.UnpackedRegBlock(
-                'CTRL_BLOCK', 0x1000, 0x100, [
-                    gen.UnpackedRegister('CONFIG', 0x00, [
-                        gen.UnpackedField('ENABLE', 0, 0, 'Enable bit'),
-                        gen.UnpackedField('MODE', 3, 1, 'Operation mode'),
-                    ]),
-                    gen.UnpackedRegister('STATUS', 0x04, [
-                        gen.UnpackedField('READY', 0, 0, 'Ready flag'),
-                        gen.UnpackedField('ERROR', 7, 4, 'Error status'),
-                    ]),
-                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Control block'
+                'CTRL_BLOCK',
+                0x1000,
+                0x100,
+                [
+                    gen.UnpackedRegister(
+                        'CONFIG',
+                        0x00,
+                        [
+                            gen.UnpackedField('ENABLE', 0, 0, 'Enable bit'),
+                            gen.UnpackedField('MODE', 3, 1, 'Operation mode'),
+                        ],
+                    ),
+                    gen.UnpackedRegister(
+                        'STATUS',
+                        0x04,
+                        [
+                            gen.UnpackedField('READY', 0, 0, 'Ready flag'),
+                            gen.UnpackedField('ERROR', 7, 4, 'Error status'),
+                        ],
+                    ),
+                ],
+                rw.Endianness.Little,
+                4,
+                rw.Endianness.Little,
+                4,
+                'Control block',
             ),
             gen.UnpackedRegBlock(
-                'DATA_BLOCK', 0x2000, 0x200, [
-                    gen.UnpackedRegister('DATA_REG', 0x00, [
-                        gen.UnpackedField('VALUE', 31, 0, 'Data value'),
-                    ]),
-                ], rw.Endianness.Big, 4, rw.Endianness.Big, 4, 'Data block'
+                'DATA_BLOCK',
+                0x2000,
+                0x200,
+                [
+                    gen.UnpackedRegister(
+                        'DATA_REG',
+                        0x00,
+                        [
+                            gen.UnpackedField('VALUE', 31, 0, 'Data value'),
+                        ],
+                    ),
+                ],
+                rw.Endianness.Big,
+                4,
+                rw.Endianness.Big,
+                4,
+                'Data block',
             ),
         ]
 
@@ -414,7 +514,9 @@ class V3GenerationTests(unittest.TestCase):
             tuple_data = tuple_out.getvalue()
             obj_data = obj_out.getvalue()
 
-            self.assertEqual(tuple_data, obj_data, 'Tuple approach should produce identical binary output')
+            self.assertEqual(
+                tuple_data, obj_data, 'Tuple approach should produce identical binary output'
+            )
 
         # Verify both can be read and produce same results
         tuple_regfile = RegisterFile(tuple_data)
@@ -443,22 +545,48 @@ class V3GenerationTests(unittest.TestCase):
 
         # Mix objects and tuples at the top level - some blocks as objects, some as tuples
         obj_block = gen.UnpackedRegBlock(
-            'OBJ_BLOCK', 0x1000, 0x100, [
-                gen.UnpackedRegister('REG1', 0x00, [
-                    gen.UnpackedField('FIELD1', 7, 0, 'Test field'),
-                ]),
-            ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Object block'
+            'OBJ_BLOCK',
+            0x1000,
+            0x100,
+            [
+                gen.UnpackedRegister(
+                    'REG1',
+                    0x00,
+                    [
+                        gen.UnpackedField('FIELD1', 7, 0, 'Test field'),
+                    ],
+                ),
+            ],
+            rw.Endianness.Little,
+            4,
+            rw.Endianness.Little,
+            4,
+            'Object block',
         )
 
         mixed_blocks_spec = [
             # Use pre-created object for first block
             obj_block,
             # Use tuple for second block
-            ('TUPLE_BLOCK', 0x2000, 0x100, [
-                ('REG2', 0x00, [
-                    ('FIELD2', 7, 0, 'Another field'),
-                ]),
-            ], rw.Endianness.Little, 4, rw.Endianness.Little, 4, 'Tuple block'),
+            (
+                'TUPLE_BLOCK',
+                0x2000,
+                0x100,
+                [
+                    (
+                        'REG2',
+                        0x00,
+                        [
+                            ('FIELD2', 7, 0, 'Another field'),
+                        ],
+                    ),
+                ],
+                rw.Endianness.Little,
+                4,
+                rw.Endianness.Little,
+                4,
+                'Tuple block',
+            ),
         ]
 
         mixed_rf = gen.create_register_file('MIXED_TEST', mixed_blocks_spec)
@@ -483,29 +611,60 @@ class V3GenerationTests(unittest.TestCase):
 
         # Test invalid block specification
         with self.assertRaises(TypeError) as cm:
-            gen.create_register_file('ERROR_TEST', [
-                'invalid_block_spec'  # Neither tuple nor UnpackedRegBlock
-            ])
+            gen.create_register_file(
+                'ERROR_TEST',
+                [
+                    'invalid_block_spec'  # Neither tuple nor UnpackedRegBlock
+                ],
+            )
         self.assertIn('Block specification must be UnpackedRegBlock or tuple', str(cm.exception))
 
         # Test invalid register specification in tuple block
         with self.assertRaises(TypeError) as cm:
-            gen.create_register_file('ERROR_TEST', [
-                ('BLOCK', 0x1000, 0x100, [
-                    123  # Neither tuple nor UnpackedRegister
-                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4)
-            ])
+            gen.create_register_file(
+                'ERROR_TEST',
+                [
+                    (
+                        'BLOCK',
+                        0x1000,
+                        0x100,
+                        [
+                            123  # Neither tuple nor UnpackedRegister
+                        ],
+                        rw.Endianness.Little,
+                        4,
+                        rw.Endianness.Little,
+                        4,
+                    )
+                ],
+            )
         self.assertIn('Register specification must be UnpackedRegister or tuple', str(cm.exception))
 
         # Test invalid field specification
         with self.assertRaises(TypeError) as cm:
-            gen.create_register_file('ERROR_TEST', [
-                ('BLOCK', 0x1000, 0x100, [
-                    ('REG', 0x00, [
-                        {'invalid': 'field'}  # Neither tuple nor UnpackedField
-                    ])
-                ], rw.Endianness.Little, 4, rw.Endianness.Little, 4)
-            ])
+            gen.create_register_file(
+                'ERROR_TEST',
+                [
+                    (
+                        'BLOCK',
+                        0x1000,
+                        0x100,
+                        [
+                            (
+                                'REG',
+                                0x00,
+                                [
+                                    {'invalid': 'field'}  # Neither tuple nor UnpackedField
+                                ],
+                            )
+                        ],
+                        rw.Endianness.Little,
+                        4,
+                        rw.Endianness.Little,
+                        4,
+                    )
+                ],
+            )
         self.assertIn('Field specification must be UnpackedField or tuple', str(cm.exception))
 
 
