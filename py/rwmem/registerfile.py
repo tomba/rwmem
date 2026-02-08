@@ -5,7 +5,7 @@ import gc
 import mmap
 import os
 import collections.abc
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 from .enums import Endianness
 from ._structs import (
@@ -47,7 +47,7 @@ class Field:
         return self.rf._get_str(self.fd.description_offset)
 
 
-class Register(collections.abc.Mapping):
+class Register(collections.abc.Mapping[str, Field]):
     def __init__(self, rf: RegisterFile, rd: RegisterData, parent_block: RegisterBlock) -> None:
         self.rf = rf
         self.rd = rd
@@ -106,7 +106,7 @@ class Register(collections.abc.Mapping):
             return self.parent_block.data_size
         return self.rd.data_size
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Field:
         if key not in self._field_infos:
             raise KeyError(f'Field "{key}" not found')
 
@@ -134,14 +134,14 @@ class Register(collections.abc.Mapping):
 
         raise RuntimeError()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._field_infos)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._field_infos)
 
 
-class RegisterBlock(collections.abc.Mapping):
+class RegisterBlock(collections.abc.Mapping[str, Register]):
     def __init__(self, rf: RegisterFile, rbd: RegisterBlockData) -> None:
         self.rf = rf
         self.rbd = rbd
@@ -170,7 +170,7 @@ class RegisterBlock(collections.abc.Mapping):
         return self.rbd.num_regs
 
     @property
-    def addr_endianness(self):
+    def addr_endianness(self) -> Endianness:
         return Endianness(self.rbd.default_addr_endianness)
 
     @property
@@ -178,7 +178,7 @@ class RegisterBlock(collections.abc.Mapping):
         return self.rbd.default_addr_size
 
     @property
-    def data_endianness(self):
+    def data_endianness(self) -> Endianness:
         return Endianness(self.rbd.default_data_endianness)
 
     @property
@@ -200,7 +200,7 @@ class RegisterBlock(collections.abc.Mapping):
             return None
         return self.rf._get_str(self.rbd.description_offset)
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Register:
         if key not in self._reg_infos:
             raise KeyError(f'Register "{key}" not found')
 
@@ -228,14 +228,14 @@ class RegisterBlock(collections.abc.Mapping):
 
         raise RuntimeError()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._reg_infos)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._reg_infos)
 
 
-class RegisterFile(collections.abc.Mapping):
+class RegisterFile(collections.abc.Mapping[str, RegisterBlock]):
     RWMEM_MAGIC = RWMEM_MAGIC
     RWMEM_VERSION = RWMEM_VERSION
 
@@ -299,14 +299,14 @@ class RegisterFile(collections.abc.Mapping):
 
         self._regblock_infos: dict[str, RegisterBlock | None] = dict.fromkeys(rb_names)
 
-    def close(self):
+    def close(self) -> None:
         if self._mmap:
             self._mmap.close()
 
-    def __enter__(self):
+    def __enter__(self) -> RegisterFile:
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(self, exc_type, exc_value, exc_tb) -> None:
         del self.rfd
         self._regblock_infos.clear()
         # Force garbage collection to clean up circular references in ctypes structures
@@ -334,16 +334,16 @@ class RegisterFile(collections.abc.Mapping):
     def num_field_indices(self) -> int:
         return self.rfd.num_field_indices
 
-    def _get_regblock_offset(self, idx: int):
+    def _get_regblock_offset(self, idx: int) -> int:
         return self.blocks_offset + ctypes.sizeof(RegisterBlockData) * idx
 
-    def _get_register_offset(self, idx: int):
+    def _get_register_offset(self, idx: int) -> int:
         return self.registers_offset + ctypes.sizeof(RegisterData) * idx
 
-    def _get_field_offset(self, idx: int):
+    def _get_field_offset(self, idx: int) -> int:
         return self.fields_offset + ctypes.sizeof(FieldData) * idx
 
-    def _get_str(self, offset: int):
+    def _get_str(self, offset: int) -> str:
         c = ctypes.c_char.from_buffer(self._map, self.strings_offset + offset)
         c_addr = ctypes.addressof(c)
         cp = ctypes.c_char_p(c_addr)
@@ -352,7 +352,7 @@ class RegisterFile(collections.abc.Mapping):
             raise RuntimeError()
         return v.decode('ascii')  # pylint: disable=no-member
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> RegisterBlock:
         if key not in self._regblock_infos:
             raise KeyError(f'RegisterBlock "{key}" not found')
 
@@ -373,8 +373,8 @@ class RegisterFile(collections.abc.Mapping):
 
         raise RuntimeError()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._regblock_infos)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._regblock_infos)
