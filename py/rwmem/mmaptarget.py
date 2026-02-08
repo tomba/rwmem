@@ -48,7 +48,8 @@ class MMapTarget:
             # XXX It is not clear if os.O_SYNC affects mmap. Do we need msync()?
             fd = os.open(file, oflag | os.O_SYNC)
         else:
-            # mmap will (apparently?) close its fd, so duplicate it first
+            # Duplicate the fd so that closing it in the finally block
+            # does not close the caller's fd.
             fd = os.dup(file.fileno())
 
         try:
@@ -67,21 +68,17 @@ class MMapTarget:
         finally:
             os.close(fd)
 
-        weakref.finalize(self, MMapTarget.cleanup, self._map)
-
-    @staticmethod
-    def cleanup(m):
-        # It is ok to call close() multiple times
-        m.close()
+        self._finalizer = weakref.finalize(self, mmap.mmap.close, self._map)
 
     def close(self):
-        self._map.close()
+        if self._finalizer.detach():
+            self._map.close()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        self._map.close()
+        self.close()
 
     def _endianness_to_bo(self, endianness: Endianness):
         if endianness == Endianness.Default:
