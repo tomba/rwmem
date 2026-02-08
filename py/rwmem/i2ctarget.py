@@ -8,12 +8,15 @@ import weakref
 
 from .enums import Endianness, MapMode
 
-__all__ = [ 'I2CTarget', ]
+__all__ = [
+    'I2CTarget',
+]
 
 I2C_FUNCS = 0x0705
 I2C_RDWR = 0x0707
 I2C_FUNC_I2C = 0x00000001
 I2C_M_RD = 0x0001
+
 
 class i2c_msg(ctypes.Structure):
     _fields_ = [
@@ -23,18 +26,27 @@ class i2c_msg(ctypes.Structure):
         ('buf', ctypes.POINTER(ctypes.c_uint8)),
     ]
 
+
 class i2c_rdwr_ioctl_data(ctypes.Structure):
     _fields_ = [
         ('msgs', ctypes.POINTER(i2c_msg)),
         ('nmsgs', ctypes.c_uint32),
     ]
 
+
 class I2CTarget:
-    def __init__(self, i2c_adapter_nr: int, i2c_dev_addr: int,
-                 offset: int, length: int,
-                 addr_endianness: Endianness, addr_size: int,
-                 data_endianness: Endianness, data_size: int,
-                 mode: MapMode = MapMode.ReadWrite) -> None:
+    def __init__(
+        self,
+        i2c_adapter_nr: int,
+        i2c_dev_addr: int,
+        offset: int,
+        length: int,
+        addr_endianness: Endianness,
+        addr_size: int,
+        data_endianness: Endianness,
+        data_size: int,
+        mode: MapMode = MapMode.ReadWrite,
+    ) -> None:
         self.i2c_adapter = i2c_adapter_nr
         self.i2c_dev_addr = i2c_dev_addr
 
@@ -68,9 +80,14 @@ class I2CTarget:
 
         raise NotImplementedError()
 
-    def read(self, addr: int,
-             data_size: int | None = None, data_endianness: Endianness = Endianness.Default,
-             addr_size: int | None = None, addr_endianness: Endianness = Endianness.Default) -> int:
+    def read(
+        self,
+        addr: int,
+        data_size: int | None = None,
+        data_endianness: Endianness = Endianness.Default,
+        addr_size: int | None = None,
+        addr_endianness: Endianness = Endianness.Default,
+    ) -> int:
         if self.mode == MapMode.Write:
             raise RuntimeError()
 
@@ -94,12 +111,14 @@ class I2CTarget:
             raise RuntimeError()
 
         if addr + data_size > self.offset + self.length:
-            raise RuntimeError(f'register {addr:#x} end {addr + data_size:#x} over block end {self.offset + self.length:#x}')
+            raise RuntimeError(
+                f'register {addr:#x} end {addr + data_size:#x} over block end {self.offset + self.length:#x}'
+            )
 
         addr_bo = self._endianness_to_bo(addr_endianness)
         data_bo = self._endianness_to_bo(data_endianness)
 
-        #print(f'READ {self.mmap_offset:#x}+{addr:#x} (nbytes {nbytes}, bo {endianness})')
+        # print(f'READ {self.mmap_offset:#x}+{addr:#x} (nbytes {nbytes}, bo {endianness})')
 
         addr_data = addr.to_bytes(addr_size, addr_bo)
         addr_buf = (ctypes.c_ubyte * len(addr_data)).from_buffer_copy(addr_data)
@@ -128,13 +147,19 @@ class I2CTarget:
 
         ret = int.from_bytes(data_buf, data_bo)
 
-        #print(f'READ {addr:#x} (nbytes {nbytes}, bo {endianness}) = {ret:#x} ({v})')
+        # print(f'READ {addr:#x} (nbytes {nbytes}, bo {endianness}) = {ret:#x} ({v})')
 
         return ret
 
-    def write(self, addr: int, value: int,
-              data_size: int | None = None, data_endianness: Endianness = Endianness.Default,
-              addr_size: int | None = None, addr_endianness: Endianness = Endianness.Default):
+    def write(
+        self,
+        addr: int,
+        value: int,
+        data_size: int | None = None,
+        data_endianness: Endianness = Endianness.Default,
+        addr_size: int | None = None,
+        addr_endianness: Endianness = Endianness.Default,
+    ):
         if self.mode == MapMode.Read:
             raise RuntimeError()
 
@@ -183,6 +208,6 @@ class I2CTarget:
 
         fcntl.ioctl(self.fd, I2C_RDWR, ioctl_data, True)
 
-        #print(f'WRITE {addr:#x} (nbytes {nbytes}, bo {endianness}) = {value:#x}')
+        # print(f'WRITE {addr:#x} (nbytes {nbytes}, bo {endianness}) = {value:#x}')
 
-        #self._map[addr:addr + nbytes] = value.to_bytes(nbytes, bo, signed=False)
+        # self._map[addr:addr + nbytes] = value.to_bytes(nbytes, bo, signed=False)

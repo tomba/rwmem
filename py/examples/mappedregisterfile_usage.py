@@ -22,7 +22,9 @@ def access_registers(temp_bin_path, rf: rw.RegisterFile):
     # Use SENSOR_A block from test.regdb
     sensor_block = rf['SENSOR_A']
 
-    with rw.MappedRegisterBlock(temp_bin_path, sensor_block, mode=rw.MapMode.ReadWrite) as mapped_block:
+    with rw.MappedRegisterBlock(
+        temp_bin_path, sensor_block, mode=rw.MapMode.ReadWrite
+    ) as mapped_block:
         print('Reading registers:')
 
         # Read register values from test data
@@ -55,7 +57,9 @@ def demonstrate_register_access():
 def access_fields(temp_bin_path, rf: rw.RegisterFile):
     sensor_block = rf['SENSOR_A']
 
-    with rw.MappedRegisterBlock(temp_bin_path, sensor_block, mode=rw.MapMode.ReadWrite) as mapped_block:
+    with rw.MappedRegisterBlock(
+        temp_bin_path, sensor_block, mode=rw.MapMode.ReadWrite
+    ) as mapped_block:
         status_reg = mapped_block['STATUS_REG']
 
         print('Reading STATUS_REG fields:')

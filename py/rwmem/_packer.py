@@ -110,7 +110,9 @@ class RegFilePacker:
 
             if reg_signature in unique_register_sets:
                 # Reuse existing register definitions
-                packed_regs, first_reg_index, first_field_index = unique_register_sets[reg_signature]
+                packed_regs, first_reg_index, first_field_index = unique_register_sets[
+                    reg_signature
+                ]
             else:
                 # Create new register definitions
                 first_reg_index = len(all_packed_regs)
@@ -135,7 +137,7 @@ class RegFilePacker:
                             name=field.name,
                             high=field.high,
                             low=field.low,
-                            description=field.description
+                            description=field.description,
                         )
                         packed_fields.append(packed_field)
                         all_packed_fields.append(packed_field)
@@ -148,26 +150,32 @@ class RegFilePacker:
                         description=reg.description,
                         reset_value=reg.reset_value,
                         data_endianness=reg.data_endianness,
-                        data_size=reg.data_size
+                        data_size=reg.data_size,
                     )
                     packed_regs.append(packed_reg)
                     all_packed_regs.append(packed_reg)
 
                 # Cache this register set for reuse
-                unique_register_sets[reg_signature] = (packed_regs, first_reg_index, first_field_index)
+                unique_register_sets[reg_signature] = (
+                    packed_regs,
+                    first_reg_index,
+                    first_field_index,
+                )
 
-            packed_blocks.append(PackedBlock(
-                name=block.name,
-                offset=block.offset,
-                size=block_size,
-                regs=packed_regs,
-                first_reg_index=current_reg_list_index,  # This is now first_reg_list_index
-                addr_endianness=block.addr_endianness,
-                addr_size=block.addr_size,
-                data_endianness=block.data_endianness,
-                data_size=block.data_size,
-                description=block.description
-            ))
+            packed_blocks.append(
+                PackedBlock(
+                    name=block.name,
+                    offset=block.offset,
+                    size=block_size,
+                    regs=packed_regs,
+                    first_reg_index=current_reg_list_index,  # This is now first_reg_list_index
+                    addr_endianness=block.addr_endianness,
+                    addr_size=block.addr_size,
+                    data_endianness=block.data_endianness,
+                    data_size=block.data_size,
+                    description=block.description,
+                )
+            )
 
             # Update the position in RegisterIndex array
             current_reg_list_index += len(packed_regs)
@@ -178,7 +186,7 @@ class RegFilePacker:
             all_registers=all_packed_regs,
             all_fields=all_packed_fields,
             strings=strings_map,
-            description=self.regfile.description
+            description=self.regfile.description,
         )
 
     def _compute_register_signature(self, regs):
@@ -189,8 +197,13 @@ class RegFilePacker:
             sorted_fields = sorted(reg.fields, key=lambda f: (f.name, f.high, f.low))
             field_sig = tuple((f.name, f.high, f.low, f.description) for f in sorted_fields)
             reg_sig = (
-                reg.name, reg.offset, field_sig, reg.description, reg.reset_value,
-                reg.data_endianness, reg.data_size
+                reg.name,
+                reg.offset,
+                field_sig,
+                reg.description,
+                reg.reset_value,
+                reg.data_endianness,
+                reg.data_size,
             )
             signature_parts.append(reg_sig)
         return tuple(signature_parts)
@@ -258,7 +271,7 @@ def pack_regfile(regfile: PackedRegFile):
         num_regs=len(regfile.all_registers),
         num_fields=len(regfile.all_fields),
         num_reg_indices=num_reg_indices,
-        num_field_indices=num_field_indices
+        num_field_indices=num_field_indices,
     )
     return bytes(data)
 
@@ -275,7 +288,7 @@ def pack_block(block: PackedBlock, strings: dict[str, int]):
         default_addr_endianness=block.addr_endianness.value,
         default_addr_size=block.addr_size,
         default_data_endianness=block.data_endianness.value,
-        default_data_size=block.data_size
+        default_data_size=block.data_size,
     )
     return bytes(data)
 
@@ -294,7 +307,7 @@ def pack_register(reg: PackedRegister, strings: dict[str, int]):
         num_fields=len(reg.fields),
         first_field_list_index=reg.first_field_index,
         data_endianness=data_endianness,
-        data_size=data_size
+        data_size=data_size,
     )
     return bytes(data)
 
@@ -305,7 +318,7 @@ def pack_field(field: PackedField, strings: dict[str, int]):
         name_offset=strings[field.name],
         description_offset=description_offset,
         high=field.high,
-        low=field.low
+        low=field.low,
     )
     return bytes(data)
 

@@ -48,8 +48,17 @@ class RegisterFileBasicTests(unittest.TestCase):
         self.assertEqual(sensor_a.addr_size, 1)
 
         # Expected registers
-        expected_regs = ['STATUS_REG', 'CONTROL_REG', 'DATA_REG', 'CONFIG_REG',
-                        'COUNTER_REG', 'BIG_REG', 'HUGE_REG', 'GIANT_REG', 'MAX_REG']
+        expected_regs = [
+            'STATUS_REG',
+            'CONTROL_REG',
+            'DATA_REG',
+            'CONFIG_REG',
+            'COUNTER_REG',
+            'BIG_REG',
+            'HUGE_REG',
+            'GIANT_REG',
+            'MAX_REG',
+        ]
         self.assertEqual(list(sensor_a.keys()), expected_regs)
         self.assertEqual(len(sensor_a), 9)
 
@@ -101,7 +110,7 @@ class RegisterTests(unittest.TestCase):
         max_reg = self.sensor_a['MAX_REG']
         self.assertEqual(max_reg.offset, 0x24)
         self.assertEqual(max_reg.effective_data_size, 8)  # 64-bit register
-        self.assertEqual(max_reg.reset_value, 0x123456789abcdef0)
+        self.assertEqual(max_reg.reset_value, 0x123456789ABCDEF0)
 
     def test_register_reset_values(self):
         """Test register reset values."""
