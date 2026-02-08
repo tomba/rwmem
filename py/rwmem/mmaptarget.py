@@ -82,9 +82,6 @@ class MMapTarget:
 
     def _endianness_to_bo(self, endianness: Endianness):
         if endianness == Endianness.Default:
-            endianness = self.data_endianness
-
-        if endianness == Endianness.Default:
             return sys.byteorder
         elif endianness == Endianness.Little:
             return 'little'
@@ -123,6 +120,9 @@ class MMapTarget:
 
         self._check_access(addr, data_size, addr_size, addr_endianness)
 
+        if data_endianness == Endianness.Default:
+            data_endianness = self.data_endianness
+
         bo = self._endianness_to_bo(data_endianness)
 
         addr -= self.mmap_offset
@@ -155,6 +155,9 @@ class MMapTarget:
             raise ValueError(f'Data size must be positive, got {data_size}')
 
         self._check_access(addr, data_size, addr_size, addr_endianness)
+
+        if data_endianness == Endianness.Default:
+            data_endianness = self.data_endianness
 
         bo = self._endianness_to_bo(data_endianness)
 
