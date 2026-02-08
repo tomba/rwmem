@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from typing import Sequence
+from collections.abc import Sequence
 
 from ._packer import RegFilePacker
 from .enums import Endianness

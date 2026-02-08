@@ -5,7 +5,8 @@ import gc
 import mmap
 import os
 import collections.abc
-from typing import BinaryIO, Iterator
+from typing import BinaryIO
+from collections.abc import Iterator
 
 from .enums import Endianness
 from ._structs import (
