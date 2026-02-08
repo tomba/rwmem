@@ -63,12 +63,22 @@ class I2CTarget:
         filename = f'/dev/i2c-{i2c_adapter_nr}'
         self.fd = os.open(filename, os.O_RDWR)
 
-        weakref.finalize(self, os.close, self.fd)
+        self._finalizer = weakref.finalize(self, os.close, self.fd)
 
         i2c_funcs = ctypes.c_uint64()
         fcntl.ioctl(self.fd, I2C_FUNCS, i2c_funcs, True)
         if (i2c_funcs.value & I2C_FUNC_I2C) == 0:
             raise RuntimeError('no i2c functionality')
+
+    def close(self):
+        if self._finalizer.detach():
+            os.close(self.fd)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
 
     def _endianness_to_bo(self, endianness: Endianness):
         if endianness == Endianness.Default:
