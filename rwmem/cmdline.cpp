@@ -205,29 +205,20 @@ static void parse_size_endian(string_view s, uint32_t* size, Endianness* e)
 // Pass 1: Normalize arguments for default mode
 static void normalize_args_for_default_mode(std::vector<std::string>& args)
 {
-	// Find first positional (skip program name and options)
-	size_t first_pos_idx = 0;
+	// If the first positional is an explicit subcommand, nothing to do
 	for (size_t i = 1; i < args.size(); i++) {
 		if (args[i][0] != '-') {
-			first_pos_idx = i;
+			const string& cmd = args[i];
+			if (cmd == "mmap" || cmd == "i2c" || cmd == "list")
+				return;
 			break;
 		}
 	}
 
-	// Check if explicit subcommand
-	if (first_pos_idx > 0) {
-		const string& cmd = args[first_pos_idx];
-		if (cmd == "mmap" || cmd == "i2c" || cmd == "list") {
-			return; // Already explicit, nothing to do
-		}
-	}
-
-	// Need to insert default mode
-	// Insert "mmap" and "/dev/mem" at first positional position
-	// Or after program name if no positionals yet
-	size_t insert_pos = (first_pos_idx > 0) ? first_pos_idx : args.size();
-	args.insert(args.begin() + insert_pos, "/dev/mem");
-	args.insert(args.begin() + insert_pos, "mmap");
+	// Insert default "mmap /dev/mem" right after the program name so the
+	// subcommand token always precedes any options the user may have given.
+	args.insert(args.begin() + 1, "/dev/mem");
+	args.insert(args.begin() + 1, "mmap");
 }
 
 void parse_cmdline(const std::vector<std::string>& args)
