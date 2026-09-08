@@ -156,6 +156,31 @@ carries the Python traceback naming the access. The connection remembers
 the death: every later request fails with the same message, `dead` is
 true, and closing targets or the connection does not raise.
 
+## rwmem-remote
+
+`rwmem-remote` is a stripped-down rwmem command that runs its accesses on a
+remote device. Everything after the host is parsed like the rwmem command
+line, with the same output format, but only numeric addresses are
+supported: no register database, and no `list`, `-r`, `-R`, `-v` or
+`--ignore-base`. Address ranges, bitfields, writes, the `-d` and `-a` size
+and endianness options, the write modes and the print and number formats all
+work as in rwmem.
+
+```sh
+# read one register, default mode is "mmap /dev/mem"; pyrwmem is shipped to the device
+rwmem-remote buildroot 0x3022a000
+
+# a 16-bit range, a bitfield write, and an i2c read
+rwmem-remote buildroot -d 16 0x3022a000-0x3022a020
+rwmem-remote buildroot 0x3022a05c:10:0=0x123
+rwmem-remote buildroot i2c 1:0x45 -a 8 -d 8 0x0+4
+
+# use the copy of pyrwmem on the device instead
+rwmem-remote --installed --env PYTHONPATH=/path/to/rwmem/py buildroot 0x3022a000
+```
+
+Remote options (`--installed`, `--env`, `--python`, `--ssh`) go before the host.
+
 ## Current limitations
 
 - One request in flight at a time: requests from other threads wait, so a

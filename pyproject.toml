@@ -24,6 +24,9 @@ classifiers = [
   'Operating System :: POSIX :: Linux',
 ]
 
+[project.scripts]
+rwmem-remote = 'rwmem.remotecmd:main'
+
 [project.urls]
 Homepage = 'https://github.com/tomba/rwmem'
 Repository = 'https://github.com/tomba/rwmem.git'

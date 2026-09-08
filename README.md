@@ -366,6 +366,12 @@ pyrwmem can read and write registers on another device over ssh, with the
 controlling program running on a PC. The device needs only python3 and an ssh
 server. See [py/docs/remote-access.md](py/docs/remote-access.md).
 
+## rwmem-remote
+
+`rwmem-remote` runs the rwmem command line on another device over ssh, with
+numeric addresses and no register database. See
+[py/docs/remote-access.md](py/docs/remote-access.md).
+
 ## Bash completion
 
 examples/bash_completion/rwmem is an example bash completion script for rwmem.
