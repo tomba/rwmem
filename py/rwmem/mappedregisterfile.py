@@ -316,10 +316,10 @@ class MappedRegisterBlock(collections.abc.Mapping):
         self._offset = regblock.offset if offset is None else offset
 
         if isinstance(file, Target):
-            # A ready-made target. It was opened with its own mode, so a
-            # mode given here would be ignored. It must cover
-            # [offset, offset + regblock.size). The block takes ownership
-            # and closes it on exit, as with its own MMapTarget.
+            # A ready-made target, e.g. a RemoteTarget. It was opened with
+            # its own mode, so a mode given here would be ignored. It must
+            # cover [offset, offset + regblock.size). The block takes
+            # ownership and closes it on exit, as with its own MMapTarget.
             if mode is not None:
                 raise ValueError('mode cannot be given with an already opened Target')
             self._map = file
@@ -468,7 +468,7 @@ class MappedRegisterFile(collections.abc.Mapping):
         """
         ``target_factory`` is called with a ``RegisterBlock`` and must return
         a ``Target`` covering it. By default blocks are mapped from
-        ``/dev/mem``.
+        ``/dev/mem``; use ``RemoteConnection.mmap_factory()`` for a device.
         """
         if isinstance(rf, RegisterFile):
             self._rf: RegisterFile | None = rf

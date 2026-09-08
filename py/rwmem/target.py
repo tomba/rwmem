@@ -39,8 +39,8 @@ class Target(ABC):
     def read_many(self, reads: Sequence[tuple[int, int | None, Endianness]]) -> list[int]:
         """Read several registers; each entry is ``(addr, data_size, data_endianness)``.
 
-        The default reads them one at a time. Targets that can do better
-        override this.
+        The default reads them one at a time. Targets that can do better,
+        such as RemoteTarget, override this.
         """
         return [
             self.read(addr, data_size, data_endianness)
