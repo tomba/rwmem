@@ -360,6 +360,12 @@ Registers in a database can be read and written by name through
 `rwmem.MappedRegisterFile`, keyed by register path such as `DSS.REVISION` or
 `DSS.REVISION:MAJOR`. See [py/docs/register-access.md](py/docs/register-access.md).
 
+## Remote access
+
+pyrwmem can read and write registers on another device over ssh, with the
+controlling program running on a PC. The device needs only python3 and an ssh
+server. See [py/docs/remote-access.md](py/docs/remote-access.md).
+
 ## Bash completion
 
 examples/bash_completion/rwmem is an example bash completion script for rwmem.

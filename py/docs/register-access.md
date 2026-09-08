@@ -1,7 +1,8 @@
 # Register access by name
 
 `rwmem.MappedRegisterFile` binds a register database to memory, so registers
-and fields are read and written by name instead of by address.
+and fields are read and written by name instead of by address. It works
+locally or on a device over ssh (see [remote-access.md](remote-access.md)).
 
 There are two ways to reach a register, over the same handles underneath.
 String keys are the short form and do I/O; methods return handles you look
@@ -23,7 +24,10 @@ with rw.RegisterFile('dss.regdb') as rf:
 ```
 
 `target_factory` is called with a `RegisterBlock` and returns a `Target`
-covering it. Without one, blocks are mapped from `/dev/mem`.
+covering it. Without one, blocks are mapped from `/dev/mem`. A
+`RemoteConnection` supplies factories that open blocks on the device:
+`conn.mapped_register_file(rf)` is the shorthand for mmap, and
+`conn.i2c_factory(bus, addr)` the factory for an I2C device.
 
 ## String keys: the short form
 
@@ -51,7 +55,7 @@ dss['*']
 ```
 
 `mrf.read([...])` reads several register paths at once, one round trip per
-block:
+block, which matters over ssh:
 
 ```python
 mrf.read(['DSS.REVISION', 'DISPC.CONTROL'])   # {path: value}
