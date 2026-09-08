@@ -378,6 +378,12 @@ pyrwmem also provides `rwmem-tui`, an interactive register browser that reads,
 writes and polls registers from a register database, locally or on a remote
 device. See [py/docs/tui.md](py/docs/tui.md).
 
+## rwmem-shell
+
+`rwmem-shell` starts a Python shell, IPython when installed, with a register
+target already opened, locally or on a remote device, for reads and writes by
+hand or in a few lines of Python. See [py/docs/shell.md](py/docs/shell.md).
+
 ## Bash completion
 
 examples/bash_completion/rwmem is an example bash completion script for rwmem.

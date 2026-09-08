@@ -181,6 +181,11 @@ rwmem-remote --installed --env PYTHONPATH=/path/to/rwmem/py buildroot 0x3022a000
 
 Remote options (`--installed`, `--env`, `--python`, `--ssh`) go before the host.
 
+For anything beyond one-off commands, `rwmem-shell --host HOST mmap` opens a
+Python shell with the device's registers reachable through a few helpers;
+see [shell.md](shell.md). IPython's `%timeit rd(0x3022a000)` gives the
+round-trip time of a read, for example.
+
 ## Current limitations
 
 - One request in flight at a time: requests from other threads wait, so a

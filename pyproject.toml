@@ -27,6 +27,7 @@ classifiers = [
 [project.scripts]
 rwmem-remote = 'rwmem.remotecmd:main'
 rwmem-tui = 'rwmem.tui.cli:main'
+rwmem-shell = 'rwmem.shell:main'
 
 [project.urls]
 Homepage = 'https://github.com/tomba/rwmem'
@@ -35,8 +36,9 @@ Repository = 'https://github.com/tomba/rwmem.git'
 
 [project.optional-dependencies]
 tui = ["textual>=8.0"]
+shell = ["ipython"]
 dev = ["ruff", "pytest", "tabulate", "pylint"]
-all = ["rwmem[tui]", "rwmem[dev]"]
+all = ["rwmem[tui]", "rwmem[shell]", "rwmem[dev]"]
 
 [tool.setuptools]
 packages = ["rwmem", "rwmem.tui"]
