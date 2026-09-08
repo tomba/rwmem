@@ -218,6 +218,66 @@ class HandleTests(unittest.TestCase):
             self.mrf.field('SENSOR_A.DATA_REG')  # no field
 
 
+class AttributeNavigationTests(unittest.TestCase):
+    def setUp(self):
+        self.rf = rw.RegisterFile(REGS_PATH)
+        self.tmpdir = tempfile.mkdtemp()
+        self.bin_path = os.path.join(self.tmpdir, 'test.bin')
+        shutil.copy(BIN_PATH, self.bin_path)
+        os.chmod(self.bin_path, stat.S_IREAD | stat.S_IWRITE)
+        self.mrf = MappedRegisterFile(
+            self.rf,
+            target_factory=lambda rb: rw.MMapTarget(
+                self.bin_path, rb.offset, rb.size, rb.data_endianness, rb.data_size
+            ),
+        )
+
+    def tearDown(self):
+        self.mrf.close()
+        self.rf.close()
+        shutil.rmtree(self.tmpdir)
+
+    def test_navigation_returns_handles(self):
+        from rwmem import MappedField, MappedRegister, MappedRegisterBlock
+
+        self.assertIsInstance(self.mrf.SENSOR_A, MappedRegisterBlock)
+        self.assertIsInstance(self.mrf.SENSOR_A.STATUS_REG, MappedRegister)
+        self.assertIsInstance(self.mrf.SENSOR_A.STATUS_REG.MODE, MappedField)
+
+    def test_read_and_write_through_attributes(self):
+        self.assertEqual(self.mrf.SENSOR_A.STATUS_REG.read(), 0x39)
+        self.assertEqual(self.mrf.SENSOR_A.STATUS_REG.MODE.read(), 0x7)
+        self.mrf.SENSOR_A.STATUS_REG.MODE.write(0x1F)
+        self.assertEqual(self.mrf['SENSOR_A.STATUS_REG:MODE'], 0x1F)
+
+    def test_handles_are_the_cached_ones(self):
+        self.assertIs(self.mrf.SENSOR_A, self.mrf['SENSOR_A'])
+        self.assertIs(self.mrf.SENSOR_A.STATUS_REG, self.mrf.reg('SENSOR_A.STATUS_REG'))
+
+    def test_dir_lists_children(self):
+        self.assertIn('SENSOR_A', dir(self.mrf))
+        self.assertIn('STATUS_REG', dir(self.mrf.SENSOR_A))
+        self.assertIn('MODE', dir(self.mrf.SENSOR_A.STATUS_REG))
+
+    def test_unknown_names_raise_attribute_error(self):
+        with self.assertRaises(AttributeError):
+            self.mrf.NOPE
+        with self.assertRaises(AttributeError):
+            self.mrf.SENSOR_A.NOPE
+        with self.assertRaises(AttributeError):
+            self.mrf.SENSOR_A.STATUS_REG.NOPE
+        # Dunder and private lookups must not be intercepted.
+        self.assertFalse(hasattr(self.mrf, '__wrapped__'))
+        with self.assertRaises(AttributeError):
+            self.mrf._not_a_thing
+
+    def test_real_attributes_win_over_navigation(self):
+        # A method name is found before __getattr__, so a register named
+        # like one would be shadowed; reg() always reaches it.
+        self.assertTrue(callable(self.mrf.block))
+        self.assertTrue(callable(self.mrf.SENSOR_A.reg))
+
+
 class MappedRegisterFileTests(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()

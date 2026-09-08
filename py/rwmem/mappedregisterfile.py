@@ -260,6 +260,20 @@ class MappedRegister:
     def __contains__(self, name: str) -> bool:
         return name in self._reg
 
+    def __getattr__(self, name: str) -> MappedField:
+        """Attribute access navigates to a field handle: reg.MODE. Read-only;
+        a field named like an attribute of this class is reachable only
+        through field()."""
+        if name.startswith('_'):
+            raise AttributeError(name)
+        if name in self._reg:
+            return self.field(name)
+        raise AttributeError(name)
+
+    def __dir__(self):
+        fields = (n for n, _, _ in self._layout().fields if n.isidentifier())
+        return [*super().__dir__(), *fields]
+
     # --- field handles --------------------------------------------------
 
     def field(self, name_or_high: str | int, low: int | None = None) -> MappedField:
@@ -396,6 +410,20 @@ class MappedRegisterBlock(collections.abc.Mapping):
                 keys.append(f'{rname}:{f.name}')
         return keys
 
+    def __getattr__(self, name: str) -> MappedRegister:
+        """Attribute access navigates to a register handle: block.REVISION.
+        Read-only; a register named like an attribute of this class is
+        reachable only through reg()."""
+        if name.startswith('_'):
+            raise AttributeError(name)
+        if name in self._registers:
+            return self.reg(name)
+        raise AttributeError(name)
+
+    def __dir__(self):
+        regs = (n for n in self._registers if n.isidentifier())
+        return [*super().__dir__(), *regs]
+
     def close(self):
         """Close the target and drop the register handles. Idempotent."""
         if self._map is None:
@@ -416,6 +444,12 @@ class MappedRegisterBlock(collections.abc.Mapping):
 
     def __len__(self):
         return len(self._registers)
+
+    def __repr__(self) -> str:
+        return (
+            f'<MappedRegisterBlock {self.name} @{self.address:#x}, '
+            f'{len(self._registers)} registers>'
+        )
 
 
 class MappedRegisterFile(collections.abc.Mapping):
@@ -528,6 +562,21 @@ class MappedRegisterFile(collections.abc.Mapping):
                 for f in self._rf[bname][rname].values():
                     keys.append(f'{bname}.{rname}:{f.name}')
         return keys
+
+    def __getattr__(self, name: str) -> MappedRegisterBlock:
+        """Attribute access navigates to a block scope: mrf.DSS, and from
+        there mrf.DSS.REVISION.MAJOR. Read-only, and it does no I/O; a block
+        named like an attribute of this class is reachable only through
+        block()."""
+        if name.startswith('_'):
+            raise AttributeError(name)
+        if name in self._blocks:
+            return self.block(name)
+        raise AttributeError(name)
+
+    def __dir__(self):
+        blocks = (n for n in self._blocks if n.isidentifier())
+        return [*super().__dir__(), *blocks]
 
     def close(self):
         """Close the opened blocks, and the RegisterFile if this owns it.

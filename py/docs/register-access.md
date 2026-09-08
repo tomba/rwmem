@@ -103,6 +103,30 @@ A block scope and its register handles are created on first use and then
 cached, so `mrf.reg('DSS.REVISION')` returns the same handle each time and
 opens the block's target only once.
 
+## Attribute navigation
+
+Blocks, registers and fields are also reachable as attributes, one level
+at a time, which reads naturally for a fixed path and lets `dir()` and tab
+completion show what the next level holds.
+
+```python
+mrf.DSS                       # the block scope, same as mrf['DSS']
+mrf.DSS.REVISION              # the register handle, same as mrf.reg('DSS.REVISION')
+mrf.DSS.REVISION.MAJOR        # the field handle
+mrf.DSS.REVISION.read()       # attributes navigate; read() and write() do the I/O
+mrf.DSS.REVISION.MAJOR.write(4)
+```
+
+Attribute access only navigates to handles and never reads or writes on its
+own, so `mrf.DSS.REVISION` is the register handle, not its value; use
+`mrf['DSS.REVISION']` or `.read()` for that. It returns the same cached
+handles as the methods. Two limits follow from Python attributes: a block,
+register or field whose name is not a valid identifier, or clashes with a
+method or property (`read`, `name`, `block`, ...), is reachable only through
+the string keys or `reg()`/`field()`; and a stray assignment such as
+`mrf.DSS = 1` raises rather than writing, since writes go through the keys
+and handles above.
+
 ## Iteration and metadata
 
 Iterating touches no hardware. A `MappedRegisterFile` iterates block names,
