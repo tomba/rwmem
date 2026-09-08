@@ -356,6 +356,10 @@ A register description file is a binary register database. See
 Register description files can be generated using the pyrwmem library. See
 [py/docs/regdb-generation.md](py/docs/regdb-generation.md) for a generation guide.
 
+Registers in a database can be read and written by name through
+`rwmem.MappedRegisterFile`, keyed by register path such as `DSS.REVISION` or
+`DSS.REVISION:MAJOR`. See [py/docs/register-access.md](py/docs/register-access.md).
+
 ## Bash completion
 
 examples/bash_completion/rwmem is an example bash completion script for rwmem.

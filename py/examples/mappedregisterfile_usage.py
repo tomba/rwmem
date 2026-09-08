@@ -2,114 +2,67 @@
 """
 Pyrwmem Example: MappedRegisterFile Usage
 
-This example demonstrates high-level register access by combining register
-database metadata with memory mapping. This provides register and field
-access by name with automatic addressing and bit manipulation.
+Register access by name, combining a register database with a memory
+mapping. String keys are the short form and do I/O; register and field
+handles are looked up once and reused.
 """
 
 import os
 import shutil
 import tempfile
+
 import rwmem as rw
 
-# Use test files from the test directory
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REGDB_PATH = os.path.join(SCRIPT_DIR, '..', 'tests', 'test.regdb')
-BIN_PATH = os.path.join(SCRIPT_DIR, '..', 'tests', 'test.bin')
 
+def demonstrate(bin_path, regdb_path):
+    # A MappedRegisterFile opens and owns the RegisterFile when given a path.
+    # Point its blocks at the copy of test.bin instead of /dev/mem.
+    with rw.MappedRegisterFile(
+        regdb_path,
+        target_factory=lambda rb: rw.MMapTarget(
+            bin_path, rb.offset, rb.size, rb.data_endianness, rb.data_size
+        ),
+    ) as mrf:
+        print('=== Reading by path ===')
+        print(f'  STATUS_REG:      0x{mrf["SENSOR_A.STATUS_REG"]:02x}')
+        print(f'  STATUS_REG:MODE: 0x{mrf["SENSOR_A.STATUS_REG:MODE"]:x}')
+        print(f'  bits [7:3]:      0x{mrf["SENSOR_A.STATUS_REG:7:3"]:x}')
 
-def access_registers(temp_bin_path, rf: rw.RegisterFile):
-    # Use SENSOR_A block from test.regdb
-    sensor_block = rf['SENSOR_A']
+        # A read returns a value that can decode its own fields.
+        value = mrf['SENSOR_A.STATUS_REG']
+        print(f'  decoded:         {value.fields}')
 
-    with rw.MappedRegisterBlock(
-        temp_bin_path, sensor_block, mode=rw.MapMode.ReadWrite
-    ) as mapped_block:
-        print('Reading registers:')
+        print('\n=== Writing by path ===')
+        mrf['SENSOR_A.STATUS_REG:MODE'] = 0x10  # read-modify-write of one field
+        print(f'  after MODE=0x10: 0x{mrf["SENSOR_A.STATUS_REG"]:02x}')
+        mrf['SENSOR_A.CONFIG_REG'] = {'THRESHOLD': 0xAB, 'GAIN': 0xCD, 'OFFSET': 0xEF}
+        print(f'  CONFIG_REG:      0x{mrf["SENSOR_A.CONFIG_REG"]:06x}')
 
-        # Read register values from test data
-        status_reg = mapped_block['STATUS_REG']
-        data_reg = mapped_block['DATA_REG']
-        config_reg = mapped_block['CONFIG_REG']
+        print('\n=== Handles ===')
+        # A block scope drops the block prefix; a register handle is reused.
+        sensor = mrf['SENSOR_A']
+        reg = sensor.reg('DATA_REG')
+        reg.write(0x1234)
+        print(f'  {reg.name} @0x{reg.address:x} = 0x{reg.read():04x}')
 
-        print(f'  STATUS_REG: 0x{status_reg.value:02x}')
-        print(f'  DATA_REG:   0x{data_reg.value:04x}')
-        print(f'  CONFIG_REG: 0x{config_reg.value:06x}')
-
-
-def demonstrate_register_access():
-    """Show basic register reading and writing."""
-    print('=== Register Access ===')
-
-    # Create a temporary copy of test.bin for modification
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.bin') as temp_file:
-        temp_bin_path = temp_file.name
-
-    shutil.copy(BIN_PATH, temp_bin_path)
-
-    try:
-        with rw.RegisterFile(REGDB_PATH) as rf:
-            access_registers(temp_bin_path, rf)
-    finally:
-        os.unlink(temp_bin_path)
-
-
-def access_fields(temp_bin_path, rf: rw.RegisterFile):
-    sensor_block = rf['SENSOR_A']
-
-    with rw.MappedRegisterBlock(
-        temp_bin_path, sensor_block, mode=rw.MapMode.ReadWrite
-    ) as mapped_block:
-        status_reg = mapped_block['STATUS_REG']
-
-        print('Reading STATUS_REG fields:')
-        print(f'  READY: {status_reg["READY"]}')
-        print(f'  ERROR: {status_reg["ERROR"]}')
-        print(f'  MODE:  {status_reg["MODE"]}')
-
-        print('\nModifying fields:')
-        status_reg['MODE'] = 0x10  # Change MODE field
-        print('  Set MODE to 0x10')
-        print(f'  STATUS_REG value now: 0x{status_reg.value:02x}')
-
-        # Bit slice operations
-        print('\nBit slice operations:')
-        print(f'  Bits [7:3]: 0x{status_reg[7:3]:x} (MODE field)')
-        status_reg[2:1] = 0x2  # Set ERROR field
-        print('  Set ERROR bits [2:1] to 0x2')
-        print(f'  STATUS_REG value now: 0x{status_reg.value:02x}')
-
-        # Demonstrate with CONFIG_REG fields
-        print('\nCONFIG_REG field access:')
-        config_reg = mapped_block['CONFIG_REG']
-        print(f'  THRESHOLD: 0x{config_reg["THRESHOLD"]:02x}')
-        print(f'  GAIN:      0x{config_reg["GAIN"]:02x}')
-        print(f'  OFFSET:    0x{config_reg["OFFSET"]:02x}')
-
-
-def demonstrate_field_access():
-    """Show field-level operations."""
-    print('\n=== Field Access ===')
-
-    # Create a temporary copy of test.bin for modification
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.bin') as temp_file:
-        temp_bin_path = temp_file.name
-
-    shutil.copy(BIN_PATH, temp_bin_path)
-
-    try:
-        with rw.RegisterFile(REGDB_PATH) as rf:
-            access_fields(temp_bin_path, rf)
-
-    finally:
-        os.unlink(temp_bin_path)
+        print('\n=== Whole block in one read ===')
+        for name, value in mrf['SENSOR_A.*'].items():
+            print(f'  {name} = 0x{value:x}')
 
 
 def main():
-    """Run MappedRegisterFile demonstrations."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    regdb_path = os.path.join(script_dir, '..', 'tests', 'test.regdb')
+    src_bin = os.path.join(script_dir, '..', 'tests', 'test.bin')
 
-    demonstrate_register_access()
-    demonstrate_field_access()
+    # Work on a writable copy of the test data.
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.bin') as tmp:
+        bin_path = tmp.name
+    shutil.copy(src_bin, bin_path)
+    try:
+        demonstrate(bin_path, regdb_path)
+    finally:
+        os.unlink(bin_path)
 
 
 if __name__ == '__main__':

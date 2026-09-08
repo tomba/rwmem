@@ -277,7 +277,7 @@ def pr_old():
             break
         vp = mrf[vp_name]
 
-        print(f'{vp_name} enable={vp["CONTROL"]["ENABLE"]}')
+        print(f'{vp_name} enable={vp["CONTROL:ENABLE"]}')
 
         ovr_name = f'OVR{vp_idx}'
         if ovr_name not in mrf:
@@ -290,7 +290,8 @@ def pr_old():
             ovr_attrs_name = f'ATTRIBUTES_{ovr_attr_idx}'
             reg = ovr[ovr_attrs_name]
             print(
-                f'    {ovr_attrs_name} enable={reg["ENABLE"]} channelin={reg["CHANNELIN"]} posx={reg["POSX"]} posy={reg["POSY"]}'
+                f'    {ovr_attrs_name} enable={reg["ENABLE"]} channelin={reg["CHANNELIN"]} '
+                f'posx={reg["POSX"]} posy={reg["POSY"]}'
             )
 
 
@@ -298,27 +299,18 @@ print('==')
 
 
 def pr():
-    for rb in mrf.values():
-        print(rb._regblock.name)
+    for bname in mrf:
+        print(bname)
 
-        for r in rb.values():
-            print(f'  {r._reg.name}:', end='')
-
-            for fname, fval in r.get_fields().items():
-                field_info = r._reg[fname]
-
-                print(f' {fname}=', end='')
-                if field_info.high == field_info.low:
-                    print(f'{fval}', end='')
-                else:
-                    print(f'{fval:#x}', end='')
-
+        for rname, value in mrf[f'{bname}.*'].items():
+            print(f'  {rname}:', end='')
+            for fname, fval in value.fields.items():
+                print(f' {fname}={fval:#x}', end='')
             print()
 
 
 pr()
 
-mrf['OVR2']['ATTRIBUTES_0']['CHANNELIN'] = 0
+mrf['OVR2.ATTRIBUTES_0:CHANNELIN'] = 0
 time.sleep(1)
-mrf['OVR2']['ATTRIBUTES_1']['CHANNELIN'] = 3
-# mrf.VP2.CONTROL.GOBIT=1
+mrf['OVR2.ATTRIBUTES_1:CHANNELIN'] = 3
