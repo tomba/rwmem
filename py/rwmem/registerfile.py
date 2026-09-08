@@ -94,18 +94,28 @@ class Register(collections.abc.Mapping[str, Field]):
         return self.rd.reset_value
 
     @property
+    def data_endianness(self) -> Endianness | None:
+        """Register-specific data endianness, or None when inherited from the block."""
+        if self.rd.data_endianness == 0:
+            return None
+        return Endianness(self.rd.data_endianness)
+
+    @property
+    def data_size(self) -> int | None:
+        """Register-specific data size, or None when inherited from the block."""
+        return self.rd.data_size or None
+
+    @property
     def effective_data_endianness(self) -> Endianness:
         """Get effective data endianness (register-specific or inherited from block)."""
-        if self.rd.data_endianness == 0:  # Inherit from block
-            return self.parent_block.data_endianness
-        return Endianness(self.rd.data_endianness)
+        e = self.data_endianness
+        return self.parent_block.data_endianness if e is None else e
 
     @property
     def effective_data_size(self) -> int:
         """Get effective data size (register-specific or inherited from block)."""
-        if self.rd.data_size == 0:  # Inherit from block
-            return self.parent_block.data_size
-        return self.rd.data_size
+        s = self.data_size
+        return self.parent_block.data_size if s is None else s
 
     def __getitem__(self, key: str) -> Field:
         if key not in self._field_infos:
