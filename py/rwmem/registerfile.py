@@ -301,19 +301,30 @@ class RegisterFile(collections.abc.Mapping[str, RegisterBlock]):
         self._regblock_infos: dict[str, RegisterBlock | None] = dict.fromkeys(rb_names)
 
     def close(self) -> None:
-        if self._mmap:
-            self._mmap.close()
+        """Release the file. Blocks, registers and fields looked up from it become invalid.
+
+        Raises BufferError if any of them is still referenced, as the mmap
+        cannot be closed under them. Closing twice is fine.
+        """
+        if self._map is None:
+            return
+
+        # Drop our own views into the buffer: the header and the cached blocks.
+        del self.rfd
+        self._regblock_infos.clear()
+        # Force garbage collection to clean up circular references in ctypes structures
+        gc.collect()
+        try:
+            if self._mmap:
+                self._mmap.close()
+        finally:
+            self._map = None
 
     def __enter__(self) -> RegisterFile:
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb) -> None:
-        del self.rfd
-        self._regblock_infos.clear()
-        # Force garbage collection to clean up circular references in ctypes structures
-        gc.collect()
-        if self._mmap:
-            self._mmap.close()
+        self.close()
 
     @property
     def num_blocks(self) -> int:
