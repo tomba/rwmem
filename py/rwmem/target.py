@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 
 from .enums import Endianness
 
@@ -34,6 +35,17 @@ class Target(ABC):
 
     @abstractmethod
     def close(self): ...
+
+    def read_many(self, reads: Sequence[tuple[int, int | None, Endianness]]) -> list[int]:
+        """Read several registers; each entry is ``(addr, data_size, data_endianness)``.
+
+        The default reads them one at a time. Targets that can do better
+        override this.
+        """
+        return [
+            self.read(addr, data_size, data_endianness)
+            for addr, data_size, data_endianness in reads
+        ]
 
     def __enter__(self):
         return self

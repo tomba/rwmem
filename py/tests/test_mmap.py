@@ -52,6 +52,24 @@ class MmapTests(unittest.TestCase):
     def setUp(self):
         self.map = rw.MMapTarget(BIN_PATH, 0, 32, rw.Endianness.Big, 4, rw.MapMode.Read)
 
+    def test_read_many(self):
+        map = self.map
+        D = rw.Endianness.Default
+
+        reads = [(0, None, D), (4, 2, D), (8, 1, D), (12, 4, rw.Endianness.Little), (16, 8, D)]
+        expected = [
+            extract_value(TEST_DATA, 0, 4),
+            extract_value(TEST_DATA, 4, 2),
+            extract_value(TEST_DATA, 8, 1),
+            extract_value(TEST_DATA, 12, 4, rw.Endianness.Little),
+            extract_value(TEST_DATA, 16, 8),
+        ]
+        self.assertEqual(map.read_many(reads), expected)
+        self.assertEqual(map.read_many([]), [])
+
+        with self.assertRaises(RuntimeError):
+            map.read_many([(0, None, D), (32, None, D)])
+
     def test_reads(self):
         map = self.map
 
