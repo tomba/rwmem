@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import io
 import os
 import shutil
 import stat
 import tempfile
 import unittest
 import rwmem as rw
+import rwmem.gen as gen
 
 REGS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.regdb'
 BIN_PATH = os.path.dirname(os.path.abspath(__file__)) + '/test.bin'
@@ -125,3 +127,144 @@ class WriteMmapRegsTests(unittest.TestCase):
             self.assertNotEqual(x, y)
             # But should have some unchanged regions
             self.assertGreater(len(matching), 1)
+
+
+class TargetMappedRegsTests(unittest.TestCase):
+    """MappedRegisterBlock given an already opened Target instead of a file name."""
+
+    def setUp(self):
+        self.rf = rw.RegisterFile(REGS_PATH)
+        # A big-endian block, so that a target opened with another
+        # endianness is not the same thing as the block's.
+        self.block = self.rf['MEMORY_CTRL']
+
+        self.tmpdir = tempfile.mkdtemp()
+        self.bin_path = os.path.join(self.tmpdir, 'test.bin')
+        shutil.copy(BIN_PATH, self.bin_path)
+        os.chmod(self.bin_path, stat.S_IREAD | stat.S_IWRITE)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def _target(self, mode=rw.MapMode.ReadWrite):
+        # Opened with Little, unlike the block, which is Big.
+        return rw.MMapTarget(
+            self.bin_path,
+            self.block.offset,
+            self.block.size,
+            rw.Endianness.Little,
+            self.block.data_size,
+            mode,
+        )
+
+    def _read_all(self, map):
+        return {name: int(map[name]) for name in map}
+
+    def test_reads_do_not_depend_on_the_targets_endianness(self):
+        with rw.MappedRegisterBlock(self.bin_path, self.block, mode=rw.MapMode.Read) as m:
+            expected = self._read_all(m)
+
+        with rw.MappedRegisterBlock(self._target(), self.block) as m:
+            self.assertEqual(self._read_all(m), expected)
+
+    def test_writes_do_not_depend_on_the_targets_endianness(self):
+        with rw.MappedRegisterBlock(self._target(), self.block) as m:
+            m['STATUS_REG'].set_value(0x12345678)
+            m['CONFIG_REG'].set_value({'THRESHOLD': 0xAB, 'GAIN': 0xCD, 'OFFSET': 0xEF})
+            m['DATA_LO_REG']['DATA'] = 0xDEADBEEF
+
+        # The file path is how the block is meant to be accessed.
+        with rw.MappedRegisterBlock(self.bin_path, self.block, mode=rw.MapMode.Read) as m:
+            self.assertEqual(int(m['STATUS_REG']), 0x12345678)
+            self.assertEqual(int(m['CONFIG_REG']), 0xABCDEF)
+            self.assertEqual(int(m['DATA_LO_REG']), 0xDEADBEEF)
+
+    def test_register_endianness_override(self):
+        # A register that overrides its block's endianness must read the
+        # same through both paths, and the other way round from the block.
+        regs = [
+            gen.UnpackedRegister('LE_REG', 0x0, [gen.UnpackedField('VALUE', 31, 0)], data_size=4),
+            gen.UnpackedRegister(
+                'BE_REG',
+                0x4,
+                [gen.UnpackedField('VALUE', 31, 0)],
+                data_size=4,
+                data_endianness=rw.Endianness.Big,
+            ),
+        ]
+        block = gen.UnpackedRegBlock(
+            'B', 0x0, 0x8, regs, rw.Endianness.Little, 1, rw.Endianness.Little, 4
+        )
+        buf = io.BytesIO()
+        gen.UnpackedRegFile('OVERRIDE', [block]).pack_to(buf)
+
+        path = os.path.join(self.tmpdir, 'override.bin')
+        with open(path, 'wb') as f:
+            f.write(bytes.fromhex('11223344') * 2)
+
+        with rw.RegisterFile(buf.getvalue()) as rf:
+            b = rf['B']
+
+            with rw.MappedRegisterBlock(path, b, mode=rw.MapMode.Read) as m:
+                self.assertEqual(int(m['LE_REG']), 0x44332211)
+                self.assertEqual(int(m['BE_REG']), 0x11223344)
+
+            target = rw.MMapTarget(path, 0, 0x8, rw.Endianness.Big, 4, rw.MapMode.Read)
+            with rw.MappedRegisterBlock(target, b) as m:
+                self.assertEqual(int(m['LE_REG']), 0x44332211)
+                self.assertEqual(int(m['BE_REG']), 0x11223344)
+
+            del b, m
+
+    def test_mode_with_a_target_raises(self):
+        with self._target(mode=rw.MapMode.Read) as target:
+            with self.assertRaises(ValueError):
+                rw.MappedRegisterBlock(target, self.block, mode=rw.MapMode.Read)
+            with self.assertRaises(ValueError):
+                rw.MappedRegisterBlock(target, self.block, mode=rw.MapMode.ReadWrite)
+
+    def test_read_only_target_does_not_write(self):
+        with rw.MappedRegisterBlock(self._target(mode=rw.MapMode.Read), self.block) as m:
+            with self.assertRaises(RuntimeError):
+                m['STATUS_REG'].set_value(0)
+
+    def test_close_is_idempotent(self):
+        m = rw.MappedRegisterBlock(self._target(), self.block)
+        m.close()
+        m.close()
+
+
+class MappedRegisterFileCloseTests(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.bin_path = os.path.join(self.tmpdir, 'test.bin')
+        shutil.copy(BIN_PATH, self.bin_path)
+        os.chmod(self.bin_path, stat.S_IREAD | stat.S_IWRITE)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def _factory(self, rb):
+        return rw.MMapTarget(self.bin_path, rb.offset, rb.size, rb.data_endianness, rb.data_size)
+
+    def test_closing_the_register_file_after_the_mapped_file(self):
+        # The mapped blocks hold views into the register file's mmap.
+        # Without closing them the RegisterFile cannot close its mmap, and
+        # raises BufferError. No helper method hides the objects here.
+        with rw.RegisterFile(REGS_PATH) as rf:
+            with rw.MappedRegisterFile(rf, target_factory=self._factory) as mrf:
+                self.assertEqual(int(mrf['SENSOR_A']['STATUS_REG']), 0x39)
+                self.assertEqual(len(mrf), len(rf))
+
+    def test_close_is_idempotent(self):
+        with rw.RegisterFile(REGS_PATH) as rf:
+            mrf = rw.MappedRegisterFile(rf, target_factory=self._factory)
+            self.assertEqual(int(mrf['SENSOR_A']['STATUS_REG']), 0x39)
+
+            mrf.close()
+            mrf.close()
+
+            # The blocks are gone with it.
+            self.assertEqual(len(mrf), 0)
+            with self.assertRaises(KeyError):
+                mrf['SENSOR_A']

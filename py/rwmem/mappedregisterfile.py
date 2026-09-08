@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import collections.abc
+from typing import BinaryIO
 
 import rwmem.helpers
 import rwmem.mmaptarget
+import rwmem.target
 
 __all__ = ['MappedRegister', 'MappedRegisterBlock', 'MappedRegisterFile']
 
@@ -19,20 +21,12 @@ class MappedRegister:
         if self._frozen is not None:
             raise RuntimeError('Register already frozen')
 
-        value = self._map.read(
-            self._block_offset + self._reg.offset, data_size=self._reg.effective_data_size
-        )
-        self._frozen = self._convert_endianness_if_needed(value, True)
+        self._frozen = self._read()
 
     def unfreeze(self):
         if self._frozen is None:
             raise RuntimeError('Register not frozen')
-        converted_val = self._convert_endianness_if_needed(self._frozen, False)
-        self._map.write(
-            self._block_offset + self._reg.offset,
-            converted_val,
-            data_size=self._reg.effective_data_size,
-        )
+        self._write(self._frozen)
         self._frozen = None
 
     def get_fields(self):
@@ -46,53 +40,26 @@ class MappedRegister:
 
         return fields
 
-    def _convert_endianness_if_needed(self, value: int, from_register: bool = True) -> int:
-        """Convert endianness if register endianness differs from block endianness."""
-        reg_endianness = self._reg.effective_data_endianness
-        block_endianness = self._reg.parent_block.data_endianness
+    def _read(self) -> int:
+        """Read the register, in its own data size and endianness."""
+        return self._map.read(
+            self._block_offset + self._reg.offset,
+            data_size=self._reg.effective_data_size,
+            data_endianness=self._reg.effective_data_endianness,
+        )
 
-        if reg_endianness == block_endianness:
-            return value
-
-        # Need to convert between endiannesses
-        data_size = self._reg.effective_data_size
-
-        if from_register:
-            # Converting from block endianness (MMapTarget) to register endianness
-            if data_size == 1:
-                return value  # No conversion needed for single bytes
-            elif data_size == 2:
-                return ((value & 0xFF) << 8) | ((value >> 8) & 0xFF)
-            elif data_size == 4:
-                return (
-                    ((value & 0xFF) << 24)
-                    | (((value >> 8) & 0xFF) << 16)
-                    | (((value >> 16) & 0xFF) << 8)
-                    | ((value >> 24) & 0xFF)
-                )
-            elif data_size == 8:
-                return (
-                    ((value & 0xFF) << 56)
-                    | (((value >> 8) & 0xFF) << 48)
-                    | (((value >> 16) & 0xFF) << 40)
-                    | (((value >> 24) & 0xFF) << 32)
-                    | (((value >> 32) & 0xFF) << 24)
-                    | (((value >> 40) & 0xFF) << 16)
-                    | (((value >> 48) & 0xFF) << 8)
-                    | ((value >> 56) & 0xFF)
-                )
-        else:
-            # Converting from register endianness to block endianness (MMapTarget)
-            return self._convert_endianness_if_needed(value, True)  # Same conversion
-
-        return value
+    def _write(self, value: int) -> None:
+        """Write the register, in its own data size and endianness."""
+        self._map.write(
+            self._block_offset + self._reg.offset,
+            value,
+            data_size=self._reg.effective_data_size,
+            data_endianness=self._reg.effective_data_endianness,
+        )
 
     def get_value(self) -> int:
         if self._frozen is None:
-            value = self._map.read(
-                self._block_offset + self._reg.offset, data_size=self._reg.effective_data_size
-            )
-            return self._convert_endianness_if_needed(value, True)
+            return self._read()
         else:
             return self._frozen
 
@@ -104,12 +71,7 @@ class MappedRegister:
             self.unfreeze()
         else:
             if self._frozen is None:
-                converted_val = self._convert_endianness_if_needed(val, False)
-                self._map.write(
-                    self._block_offset + self._reg.offset,
-                    converted_val,
-                    data_size=self._reg.effective_data_size,
-                )
+                self._write(val)
             else:
                 self._frozen = val
 
@@ -194,33 +156,51 @@ class MappedRegister:
 class MappedRegisterBlock(collections.abc.Mapping):
     def __init__(
         self,
-        file,
+        file: str | BinaryIO | rwmem.target.Target,
         regblock: rwmem.RegisterBlock,
         offset: int | None = None,
-        mode=rwmem.MapMode.ReadWrite,
+        mode=None,
     ):
         self._regblock = regblock
 
         self._offset = regblock.offset if offset is None else offset
 
-        self._map = rwmem.mmaptarget.MMapTarget(
-            file,
-            self._offset,
-            self._regblock.size,
-            regblock.data_endianness,
-            regblock.data_size,
-            mode,
-        )
+        if isinstance(file, rwmem.target.Target):
+            # A ready-made target. It was opened with its own mode, so a
+            # mode given here would be ignored. It must cover
+            # [offset, offset + regblock.size). The block takes ownership
+            # and closes it on exit, as with its own MMapTarget.
+            if mode is not None:
+                raise ValueError('mode cannot be given with an already opened Target')
+
+            self._map = file
+        else:
+            self._map = rwmem.mmaptarget.MMapTarget(
+                file,
+                self._offset,
+                self._regblock.size,
+                regblock.data_endianness,
+                regblock.data_size,
+                rwmem.MapMode.ReadWrite if mode is None else mode,
+            )
 
         self._registers: dict[str, MappedRegister | None] = dict.fromkeys(regblock.keys())
+
+    def close(self):
+        """Close the target and drop the register views. Idempotent."""
+        if self._map is None:
+            return
+
+        self._map.close()
+        self._map = None
+        del self._regblock
+        self._registers.clear()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        self._map.close()
-        del self._regblock
-        self._registers.clear()
+        self.close()
 
     def __getitem__(self, key: str):
         if key not in self._registers:
@@ -246,9 +226,37 @@ class MappedRegisterBlock(collections.abc.Mapping):
 
 
 class MappedRegisterFile(collections.abc.Mapping):
-    def __init__(self, rf: rwmem.RegisterFile) -> None:
+    def __init__(
+        self,
+        rf: rwmem.RegisterFile,
+        target_factory: collections.abc.Callable[[rwmem.RegisterBlock], rwmem.target.Target]
+        | None = None,
+    ) -> None:
+        """
+        ``target_factory`` is called with a ``RegisterBlock`` and must return a
+        ``Target`` covering it. By default blocks are mapped from ``/dev/mem``.
+        """
         self._rf = rf
+        self._target_factory = target_factory
         self._regblocks: dict[str, MappedRegisterBlock | None] = dict.fromkeys(rf.keys())
+
+    def close(self):
+        """Close the opened blocks and drop the references to them. Idempotent.
+
+        Needed before the ``RegisterFile`` is closed: the blocks hold views
+        into its mmap, which cannot be closed while they are alive.
+        """
+        for mrb in self._regblocks.values():
+            if mrb:
+                mrb.close()
+        self._regblocks.clear()
+        self._rf = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
 
     def __getitem__(self, key: str):
         if key not in self._regblocks:
@@ -258,9 +266,13 @@ class MappedRegisterFile(collections.abc.Mapping):
         if mrb:
             return mrb
 
+        assert self._rf is not None
         rbi = self._rf.get(key)
         if rbi:
-            mrb = MappedRegisterBlock('/dev/mem', rbi)
+            if self._target_factory is not None:
+                mrb = MappedRegisterBlock(self._target_factory(rbi), rbi)
+            else:
+                mrb = MappedRegisterBlock('/dev/mem', rbi)
             self._regblocks[rbi.name] = mrb
             return mrb
 
