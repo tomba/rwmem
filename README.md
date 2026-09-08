@@ -372,6 +372,12 @@ server. See [py/docs/remote-access.md](py/docs/remote-access.md).
 numeric addresses and no register database. See
 [py/docs/remote-access.md](py/docs/remote-access.md).
 
+## rwmem-tui
+
+pyrwmem also provides `rwmem-tui`, an interactive register browser that reads,
+writes and polls registers from a register database, locally or on a remote
+device. See [py/docs/tui.md](py/docs/tui.md).
+
 ## Bash completion
 
 examples/bash_completion/rwmem is an example bash completion script for rwmem.

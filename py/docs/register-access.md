@@ -1,8 +1,9 @@
 # Register access by name
 
 `rwmem.MappedRegisterFile` binds a register database to memory, so registers
-and fields are read and written by name instead of by address. It works
-locally or on a device over ssh (see [remote-access.md](remote-access.md)).
+and fields are read and written by name instead of by address. It is what
+`rwmem-tui` uses, and it works locally or on a device over ssh (see
+[remote-access.md](remote-access.md)).
 
 There are two ways to reach a register, over the same handles underneath.
 String keys are the short form and do I/O; methods return handles you look
